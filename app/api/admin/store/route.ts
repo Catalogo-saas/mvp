@@ -14,6 +14,7 @@ const schema = z.object({
   heroTitle: z.string().max(120).optional(),
   heroSubtitle: z.string().max(220).optional(),
   address: z.string().max(180).optional(),
+  template: z.enum(["market", "quick-menu", "premium"]).default("market"),
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/)
 });
@@ -41,6 +42,7 @@ export async function PATCH(request: Request) {
       heroTitle: result.data.heroTitle,
       heroSubtitle: result.data.heroSubtitle,
       address: result.data.address,
+      template: result.data.template,
       theme: {
         primary: result.data.primary,
         accent: result.data.accent,

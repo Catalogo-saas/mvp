@@ -31,7 +31,7 @@ async function main() {
       description: "Catálogo de ejemplo para validar el MVP.",
       whatsappPhone: "5491123456789",
       businessType: "FOOD",
-      template: "food",
+      template: "market",
       heroTitle: "Pedidos simples por WhatsApp",
       heroSubtitle: "Elegí tus productos, armá el carrito y confirmá en segundos."
     }
@@ -57,6 +57,7 @@ async function main() {
       slug: "hamburguesa-clasica",
       description: "Pan brioche, medallón, cheddar y salsa de la casa.",
       basePrice: 6500,
+      promoPrice: 5200,
       imageUrls: []
     }
   });

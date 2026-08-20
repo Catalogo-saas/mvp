@@ -174,6 +174,7 @@ export const ProductScalarFieldEnum = {
   slug: 'slug',
   description: 'description',
   basePrice: 'basePrice',
+  promoPrice: 'promoPrice',
   imageUrls: 'imageUrls',
   isVisible: 'isVisible',
   sortOrder: 'sortOrder',

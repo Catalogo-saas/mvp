@@ -19,15 +19,20 @@ export default async function AdminProductsPage() {
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }]
   });
+  const categories = await prisma.category.findMany({
+    where: { storeId: store.id },
+    include: { _count: { select: { products: true } } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+  });
 
   return (
     <div className="space-y-6">
       <header className="panel p-6">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Catálogo</p>
         <h1 className="mt-2 text-3xl font-black">Productos y opciones</h1>
-        <p className="mt-2 text-muted">Cargá productos con colores, talles, extras o agregados.</p>
+        <p className="mt-2 text-muted">Gestioná productos, categorías, imágenes, promos, extras y variantes.</p>
       </header>
-      <ProductForm products={products} />
+      <ProductForm products={products} categories={categories} />
     </div>
   );
 }

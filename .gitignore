@@ -5,5 +5,6 @@ node_modules
 dist
 coverage
 *.log
-uploads
+/uploads
 tsconfig.tsbuildinfo
+.DS_Store

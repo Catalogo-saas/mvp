@@ -1,8 +1,9 @@
 "use client";
 
-import { MessageCircle, Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ImageIcon, MessageCircle, Minus, Plus, Search, ShoppingCart, X } from "lucide-react";
+import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 
+import { getDiscountPercent, getEffectiveProductPrice, normalizeStoreTemplate } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
 
 type StorefrontProduct = {
@@ -11,6 +12,7 @@ type StorefrontProduct = {
   slug: string;
   description: string | null;
   basePrice: number;
+  promoPrice: number | null;
   imageUrls: string[];
   category: { id: string; name: string; slug: string } | null;
   optionGroups: Array<{
@@ -18,6 +20,7 @@ type StorefrontProduct = {
     name: string;
     selectionType: "SINGLE" | "MULTIPLE";
     isRequired: boolean;
+    maxSelections: number | null;
     options: Array<{ id: string; name: string; priceDelta: number; isAvailable: boolean }>;
   }>;
 };
@@ -41,25 +44,75 @@ function calculateUnitPrice(product: StorefrontProduct, selectedOptionIds: strin
         return selected.has(option.id) ? sum + option.priceDelta : sum;
       }, 0)
     );
-  }, product.basePrice);
+  }, getEffectiveProductPrice(product));
+}
+
+function PriceBlock({ product, size = "md" }: { product: StorefrontProduct; size?: "sm" | "md" | "lg" }) {
+  const discount = getDiscountPercent(product);
+  const effectivePrice = getEffectiveProductPrice(product);
+  const priceClass = size === "lg" ? "text-3xl" : size === "sm" ? "text-base" : "text-xl";
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+      <strong className={`${priceClass} font-black ${discount ? "text-red-600" : ""}`}>{formatMoney(effectivePrice)}</strong>
+      {discount ? <span className="font-bold text-muted line-through">{formatMoney(product.basePrice)}</span> : null}
+      {discount ? <span className="rounded-full bg-red-600 px-2 py-1 text-[11px] font-black text-white">{discount}% OFF</span> : null}
+    </div>
+  );
+}
+
+function ProductImage({ product, className }: { product: StorefrontProduct; className: string }) {
+  return (
+    <div className={`relative overflow-hidden bg-surface ${className}`}>
+      {product.imageUrls[0] ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={product.imageUrls[0]} alt={product.name} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full items-center justify-center text-muted">
+          <ImageIcon size={24} />
+        </div>
+      )}
+      {getDiscountPercent(product) ? (
+        <span className="absolute left-3 top-3 rounded-full bg-red-600 px-3 py-1.5 text-xs font-black text-white shadow-lg">
+          {getDiscountPercent(product)}% OFF
+        </span>
+      ) : null}
+      {product.imageUrls.length > 1 ? (
+        <span className="absolute bottom-3 right-3 rounded-full bg-black/70 px-2.5 py-1 text-xs font-black text-white">
+          {product.imageUrls.length} fotos
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 export function PublicStore({
   store,
   products
 }: {
-  store: { name: string; slug: string; description: string | null; heroTitle: string | null; heroSubtitle: string | null; logoUrl: string | null; theme: unknown };
+  store: {
+    name: string;
+    slug: string;
+    description: string | null;
+    heroTitle: string | null;
+    heroSubtitle: string | null;
+    logoUrl: string | null;
+    template: string;
+    theme: unknown;
+  };
   products: StorefrontProduct[];
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [activeProduct, setActiveProduct] = useState<StorefrontProduct | null>(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const template = normalizeStoreTemplate(store.template);
   const primary =
     store.theme && typeof store.theme === "object" && "primary" in store.theme
       ? String((store.theme as Record<string, unknown>).primary)
@@ -75,9 +128,13 @@ export function PublicStore({
     return Array.from(map.values());
   }, [products]);
 
+  const hasPromos = products.some((product) => getDiscountPercent(product));
   const filteredProducts = products.filter((product) => {
     const matchesQuery = [product.name, product.description ?? ""].join(" ").toLowerCase().includes(query.toLowerCase());
-    const matchesCategory = category === "all" || product.category?.slug === category;
+    const matchesCategory =
+      category === "all" ||
+      (category === "promos" && Boolean(getDiscountPercent(product))) ||
+      product.category?.slug === category;
     return matchesQuery && matchesCategory;
   });
 
@@ -85,17 +142,30 @@ export function PublicStore({
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   function toggleOption(group: StorefrontProduct["optionGroups"][number], optionId: string) {
+    setError("");
     setSelectedOptionIds((current) => {
       if (group.selectionType === "SINGLE") {
         const withoutGroup = current.filter((id) => !group.options.some((option) => option.id === id));
         return [...withoutGroup, optionId];
       }
-      return current.includes(optionId) ? current.filter((id) => id !== optionId) : [...current, optionId];
+
+      if (current.includes(optionId)) {
+        return current.filter((id) => id !== optionId);
+      }
+
+      const selectedInGroup = current.filter((id) => group.options.some((option) => option.id === id));
+      if (group.maxSelections && selectedInGroup.length >= group.maxSelections) {
+        setError(`Máximo ${group.maxSelections} opción(es) en ${group.name}`);
+        return current;
+      }
+
+      return [...current, optionId];
     });
   }
 
   function openProduct(product: StorefrontProduct) {
     setActiveProduct(product);
+    setActiveImageIndex(0);
     setSelectedOptionIds([]);
     setError("");
   }
@@ -109,6 +179,10 @@ export function PublicStore({
       const selectedInGroup = selectedOptionIds.filter((id) => group.options.some((option) => option.id === id));
       if (group.isRequired && selectedInGroup.length === 0) {
         setError(`Falta seleccionar ${group.name}`);
+        return;
+      }
+      if (group.maxSelections && selectedInGroup.length > group.maxSelections) {
+        setError(`Máximo ${group.maxSelections} opción(es) en ${group.name}`);
         return;
       }
     }
@@ -143,7 +217,7 @@ export function PublicStore({
     );
   }
 
-  async function submitOrder(event: React.FormEvent<HTMLFormElement>) {
+  async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
     setError("");
@@ -176,8 +250,22 @@ export function PublicStore({
     window.location.href = data.whatsappUrl;
   }
 
+  const heroClass =
+    template === "premium"
+      ? "overflow-hidden rounded-[28px] bg-ink p-6 text-white md:p-10"
+      : template === "quick-menu"
+        ? "rounded-[24px] border border-line bg-white p-5"
+        : "overflow-hidden rounded-[28px] bg-ink p-6 text-white md:p-10";
+  const gridClass =
+    template === "quick-menu"
+      ? "mt-5 grid gap-3"
+      : template === "premium"
+        ? "mt-5 grid gap-5 sm:grid-cols-2"
+        : "mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+  const activeImage = activeProduct?.imageUrls[activeImageIndex] ?? activeProduct?.imageUrls[0];
+
   return (
-    <div style={{ "--store-primary": primary } as React.CSSProperties} className="min-h-screen bg-[#fffaf4]">
+    <div style={{ "--store-primary": primary } as CSSProperties} className="min-h-screen bg-[#fffaf4]">
       <header className="sticky top-0 z-20 border-b border-black/5 bg-white/90 backdrop-blur">
         <div className="container-page flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
@@ -201,12 +289,16 @@ export function PublicStore({
       </header>
 
       <main className="container-page pb-28 pt-5">
-        <section className="overflow-hidden rounded-[32px] bg-ink p-6 text-white md:p-10">
-          <p className="text-sm font-bold text-white/60">Catálogo online</p>
+        <section className={heroClass}>
+          <p className={`text-sm font-bold ${template === "quick-menu" ? "text-[var(--store-primary)]" : "text-white/60"}`}>
+            {template === "market" ? "Ofertas y catálogo" : template === "quick-menu" ? "Menú online" : "Catálogo seleccionado"}
+          </p>
           <h1 className="mt-3 max-w-2xl text-4xl font-black tracking-tight md:text-6xl">
             {store.heroTitle ?? store.name}
           </h1>
-          <p className="mt-4 max-w-xl text-white/70">{store.heroSubtitle ?? store.description ?? "Elegí productos y confirmá por WhatsApp."}</p>
+          <p className={`mt-4 max-w-xl ${template === "quick-menu" ? "text-muted" : "text-white/70"}`}>
+            {store.heroSubtitle ?? store.description ?? "Elegí productos y confirmá por WhatsApp."}
+          </p>
         </section>
 
         <section className="sticky top-[73px] z-10 -mx-4 mt-4 bg-[#fffaf4]/95 px-4 py-3 backdrop-blur md:top-[77px]">
@@ -228,6 +320,15 @@ export function PublicStore({
               >
                 Todo
               </button>
+              {hasPromos ? (
+                <button
+                  className={`rounded-full px-4 py-2 text-sm font-bold ${category === "promos" ? "bg-red-600 text-white" : "bg-white text-red-600"}`}
+                  onClick={() => setCategory("promos")}
+                  type="button"
+                >
+                  Promos
+                </button>
+              ) : null}
               {categories.map((item) => (
                 <button
                   className={`rounded-full px-4 py-2 text-sm font-bold ${category === item.slug ? "bg-ink text-white" : "bg-white"}`}
@@ -242,34 +343,48 @@ export function PublicStore({
           </div>
         </section>
 
-        <section className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredProducts.map((product) => (
-            <article key={product.id} className="overflow-hidden rounded-[28px] border border-line bg-white shadow-soft">
-              <button className="block w-full text-left" onClick={() => openProduct(product)} type="button">
-                <div className="aspect-[4/3] bg-surface">
-                  {product.imageUrls[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.imageUrls[0]} alt={product.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm font-bold text-muted">Sin imagen</div>
-                  )}
-                </div>
-                <div className="p-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">
-                    {product.category?.name ?? "Producto"}
-                  </p>
-                  <h2 className="mt-2 text-xl font-black">{product.name}</h2>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{product.description}</p>
-                  <div className="mt-4 flex items-center justify-between">
-                    <span className="text-lg font-black">{formatMoney(product.basePrice)}</span>
-                    <span className="rounded-full bg-green-100 px-3 py-2 text-sm font-black text-green-800">
-                      Agregar
-                    </span>
+        <section className={gridClass}>
+          {filteredProducts.map((product) =>
+            template === "quick-menu" ? (
+              <article key={product.id} className="rounded-[22px] border border-line bg-white p-3 shadow-soft">
+                <button className="grid w-full grid-cols-[96px_1fr_auto] items-center gap-3 text-left" onClick={() => openProduct(product)} type="button">
+                  <ProductImage product={product} className="aspect-square rounded-2xl" />
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-black">{product.name}</p>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{product.description}</p>
+                    <div className="mt-2">
+                      <PriceBlock product={product} size="sm" />
+                    </div>
                   </div>
-                </div>
-              </button>
-            </article>
-          ))}
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-ink font-black text-white">
+                    <Plus size={18} />
+                  </span>
+                </button>
+              </article>
+            ) : (
+              <article
+                key={product.id}
+                className={`overflow-hidden rounded-[28px] border border-line bg-white shadow-soft ${template === "premium" ? "lg:min-h-[460px]" : ""}`}
+              >
+                <button className="block h-full w-full text-left" onClick={() => openProduct(product)} type="button">
+                  <ProductImage product={product} className={template === "premium" ? "aspect-square" : "aspect-[4/3]"} />
+                  <div className="p-5">
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">
+                      {product.category?.name ?? "Producto"}
+                    </p>
+                    <h2 className="mt-2 text-xl font-black">{product.name}</h2>
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{product.description}</p>
+                    <div className="mt-4 flex items-end justify-between gap-3">
+                      <PriceBlock product={product} />
+                      <span className="rounded-full bg-green-100 px-3 py-2 text-sm font-black text-green-800">
+                        Agregar
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </article>
+            )
+          )}
         </section>
       </main>
 
@@ -286,47 +401,80 @@ export function PublicStore({
 
       {activeProduct ? (
         <div className="fixed inset-0 z-40 bg-black/50 p-4 backdrop-blur-sm">
-          <div className="mx-auto flex h-full max-w-xl items-end md:items-center">
-            <section className="max-h-[90vh] w-full overflow-auto rounded-[32px] bg-white p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-black">{activeProduct.name}</h2>
-                  <p className="mt-1 text-muted">{activeProduct.description}</p>
-                </div>
-                <button onClick={() => setActiveProduct(null)} type="button">
-                  <X />
-                </button>
-              </div>
-              <div className="mt-5 space-y-5">
-                {activeProduct.optionGroups.map((group) => (
-                  <fieldset key={group.id}>
-                    <legend className="font-black">
-                      {group.name} {group.isRequired ? <span className="text-red-600">*</span> : null}
-                    </legend>
-                    <div className="mt-3 grid gap-2">
-                      {group.options.filter((option) => option.isAvailable).map((option) => (
-                        <label key={option.id} className="flex items-center justify-between rounded-2xl border border-line p-3">
-                          <span>
-                            <input
-                              className="mr-3"
-                              type={group.selectionType === "SINGLE" ? "radio" : "checkbox"}
-                              name={group.id}
-                              checked={selectedOptionIds.includes(option.id)}
-                              onChange={() => toggleOption(group, option.id)}
-                            />
-                            {option.name}
-                          </span>
-                          {option.priceDelta ? <span className="font-bold">+{formatMoney(option.priceDelta)}</span> : null}
-                        </label>
+          <div className="mx-auto flex h-full max-w-2xl items-end md:items-center">
+            <section className="max-h-[92vh] w-full overflow-auto rounded-[32px] bg-white">
+              {activeProduct.imageUrls.length ? (
+                <div className="bg-surface p-3">
+                  <div className="aspect-[4/3] overflow-hidden rounded-[24px] bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={activeImage} alt={activeProduct.name} className="h-full w-full object-cover" />
+                  </div>
+                  {activeProduct.imageUrls.length > 1 ? (
+                    <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+                      {activeProduct.imageUrls.map((url, index) => (
+                        <button
+                          className={`h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 ${index === activeImageIndex ? "border-[var(--store-primary)]" : "border-transparent"}`}
+                          key={`${url}-${index}`}
+                          onClick={() => setActiveImageIndex(index)}
+                          type="button"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={url} alt="" className="h-full w-full object-cover" />
+                        </button>
                       ))}
                     </div>
-                  </fieldset>
-                ))}
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">
+                      {activeProduct.category?.name ?? "Producto"}
+                    </p>
+                    <h2 className="mt-2 text-2xl font-black">{activeProduct.name}</h2>
+                    <p className="mt-2 text-muted">{activeProduct.description}</p>
+                    <div className="mt-4">
+                      <PriceBlock product={activeProduct} size="lg" />
+                    </div>
+                  </div>
+                  <button onClick={() => setActiveProduct(null)} type="button">
+                    <X />
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-5">
+                  {activeProduct.optionGroups.map((group) => (
+                    <fieldset key={group.id}>
+                      <legend className="font-black">
+                        {group.name} {group.isRequired ? <span className="text-red-600">*</span> : null}
+                      </legend>
+                      <div className="mt-3 grid gap-2">
+                        {group.options.filter((option) => option.isAvailable).map((option) => (
+                          <label key={option.id} className="flex items-center justify-between rounded-2xl border border-line p-3">
+                            <span>
+                              <input
+                                className="mr-3"
+                                type={group.selectionType === "SINGLE" ? "radio" : "checkbox"}
+                                name={group.id}
+                                checked={selectedOptionIds.includes(option.id)}
+                                onChange={() => toggleOption(group, option.id)}
+                              />
+                              {option.name}
+                            </span>
+                            {option.priceDelta ? <span className="font-bold">+{formatMoney(option.priceDelta)}</span> : null}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
+                  ))}
+                </div>
+                {error ? <p className="mt-4 text-sm font-semibold text-red-600">{error}</p> : null}
+                <button className="btn-primary mt-6 w-full" onClick={addActiveProduct} type="button">
+                  Agregar · {formatMoney(calculateUnitPrice(activeProduct, selectedOptionIds))}
+                </button>
               </div>
-              {error ? <p className="mt-4 text-sm font-semibold text-red-600">{error}</p> : null}
-              <button className="btn-primary mt-6 w-full" onClick={addActiveProduct} type="button">
-                Agregar — {formatMoney(calculateUnitPrice(activeProduct, selectedOptionIds))}
-              </button>
             </section>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getEffectiveProductPrice } from "@/lib/catalog";
 import { buildWhatsAppOrderUrl } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
     const selectedIds = new Set(inputItem.selectedOptionIds);
     const selectedOptions = [];
-    let unitPrice = product.basePrice;
+    let unitPrice = getEffectiveProductPrice(product);
 
     for (const group of product.optionGroups) {
       const selectedInGroup = group.options.filter((option) => selectedIds.has(option.id) && option.isAvailable);
@@ -75,6 +76,10 @@ export async function POST(request: Request) {
 
       if (group.selectionType === "SINGLE" && selectedInGroup.length > 1) {
         return NextResponse.json({ error: `Solo se puede elegir una opción en ${group.name}` }, { status: 400 });
+      }
+
+      if (group.maxSelections && selectedInGroup.length > group.maxSelections) {
+        return NextResponse.json({ error: `Máximo ${group.maxSelections} opción(es) en ${group.name}` }, { status: 400 });
       }
 
       for (const option of selectedInGroup) {
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const code = Date.now().toString(36).toUpperCase().slice(-6);
+  const code = `PED-${Date.now().toString(36).toUpperCase().slice(-6)}`;
   const order = await prisma.order.create({
     data: {
       storeId: store.id,

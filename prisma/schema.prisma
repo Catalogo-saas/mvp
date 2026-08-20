@@ -123,6 +123,7 @@ model Product {
   slug        String
   description String?
   basePrice   Int
+  promoPrice  Int?
   imageUrls   String[] @default([])
   isVisible   Boolean  @default(true)
   sortOrder   Int      @default(0)

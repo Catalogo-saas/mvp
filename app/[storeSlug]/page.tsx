@@ -61,6 +61,7 @@ export default async function StorePage({ params }: { params: Params }) {
         heroTitle: store.heroTitle,
         heroSubtitle: store.heroSubtitle,
         logoUrl: store.logoUrl,
+        template: store.template,
         theme: store.theme
       }}
       products={store.products}

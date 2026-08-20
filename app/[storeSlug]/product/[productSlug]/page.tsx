@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getDiscountPercent, getEffectiveProductPrice } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
@@ -49,6 +50,8 @@ export default async function ProductPage({ params }: { params: Params }) {
   if (!product) {
     notFound();
   }
+  const effectivePrice = getEffectiveProductPrice(product);
+  const discount = getDiscountPercent(product);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -59,7 +62,7 @@ export default async function ProductPage({ params }: { params: Params }) {
     offers: {
       "@type": "Offer",
       priceCurrency: "ARS",
-      price: product.basePrice,
+      price: effectivePrice,
       availability: "https://schema.org/InStock"
     }
   };
@@ -71,10 +74,29 @@ export default async function ProductPage({ params }: { params: Params }) {
         ← Volver a {product.store.name}
       </Link>
       <section className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="panel overflow-hidden">
+        <div className="panel overflow-hidden p-3">
           {product.imageUrls[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.imageUrls[0]} alt={product.name} className="aspect-square w-full object-cover" />
+            <div>
+              <div className="relative overflow-hidden rounded-2xl">
+                {discount ? (
+                  <span className="absolute left-4 top-4 rounded-full bg-red-600 px-3 py-2 text-sm font-black text-white">
+                    {discount}% OFF
+                  </span>
+                ) : null}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={product.imageUrls[0]} alt={product.name} className="aspect-square w-full object-cover" />
+              </div>
+              {product.imageUrls.length > 1 ? (
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {product.imageUrls.slice(1, 5).map((url, index) => (
+                    <div key={`${url}-${index}`} className="overflow-hidden rounded-2xl bg-surface">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt="" className="aspect-square w-full object-cover" />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           ) : (
             <div className="flex aspect-square items-center justify-center text-muted">Sin imagen</div>
           )}
@@ -83,7 +105,11 @@ export default async function ProductPage({ params }: { params: Params }) {
           <p className="text-sm font-black uppercase tracking-[0.2em] text-brand">{product.category?.name ?? "Producto"}</p>
           <h1 className="mt-3 text-4xl font-black">{product.name}</h1>
           <p className="mt-4 text-lg leading-8 text-muted">{product.description}</p>
-          <p className="mt-6 text-3xl font-black">{formatMoney(product.basePrice)}</p>
+          <div className="mt-6 flex flex-wrap items-baseline gap-3">
+            <p className={`text-3xl font-black ${discount ? "text-red-600" : ""}`}>{formatMoney(effectivePrice)}</p>
+            {discount ? <p className="text-xl font-bold text-muted line-through">{formatMoney(product.basePrice)}</p> : null}
+            {discount ? <span className="rounded-full bg-red-600 px-3 py-2 text-sm font-black text-white">{discount}% OFF</span> : null}
+          </div>
           <div className="mt-8 space-y-4">
             {product.optionGroups.map((group) => (
               <div key={group.id} className="rounded-2xl border border-line p-4">

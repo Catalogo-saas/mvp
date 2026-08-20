@@ -12,6 +12,7 @@ type StoreSettings = {
   heroTitle: string | null;
   heroSubtitle: string | null;
   address: string | null;
+  template: string;
   theme: unknown;
 };
 
@@ -23,6 +24,10 @@ function getThemeValue(theme: unknown, key: "primary" | "accent", fallback: stri
     }
   }
   return fallback;
+}
+
+function getTemplateValue(value: string) {
+  return ["market", "quick-menu", "premium"].includes(value) ? value : "market";
 }
 
 export function StoreSettingsForm({ store }: { store: StoreSettings }) {
@@ -60,6 +65,7 @@ export function StoreSettingsForm({ store }: { store: StoreSettings }) {
         heroTitle: form.get("heroTitle"),
         heroSubtitle: form.get("heroSubtitle"),
         address: form.get("address"),
+        template: form.get("template"),
         primary: form.get("primary"),
         accent: form.get("accent")
       })
@@ -87,6 +93,30 @@ export function StoreSettingsForm({ store }: { store: StoreSettings }) {
         <option value="SERVICES">Servicios</option>
         <option value="MIXED">Multirubro</option>
       </select>
+      <fieldset className="grid gap-3 rounded-2xl border border-line p-4">
+        <legend className="px-1 text-sm font-black">Diseño público</legend>
+        <label className="flex items-start gap-3 rounded-2xl border border-line p-3">
+          <input name="template" type="radio" value="market" defaultChecked={getTemplateValue(store.template) === "market"} />
+          <span>
+            <span className="block font-black">Ecommerce promo</span>
+            <span className="text-sm text-muted">Cards visuales, ofertas y precios promocionales destacados.</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 rounded-2xl border border-line p-3">
+          <input name="template" type="radio" value="quick-menu" defaultChecked={getTemplateValue(store.template) === "quick-menu"} />
+          <span>
+            <span className="block font-black">Menú rápido</span>
+            <span className="text-sm text-muted">Lista compacta para sumar productos con menos pasos.</span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 rounded-2xl border border-line p-3">
+          <input name="template" type="radio" value="premium" defaultChecked={getTemplateValue(store.template) === "premium"} />
+          <span>
+            <span className="block font-black">Retail premium</span>
+            <span className="text-sm text-muted">Fotos grandes y una grilla más visual para productos.</span>
+          </span>
+        </label>
+      </fieldset>
       <input className="field" name="heroTitle" defaultValue={store.heroTitle ?? ""} placeholder="Título principal" />
       <input className="field" name="heroSubtitle" defaultValue={store.heroSubtitle ?? ""} placeholder="Subtítulo" />
       <input className="field" name="address" defaultValue={store.address ?? ""} placeholder="Dirección o zona" />
