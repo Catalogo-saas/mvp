@@ -1,0 +1,201 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../lib/generated/prisma"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum BusinessType {
+  FOOD
+  RETAIL
+  SERVICES
+  MIXED
+}
+
+enum SelectionType {
+  SINGLE
+  MULTIPLE
+}
+
+enum OrderStatus {
+  PENDING_WHATSAPP
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  stores   Store[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Store {
+  id            String       @id @default(cuid())
+  ownerId       String
+  name          String
+  slug          String       @unique
+  description   String?
+  whatsappPhone String
+  businessType  BusinessType @default(MIXED)
+  template      String       @default("market")
+  logoUrl       String?
+  heroTitle     String?
+  heroSubtitle  String?
+  address       String?
+  theme         Json         @default("{\"primary\":\"#16a34a\",\"accent\":\"#f97316\",\"font\":\"Inter\"}")
+  isPublished   Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  categories Category[]
+  products   Product[]
+  orders     Order[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  storeId   String
+  name      String
+  slug      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([storeId, slug])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  storeId     String
+  categoryId  String?
+  name        String
+  slug        String
+  description String?
+  basePrice   Int
+  imageUrls   String[] @default([])
+  isVisible   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  store        Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  optionGroups OptionGroup[]
+  orderItems   OrderItem[]
+
+  @@unique([storeId, slug])
+}
+
+model OptionGroup {
+  id            String        @id @default(cuid())
+  productId     String
+  name          String
+  selectionType SelectionType @default(SINGLE)
+  isRequired    Boolean       @default(false)
+  minSelections Int           @default(0)
+  maxSelections Int?
+  sortOrder     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options ProductOption[]
+}
+
+model ProductOption {
+  id            String   @id @default(cuid())
+  optionGroupId String
+  name          String
+  priceDelta    Int      @default(0)
+  isAvailable   Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  optionGroup OptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  storeId       String
+  code          String
+  status        OrderStatus @default(PENDING_WHATSAPP)
+  customerName  String
+  customerPhone String
+  fulfillment   String
+  notes         String?
+  total         Int
+  checkout      Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  store Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@unique([storeId, code])
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  productId   String?
+  productName String
+  quantity    Int
+  unitPrice   Int
+  options     Json
+  subtotal    Int
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
