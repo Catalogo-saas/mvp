@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getEffectiveProductPrice } from "@/lib/catalog";
 import { buildWhatsAppOrderUrl } from "@/lib/whatsapp";
 import { prisma } from "@/lib/prisma";
+import { getStoreAvailability } from "@/lib/store-settings";
 
 const schema = z.object({
   storeSlug: z.string().min(2),
@@ -51,6 +52,14 @@ export async function POST(request: Request) {
 
   if (!store?.isPublished) {
     return NextResponse.json({ error: "Tienda no disponible" }, { status: 404 });
+  }
+
+  const availability = getStoreAvailability({
+    restrictBySchedule: store.restrictBySchedule,
+    businessHours: store.businessHours
+  });
+  if (!availability.isOpen) {
+    return NextResponse.json({ error: availability.label }, { status: 409 });
   }
 
   const productsById = new Map(store.products.map((product) => [product.id, product]));

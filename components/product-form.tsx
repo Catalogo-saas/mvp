@@ -162,11 +162,9 @@ export function ProductForm({
   const [categories, setCategories] = useState(initialCategories);
   const [draft, setDraft] = useState<ProductDraft>(() => emptyDraft(initialCategories));
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [isProductModalOpen, setProductModalOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [newCategoryName, setNewCategoryName] = useState("");
-  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
-  const [editingCategoryName, setEditingCategoryName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -198,6 +196,23 @@ export function ProductForm({
     setEditingProductId(null);
     setDraft(emptyDraft(nextCategories));
     setError("");
+  }
+
+  function openNewProduct() {
+    resetDraft();
+    setProductModalOpen(true);
+  }
+
+  function openEditProduct(product: ProductListItem) {
+    setEditingProductId(product.id);
+    setDraft(productToDraft(product));
+    setError("");
+    setProductModalOpen(true);
+  }
+
+  function closeProductModal() {
+    setProductModalOpen(false);
+    resetDraft();
   }
 
   function updateDraft<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
@@ -348,6 +363,7 @@ export function ProductForm({
     );
     await refreshCategories();
     resetDraft();
+    setProductModalOpen(false);
     router.refresh();
   }
 
@@ -382,77 +398,15 @@ export function ProductForm({
     await refreshCategories();
     if (editingProductId === product.id) {
       resetDraft();
-    }
-    router.refresh();
-  }
-
-  async function createCategory(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    const response = await fetch("/api/admin/categories", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newCategoryName })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(data?.error ?? "No se pudo crear la categoría.");
-      return;
-    }
-    setCategories((current) => [...current, data.category]);
-    setNewCategoryName("");
-    setDraft((current) => (current.categoryId ? current : { ...current, categoryId: data.category.id }));
-    router.refresh();
-  }
-
-  async function saveCategory(categoryId: string) {
-    setError("");
-    const response = await fetch(`/api/admin/categories/${categoryId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editingCategoryName })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok) {
-      setError(data?.error ?? "No se pudo guardar la categoría.");
-      return;
-    }
-    setCategories((current) => current.map((category) => (category.id === categoryId ? data.category : category)));
-    setProducts((current) =>
-      current.map((product) =>
-        product.category?.id === categoryId
-          ? { ...product, category: { id: data.category.id, name: data.category.name, slug: data.category.slug } }
-          : product
-      )
-    );
-    setEditingCategoryId(null);
-    setEditingCategoryName("");
-    router.refresh();
-  }
-
-  async function deleteCategory(category: CategoryListItem) {
-    if (!window.confirm(`Eliminar la categoría ${category.name}? Los productos quedarán sin categoría.`)) {
-      return;
-    }
-    setError("");
-    const response = await fetch(`/api/admin/categories/${category.id}`, { method: "DELETE" });
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setError(data?.error ?? "No se pudo eliminar la categoría.");
-      return;
-    }
-    setCategories((current) => current.filter((item) => item.id !== category.id));
-    setProducts((current) => current.map((product) => (product.category?.id === category.id ? { ...product, category: null } : product)));
-    if (draft.categoryId === category.id) {
-      updateDraft("categoryId", "");
+      setProductModalOpen(false);
     }
     router.refresh();
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_390px]">
+    <div className="grid gap-6">
       <section className="panel overflow-hidden">
-        <div className="grid gap-3 border-b border-line p-5 md:grid-cols-[1fr_220px]">
+        <div className="grid gap-3 border-b border-line p-5 md:grid-cols-[1fr_220px_auto]">
           <input className="field" placeholder="Buscar producto o categoría" value={query} onChange={(event) => setQuery(event.target.value)} />
           <select className="field" value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
             <option value="all">Todas las categorías</option>
@@ -463,7 +417,12 @@ export function ProductForm({
               </option>
             ))}
           </select>
+          <button className="btn-primary whitespace-nowrap" type="button" onClick={openNewProduct}>
+            <Plus size={17} /> Nuevo producto
+          </button>
         </div>
+
+        {error && !isProductModalOpen ? <p className="border-b border-line bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p> : null}
 
         <div className="divide-y divide-line">
           {filteredProducts.length === 0 ? (
@@ -510,11 +469,7 @@ export function ProductForm({
                     <button
                       className="btn-secondary !px-3"
                       type="button"
-                      onClick={() => {
-                        setEditingProductId(product.id);
-                        setDraft(productToDraft(product));
-                        setError("");
-                      }}
+                      onClick={() => openEditProduct(product)}
                     >
                       <Pencil size={17} /> Editar
                     </button>
@@ -529,18 +484,19 @@ export function ProductForm({
         </div>
       </section>
 
-      <aside className="grid gap-6">
-        <form onSubmit={saveProduct} className="panel grid gap-4 p-5">
+      {isProductModalOpen ? (
+          <div className="fixed inset-0 z-50 bg-black/50 p-4 backdrop-blur-sm">
+            <div className="mx-auto flex h-full max-w-3xl items-end md:items-center">
+              <form onSubmit={saveProduct} className="panel max-h-[92vh] w-full overflow-auto p-5">
+                <div className="grid gap-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">{editingProductId ? "Editar" : "Nuevo"}</p>
               <h2 className="text-2xl font-black">Producto</h2>
             </div>
-            {editingProductId ? (
-              <button className="rounded-full border border-line p-2" type="button" onClick={() => resetDraft()}>
-                <X size={18} />
-              </button>
-            ) : null}
+            <button className="rounded-full border border-line p-2" type="button" onClick={closeProductModal}>
+              <X size={18} />
+            </button>
           </div>
 
           <input className="field" placeholder="Nombre" value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} required />
@@ -701,59 +657,11 @@ export function ProductForm({
           <button className="btn-primary w-full" disabled={loading || uploading}>
             <Save size={18} /> {loading ? "Guardando..." : editingProductId ? "Guardar cambios" : "Crear producto"}
           </button>
-        </form>
-
-        <section className="panel p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-black">Categorías</h2>
+                </div>
+              </form>
+            </div>
           </div>
-          <form className="mb-4 grid grid-cols-[1fr_auto] gap-2" onSubmit={createCategory}>
-            <input className="field" placeholder="Nueva categoría" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} />
-            <button className="btn-primary !px-3" type="submit">
-              <Plus size={17} />
-            </button>
-          </form>
-          <div className="grid gap-2">
-            {categories.map((category) => (
-              <article key={category.id} className="rounded-2xl border border-line p-3">
-                {editingCategoryId === category.id ? (
-                  <div className="grid grid-cols-[1fr_auto_auto] gap-2">
-                    <input className="field !py-2" value={editingCategoryName} onChange={(event) => setEditingCategoryName(event.target.value)} />
-                    <button className="rounded-xl border border-line px-3 font-bold text-brand" type="button" onClick={() => saveCategory(category.id)}>
-                      <Save size={16} />
-                    </button>
-                    <button className="rounded-xl border border-line px-3 font-bold" type="button" onClick={() => setEditingCategoryId(null)}>
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-black">{category.name}</p>
-                      <p className="text-sm text-muted">{category._count.products} producto(s)</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button
-                        className="rounded-xl border border-line p-2"
-                        type="button"
-                        onClick={() => {
-                          setEditingCategoryId(category.id);
-                          setEditingCategoryName(category.name);
-                        }}
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button className="rounded-xl border border-line p-2 text-red-600" type="button" onClick={() => deleteCategory(category)}>
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      </aside>
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { formatMoney } from "@/lib/money";
 import { getMerchantStore } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
+import { OrderManager } from "@/components/order-manager";
 
 export default async function AdminDashboardPage() {
   const store = await getMerchantStore();
@@ -16,6 +17,23 @@ export default async function AdminDashboardPage() {
   });
 
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const serializedOrders = orders.map((order) => ({
+    id: order.id,
+    code: order.code,
+    status: order.status,
+    customerName: order.customerName,
+    customerPhone: order.customerPhone,
+    fulfillment: order.fulfillment,
+    notes: order.notes,
+    total: order.total,
+    createdAt: order.createdAt.toISOString(),
+    items: order.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      quantity: item.quantity,
+      subtotal: item.subtotal
+    }))
+  }));
 
   return (
     <div className="space-y-6">
@@ -40,38 +58,7 @@ export default async function AdminDashboardPage() {
         </article>
       </section>
 
-      <section className="panel overflow-hidden">
-        <div className="border-b border-line p-5">
-          <h2 className="text-xl font-black">Últimos pedidos</h2>
-        </div>
-        <div className="divide-y divide-line">
-          {orders.length === 0 ? (
-            <p className="p-5 text-muted">Todavía no hay pedidos.</p>
-          ) : (
-            orders.map((order) => (
-              <article key={order.id} className="p-5">
-                <div className="flex flex-col justify-between gap-3 md:flex-row">
-                  <div>
-                    <p className="font-black">#{order.code} · {order.customerName}</p>
-                    <p className="text-sm text-muted">{order.customerPhone} · {order.fulfillment}</p>
-                  </div>
-                  <div className="text-left md:text-right">
-                    <p className="font-black">{formatMoney(order.total)}</p>
-                    <p className="text-sm font-bold text-green-700">{order.status}</p>
-                  </div>
-                </div>
-                <ul className="mt-3 space-y-1 text-sm text-muted">
-                  {order.items.map((item) => (
-                    <li key={item.id}>
-                      {item.quantity}x {item.productName} — {formatMoney(item.subtotal)}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))
-          )}
-        </div>
-      </section>
+      <OrderManager orders={serializedOrders} />
     </div>
   );
 }

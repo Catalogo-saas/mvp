@@ -145,6 +145,13 @@ export const StoreScalarFieldEnum = {
   heroSubtitle: 'heroSubtitle',
   address: 'address',
   theme: 'theme',
+  paymentAccountHolder: 'paymentAccountHolder',
+  paymentProvider: 'paymentProvider',
+  paymentAlias: 'paymentAlias',
+  paymentCbu: 'paymentCbu',
+  restrictBySchedule: 'restrictBySchedule',
+  businessHours: 'businessHours',
+  mobileProductColumns: 'mobileProductColumns',
   isPublished: 'isPublished',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

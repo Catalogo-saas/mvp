@@ -29,7 +29,8 @@ export type SelectionType = (typeof SelectionType)[keyof typeof SelectionType]
 
 export const OrderStatus = {
   PENDING_WHATSAPP: 'PENDING_WHATSAPP',
-  CONFIRMED: 'CONFIRMED',
+  PAID: 'PAID',
+  DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED'
 } as const
 

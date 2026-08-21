@@ -22,7 +22,8 @@ enum SelectionType {
 
 enum OrderStatus {
   PENDING_WHATSAPP
-  CONFIRMED
+  PAID
+  DELIVERED
   CANCELLED
 }
 
@@ -90,6 +91,13 @@ model Store {
   heroSubtitle  String?
   address       String?
   theme         Json         @default("{\"primary\":\"#16a34a\",\"accent\":\"#f97316\",\"font\":\"Inter\"}")
+  paymentAccountHolder String?
+  paymentProvider      String?
+  paymentAlias         String?
+  paymentCbu           String?
+  restrictBySchedule   Boolean @default(false)
+  businessHours        Json    @default("{\"timezone\":\"America/Argentina/Buenos_Aires\",\"days\":{\"monday\":[],\"tuesday\":[],\"wednesday\":[],\"thursday\":[],\"friday\":[],\"saturday\":[],\"sunday\":[]}}")
+  mobileProductColumns Int     @default(1)
   isPublished   Boolean      @default(true)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt

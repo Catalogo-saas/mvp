@@ -29,7 +29,7 @@ async function main() {
       name: "Puro Demo",
       slug: "demo",
       description: "Catálogo de ejemplo para validar el MVP.",
-      whatsappPhone: "5491123456789",
+      whatsappPhone: "541123456789",
       businessType: "FOOD",
       template: "market",
       heroTitle: "Pedidos simples por WhatsApp",

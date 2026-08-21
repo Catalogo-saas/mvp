@@ -99,6 +99,11 @@ export function PublicStore({
     logoUrl: string | null;
     template: string;
     theme: unknown;
+    mobileProductColumns: number;
+    availability: {
+      isOpen: boolean;
+      label: string;
+    };
   };
   products: StorefrontProduct[];
 }) {
@@ -113,6 +118,7 @@ export function PublicStore({
   const [loading, setLoading] = useState(false);
 
   const template = normalizeStoreTemplate(store.template);
+  const mobileProductColumns = store.mobileProductColumns === 2 ? 2 : 1;
   const primary =
     store.theme && typeof store.theme === "object" && "primary" in store.theme
       ? String((store.theme as Record<string, unknown>).primary)
@@ -219,6 +225,10 @@ export function PublicStore({
 
   async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!store.availability.isOpen) {
+      setError(store.availability.label);
+      return;
+    }
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
@@ -258,11 +268,14 @@ export function PublicStore({
         : "overflow-hidden rounded-[28px] bg-ink p-6 text-white md:p-10";
   const gridClass =
     template === "quick-menu"
-      ? "mt-5 grid gap-3"
+      ? mobileProductColumns === 2
+        ? "mt-5 grid grid-cols-2 gap-3 md:grid-cols-1"
+        : "mt-5 grid gap-3"
       : template === "premium"
-        ? "mt-5 grid gap-5 sm:grid-cols-2"
-        : "mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3";
+        ? `mt-5 grid gap-5 ${mobileProductColumns === 2 ? "grid-cols-2" : "grid-cols-1"} sm:grid-cols-2`
+        : `mt-5 grid gap-4 ${mobileProductColumns === 2 ? "grid-cols-2" : "grid-cols-1"} sm:grid-cols-2 lg:grid-cols-3`;
   const activeImage = activeProduct?.imageUrls[activeImageIndex] ?? activeProduct?.imageUrls[0];
+  const quickMenuTwoColumns = template === "quick-menu" && mobileProductColumns === 2;
 
   return (
     <div style={{ "--store-primary": primary } as CSSProperties} className="min-h-screen bg-[#fffaf4]">
@@ -301,12 +314,18 @@ export function PublicStore({
           </p>
         </section>
 
+        {!store.availability.isOpen ? (
+          <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">
+            {store.availability.label}
+          </section>
+        ) : null}
+
         <section className="sticky top-[73px] z-10 -mx-4 mt-4 bg-[#fffaf4]/95 px-4 py-3 backdrop-blur md:top-[77px]">
           <div className="container-page !w-full !max-w-none">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
               <input
-                className="field pl-11"
+                className="field !pl-11"
                 placeholder="Buscar productos"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -347,16 +366,20 @@ export function PublicStore({
           {filteredProducts.map((product) =>
             template === "quick-menu" ? (
               <article key={product.id} className="rounded-[22px] border border-line bg-white p-3 shadow-soft">
-                <button className="grid w-full grid-cols-[96px_1fr_auto] items-center gap-3 text-left" onClick={() => openProduct(product)} type="button">
+                <button
+                  className={quickMenuTwoColumns ? "block w-full text-left" : "grid w-full grid-cols-[96px_1fr_auto] items-center gap-3 text-left"}
+                  onClick={() => openProduct(product)}
+                  type="button"
+                >
                   <ProductImage product={product} className="aspect-square rounded-2xl" />
-                  <div className="min-w-0">
+                  <div className={quickMenuTwoColumns ? "mt-3 min-w-0" : "min-w-0"}>
                     <p className="truncate text-base font-black">{product.name}</p>
-                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{product.description}</p>
+                    <p className={`${quickMenuTwoColumns ? "hidden" : "mt-1 line-clamp-2"} text-sm leading-5 text-muted`}>{product.description}</p>
                     <div className="mt-2">
                       <PriceBlock product={product} size="sm" />
                     </div>
                   </div>
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-ink font-black text-white">
+                  <span className={`${quickMenuTwoColumns ? "mt-3 grid h-9 w-full place-items-center" : "grid h-10 w-10 place-items-center"} rounded-full bg-ink p-2 font-black text-white`}>
                     <Plus size={18} />
                   </span>
                 </button>
@@ -525,9 +548,12 @@ export function PublicStore({
                   <span>Total</span>
                   <span>{formatMoney(cartTotal)}</span>
                 </div>
+                {!store.availability.isOpen ? (
+                  <p className="rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">{store.availability.label}</p>
+                ) : null}
                 {error ? <p className="text-sm font-semibold text-red-600">{error}</p> : null}
-                <button className="btn-primary w-full" disabled={loading || cart.length === 0}>
-                  <MessageCircle size={18} /> {loading ? "Creando pedido..." : "Confirmar por WhatsApp"}
+                <button className="btn-primary w-full" disabled={loading || cart.length === 0 || !store.availability.isOpen}>
+                  <MessageCircle size={18} /> {loading ? "Creando pedido..." : store.availability.isOpen ? "Confirmar por WhatsApp" : "Tienda cerrada"}
                 </button>
               </form>
             </section>

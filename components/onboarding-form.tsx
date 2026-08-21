@@ -3,10 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { formatArgentineLocalPhone } from "@/lib/store-settings";
+
 export function OnboardingForm() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [whatsappLocal, setWhatsappLocal] = useState("");
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -19,7 +22,7 @@ export function OnboardingForm() {
       body: JSON.stringify({
         name: form.get("name"),
         slug: form.get("slug"),
-        whatsappPhone: form.get("whatsappPhone"),
+        whatsappPhone: whatsappLocal,
         businessType: form.get("businessType")
       })
     });
@@ -40,7 +43,23 @@ export function OnboardingForm() {
     <form onSubmit={onSubmit} className="grid gap-4">
       <input className="field" name="name" placeholder="Nombre del negocio" required />
       <input className="field" name="slug" placeholder="slug-de-la-tienda" required />
-      <input className="field" name="whatsappPhone" placeholder="WhatsApp con código de país, ej: 5491123456789" required />
+      <label className="grid gap-2 text-sm font-bold">
+        WhatsApp
+        <div className="relative">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-black text-ink">
+            +54
+          </span>
+          <input
+            className="field !pl-20"
+            inputMode="numeric"
+            maxLength={12}
+            placeholder="123 456-7890"
+            required
+            value={whatsappLocal}
+            onChange={(event) => setWhatsappLocal(formatArgentineLocalPhone(event.target.value))}
+          />
+        </div>
+      </label>
       <select className="field" name="businessType" defaultValue="MIXED">
         <option value="FOOD">Comida</option>
         <option value="RETAIL">Retail</option>

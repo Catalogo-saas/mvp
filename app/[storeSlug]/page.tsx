@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PublicStore } from "@/components/public-store";
 import { prisma } from "@/lib/prisma";
+import { getStoreAvailability } from "@/lib/store-settings";
 
 type Params = Promise<{ storeSlug: string }>;
 
@@ -52,6 +53,11 @@ export default async function StorePage({ params }: { params: Params }) {
     notFound();
   }
 
+  const availability = getStoreAvailability({
+    restrictBySchedule: store.restrictBySchedule,
+    businessHours: store.businessHours
+  });
+
   return (
     <PublicStore
       store={{
@@ -62,7 +68,9 @@ export default async function StorePage({ params }: { params: Params }) {
         heroSubtitle: store.heroSubtitle,
         logoUrl: store.logoUrl,
         template: store.template,
-        theme: store.theme
+        theme: store.theme,
+        mobileProductColumns: store.mobileProductColumns,
+        availability
       }}
       products={store.products}
     />

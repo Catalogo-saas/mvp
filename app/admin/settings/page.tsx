@@ -12,7 +12,7 @@ export default async function AdminSettingsPage() {
       <header className="panel p-6">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Tienda</p>
         <h1 className="mt-2 text-3xl font-black">Configuración</h1>
-        <p className="mt-2 text-muted">Datos públicos, WhatsApp, logo y colores.</p>
+        <p className="mt-2 text-muted">Datos públicos, WhatsApp, pagos, horarios, logo y colores.</p>
       </header>
       <StoreSettingsForm store={store} />
     </div>

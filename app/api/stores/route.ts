@@ -5,11 +5,12 @@ import { BusinessType } from "@/lib/generated/prisma/enums";
 import { getCurrentUserId } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
 import { reservedSlugs, slugify } from "@/lib/slug";
+import { isCompleteArgentineLocalPhone, normalizeArgentineWhatsAppPhone } from "@/lib/store-settings";
 
 const schema = z.object({
   name: z.string().min(2).max(90),
   slug: z.string().min(2).max(64),
-  whatsappPhone: z.string().min(8).max(30),
+  whatsappPhone: z.string().refine(isCompleteArgentineLocalPhone),
   businessType: z.nativeEnum(BusinessType).default("MIXED")
 });
 
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       ownerId: userId,
       name: result.data.name,
       slug,
-      whatsappPhone: result.data.whatsappPhone,
+      whatsappPhone: normalizeArgentineWhatsAppPhone(result.data.whatsappPhone),
       businessType: result.data.businessType,
       heroTitle: result.data.name,
       heroSubtitle: "Catálogo online con pedidos por WhatsApp"
