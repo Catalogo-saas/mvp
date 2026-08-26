@@ -14,6 +14,7 @@ type StorefrontProduct = {
   basePrice: number;
   promoPrice: number | null;
   imageUrls: string[];
+  stockQuantity: number | null;
   category: { id: string; name: string; slug: string } | null;
   optionGroups: Array<{
     id: string;
@@ -147,6 +148,21 @@ export function PublicStore({
   const cartTotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  function remainingStock(product: StorefrontProduct) {
+    if (product.stockQuantity === null) {
+      return null;
+    }
+    const reservedInCart = cart
+      .filter((item) => item.productId === product.id)
+      .reduce((sum, item) => sum + item.quantity, 0);
+    return product.stockQuantity - reservedInCart;
+  }
+
+  function isOutOfStock(product: StorefrontProduct) {
+    const remaining = remainingStock(product);
+    return remaining !== null && remaining <= 0;
+  }
+
   function toggleOption(group: StorefrontProduct["optionGroups"][number], optionId: string) {
     setError("");
     setSelectedOptionIds((current) => {
@@ -178,6 +194,10 @@ export function PublicStore({
 
   function addActiveProduct() {
     if (!activeProduct) {
+      return;
+    }
+    if (isOutOfStock(activeProduct)) {
+      setError("No hay stock disponible para este producto.");
       return;
     }
 
@@ -218,7 +238,22 @@ export function PublicStore({
   function updateQuantity(lineId: string, delta: number) {
     setCart((current) =>
       current
-        .map((item) => (item.lineId === lineId ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item))
+        .map((item) => {
+          if (item.lineId !== lineId) {
+            return item;
+          }
+          if (delta > 0) {
+            const product = products.find((currentProduct) => currentProduct.id === item.productId);
+            const productQuantity = current
+              .filter((currentItem) => currentItem.productId === item.productId)
+              .reduce((sum, currentItem) => sum + currentItem.quantity, 0);
+            if (product?.stockQuantity !== null && product?.stockQuantity !== undefined && productQuantity >= product.stockQuantity) {
+              setError("No hay más stock disponible para este producto.");
+              return item;
+            }
+          }
+          return { ...item, quantity: Math.max(0, item.quantity + delta) };
+        })
         .filter((item) => item.quantity > 0)
     );
   }
@@ -363,8 +398,10 @@ export function PublicStore({
         </section>
 
         <section className={gridClass}>
-          {filteredProducts.map((product) =>
-            template === "quick-menu" ? (
+          {filteredProducts.map((product) => {
+            const outOfStock = isOutOfStock(product);
+            const remaining = remainingStock(product);
+            return template === "quick-menu" ? (
               <article key={product.id} className="rounded-[22px] border border-line bg-white p-3 shadow-soft">
                 <button
                   className={quickMenuTwoColumns ? "block w-full text-left" : "grid w-full grid-cols-[96px_1fr_auto] items-center gap-3 text-left"}
@@ -375,12 +412,17 @@ export function PublicStore({
                   <div className={quickMenuTwoColumns ? "mt-3 min-w-0" : "min-w-0"}>
                     <p className="truncate text-base font-black">{product.name}</p>
                     <p className={`${quickMenuTwoColumns ? "hidden" : "mt-1 line-clamp-2"} text-sm leading-5 text-muted`}>{product.description}</p>
+                    {remaining !== null ? (
+                      <p className={`mt-1 text-xs font-black ${outOfStock ? "text-red-600" : "text-muted"}`}>
+                        {outOfStock ? "Sin stock" : `Quedan ${remaining}`}
+                      </p>
+                    ) : null}
                     <div className="mt-2">
                       <PriceBlock product={product} size="sm" />
                     </div>
                   </div>
-                  <span className={`${quickMenuTwoColumns ? "mt-3 grid h-9 w-full place-items-center" : "grid h-10 w-10 place-items-center"} rounded-full bg-ink p-2 font-black text-white`}>
-                    <Plus size={18} />
+                  <span className={`${quickMenuTwoColumns ? "mt-3 grid h-9 w-full place-items-center" : "grid h-10 w-10 place-items-center"} rounded-full p-2 font-black text-white ${outOfStock ? "bg-slate-300" : "bg-ink"}`}>
+                    {outOfStock ? "Sin stock" : <Plus size={18} />}
                   </span>
                 </button>
               </article>
@@ -397,17 +439,22 @@ export function PublicStore({
                     </p>
                     <h2 className="mt-2 text-xl font-black">{product.name}</h2>
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{product.description}</p>
+                    {remaining !== null ? (
+                      <p className={`mt-3 text-sm font-black ${outOfStock ? "text-red-600" : "text-muted"}`}>
+                        {outOfStock ? "Sin stock" : `Quedan ${remaining}`}
+                      </p>
+                    ) : null}
                     <div className="mt-4 flex items-end justify-between gap-3">
                       <PriceBlock product={product} />
-                      <span className="rounded-full bg-green-100 px-3 py-2 text-sm font-black text-green-800">
-                        Agregar
+                      <span className={`rounded-full px-3 py-2 text-sm font-black ${outOfStock ? "bg-slate-100 text-slate-600" : "bg-green-100 text-green-800"}`}>
+                        {outOfStock ? "Sin stock" : "Agregar"}
                       </span>
                     </div>
                   </div>
                 </button>
               </article>
-            )
-          )}
+            );
+          })}
         </section>
       </main>
 
@@ -461,6 +508,11 @@ export function PublicStore({
                     <div className="mt-4">
                       <PriceBlock product={activeProduct} size="lg" />
                     </div>
+                    {remainingStock(activeProduct) !== null ? (
+                      <p className={`mt-3 text-sm font-black ${isOutOfStock(activeProduct) ? "text-red-600" : "text-muted"}`}>
+                        {isOutOfStock(activeProduct) ? "Sin stock disponible" : `Quedan ${remainingStock(activeProduct)}`}
+                      </p>
+                    ) : null}
                   </div>
                   <button onClick={() => setActiveProduct(null)} type="button">
                     <X />
@@ -494,8 +546,8 @@ export function PublicStore({
                   ))}
                 </div>
                 {error ? <p className="mt-4 text-sm font-semibold text-red-600">{error}</p> : null}
-                <button className="btn-primary mt-6 w-full" onClick={addActiveProduct} type="button">
-                  Agregar · {formatMoney(calculateUnitPrice(activeProduct, selectedOptionIds))}
+                <button className="btn-primary mt-6 w-full disabled:cursor-not-allowed disabled:bg-slate-300" onClick={addActiveProduct} type="button" disabled={isOutOfStock(activeProduct)}>
+                  {isOutOfStock(activeProduct) ? "Sin stock" : `Agregar · ${formatMoney(calculateUnitPrice(activeProduct, selectedOptionIds))}`}
                 </button>
               </div>
             </section>

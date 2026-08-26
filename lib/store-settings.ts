@@ -94,6 +94,16 @@ function minutesFromTime(value: string) {
   return hours * 60 + minutes;
 }
 
+function isOvernightRange(range: BusinessHoursRange) {
+  return minutesFromTime(range.close) < minutesFromTime(range.open);
+}
+
+function rangeEndMinutes(range: BusinessHoursRange) {
+  const open = minutesFromTime(range.open);
+  const close = minutesFromTime(range.close);
+  return close < open ? close + 24 * 60 : close;
+}
+
 export function normalizeBusinessHours(value: unknown): BusinessHours {
   if (!value || typeof value !== "object") {
     return emptyBusinessHours();
@@ -112,15 +122,15 @@ export function normalizeBusinessHours(value: unknown): BusinessHours {
       }
       const openMinutes = minutesFromTime(item.open);
       const closeMinutes = minutesFromTime(item.close);
-      if (openMinutes >= closeMinutes) {
-        throw new Error("El horario de cierre debe ser posterior al de apertura.");
+      if (openMinutes === closeMinutes) {
+        throw new Error("La apertura y el cierre no pueden ser iguales.");
       }
       return { open: item.open, close: item.close };
     });
 
     normalizedRanges.sort((a, b) => minutesFromTime(a.open) - minutesFromTime(b.open));
     for (let index = 1; index < normalizedRanges.length; index += 1) {
-      if (minutesFromTime(normalizedRanges[index].open) < minutesFromTime(normalizedRanges[index - 1].close)) {
+      if (minutesFromTime(normalizedRanges[index].open) < rangeEndMinutes(normalizedRanges[index - 1])) {
         throw new Error("Los rangos horarios no pueden superponerse.");
       }
     }
@@ -160,18 +170,30 @@ export function getStoreAvailability(input: { restrictBySchedule: boolean; busin
   }
 
   const { day, minutes } = getZonedDayAndMinutes(input.now ?? new Date(), hours.timezone);
+  const currentDayIndex = businessDayKeys.indexOf(day);
+  const previousDay = businessDayKeys[(currentDayIndex + businessDayKeys.length - 1) % businessDayKeys.length];
+  const previousOvernightRange = hours.days[previousDay].find((range) => {
+    return isOvernightRange(range) && minutes < minutesFromTime(range.close);
+  });
+
+  if (previousOvernightRange) {
+    return { isOpen: true, label: `Abierto hasta las ${previousOvernightRange.close}` };
+  }
+
   const todayRanges = hours.days[day];
   const activeRange = todayRanges.find((range) => {
     const open = minutesFromTime(range.open);
     const close = minutesFromTime(range.close);
+    if (close < open) {
+      return minutes >= open;
+    }
     return minutes >= open && minutes < close;
   });
 
   if (activeRange) {
-    return { isOpen: true, label: `Abierto hasta las ${activeRange.close}` };
+    return { isOpen: true, label: `Abierto hasta las ${activeRange.close}${isOvernightRange(activeRange) ? " del día siguiente" : ""}` };
   }
 
-  const currentDayIndex = businessDayKeys.indexOf(day);
   for (let offset = 0; offset < businessDayKeys.length; offset += 1) {
     const candidateDay = businessDayKeys[(currentDayIndex + offset) % businessDayKeys.length];
     const candidateRanges = hours.days[candidateDay];

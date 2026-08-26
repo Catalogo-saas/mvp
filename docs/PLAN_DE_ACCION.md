@@ -19,7 +19,7 @@ Crear un SaaS multi-tienda donde cada comercio tenga una página pública mobile
 - Registro/login con email y contraseña.
 - Alta de tienda por usuario registrado.
 - Página pública por ruta `/{storeSlug}`.
-- Backoffice en `/admin`.
+- Backoffice en `/gestion`.
 - Gestión de datos de tienda, categorías y productos.
 - Productos con grupos de opciones/extras configurables:
   - selección simple o múltiple;

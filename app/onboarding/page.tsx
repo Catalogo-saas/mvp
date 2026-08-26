@@ -11,7 +11,7 @@ export default async function OnboardingPage() {
 
   const store = await getMerchantStore();
   if (store) {
-    redirect("/admin");
+    redirect("/gestion");
   }
 
   return (

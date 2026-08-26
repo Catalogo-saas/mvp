@@ -4,6 +4,14 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function safeCallbackUrl(value: string | null) {
+  if (value?.startsWith("/") && !value.startsWith("//")) {
+    return value;
+  }
+
+  return "/gestion";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -14,10 +22,12 @@ export function LoginForm() {
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
+    const callbackUrl = safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl"));
     const result = await signIn("credentials", {
       email: form.get("email"),
       password: form.get("password"),
-      redirect: false
+      redirect: false,
+      callbackUrl
     });
     setLoading(false);
 
@@ -26,7 +36,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/admin");
+    router.replace(callbackUrl);
     router.refresh();
   }
 

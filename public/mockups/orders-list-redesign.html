@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mockups lista de pedidos</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --brand: #16a34a;
+        --brand-dark: #14532d;
+        --ink: #111827;
+        --muted: #6b7280;
+        --line: #e5e7eb;
+        --surface: #f8fafc;
+        --white: #ffffff;
+        --amber-bg: #fffbeb;
+        --amber: #92400e;
+        --blue-bg: #eff6ff;
+        --blue: #1e40af;
+        --green-bg: #ecfdf5;
+        --green: #166534;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--surface);
+        color: var(--ink);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      select,
+      input {
+        font: inherit;
+      }
+
+      .page {
+        width: min(1160px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 32px 0 56px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: var(--brand);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: clamp(28px, 4vw, 42px);
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+
+      .intro {
+        max-width: 780px;
+        color: var(--muted);
+        font-weight: 650;
+        line-height: 1.55;
+      }
+
+      .mockup {
+        margin-top: 28px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: var(--white);
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.06);
+      }
+
+      .mockup-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 22px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .mockup-header h2 {
+        margin-top: 4px;
+        font-size: 24px;
+        letter-spacing: -0.03em;
+      }
+
+      .mockup-header p:last-child {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 7px 10px;
+        background: var(--green-bg);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--line);
+        background: #fcfcfd;
+      }
+
+      .field {
+        min-width: 0;
+        border: 1px solid #d1d5db;
+        border-radius: 16px;
+        background: var(--white);
+        padding: 12px 14px;
+        color: var(--muted);
+        font-weight: 750;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        background: var(--white);
+        color: var(--ink);
+        padding: 12px 16px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .pending {
+        background: var(--amber-bg);
+        color: var(--amber);
+      }
+
+      .paid {
+        background: var(--blue-bg);
+        color: var(--blue);
+      }
+
+      .delivered {
+        background: var(--green-bg);
+        color: var(--green);
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .value {
+        margin-top: 5px;
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .price {
+        font-size: 22px;
+        font-weight: 950;
+        letter-spacing: -0.04em;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      /* Diseño 1: tabla operativa */
+      .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .orders-table th,
+      .orders-table td {
+        border-bottom: 1px solid var(--line);
+        padding: 16px 18px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .orders-table th {
+        background: #fcfcfd;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .orders-table tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .order-code {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-weight: 950;
+      }
+
+      .products-inline {
+        display: grid;
+        gap: 7px;
+        min-width: 220px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .products-inline strong {
+        color: var(--ink);
+      }
+
+      .right {
+        text-align: right !important;
+      }
+
+      /* Diseño 2: filas tipo recibo */
+      .receipt-list {
+        display: grid;
+      }
+
+      .receipt-row {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr) 180px 190px;
+        gap: 18px;
+        align-items: start;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .receipt-row:last-child {
+        border-bottom: 0;
+      }
+
+      .receipt-main {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .receipt-products {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px dashed #d1d5db;
+      }
+
+      .receipt-product {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .receipt-product strong {
+        color: var(--ink);
+      }
+
+      .receipt-actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      /* Diseño 3: editorial horizontal */
+      .editorial-list {
+        display: grid;
+      }
+
+      .editorial-row {
+        display: grid;
+        grid-template-columns: minmax(190px, 0.55fr) minmax(0, 1fr) 170px;
+        min-height: 160px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .editorial-row:last-child {
+        border-bottom: 0;
+      }
+
+      .editorial-id {
+        display: grid;
+        align-content: space-between;
+        padding: 20px 22px;
+        background: #fcfcfd;
+        border-right: 1px solid var(--line);
+      }
+
+      .editorial-id strong {
+        display: block;
+        margin-top: 7px;
+        font-size: 28px;
+        letter-spacing: -0.05em;
+      }
+
+      .editorial-body {
+        display: grid;
+        gap: 16px;
+        padding: 20px 22px;
+      }
+
+      .editorial-fields {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .editorial-products {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .editorial-products span::before {
+        content: "•";
+        margin-right: 8px;
+        color: var(--brand);
+      }
+
+      .editorial-total {
+        display: grid;
+        align-content: space-between;
+        justify-items: end;
+        padding: 20px 22px;
+        border-left: 1px solid var(--line);
+      }
+
+      /* Diseño 4: compacto de gestión */
+      .compact-list {
+        display: grid;
+      }
+
+      .compact-head,
+      .compact-row {
+        display: grid;
+        grid-template-columns: 1.05fr 1fr 0.9fr 0.8fr 0.75fr 0.9fr;
+        gap: 14px;
+        align-items: center;
+        padding: 14px 18px;
+      }
+
+      .compact-head {
+        border-bottom: 1px solid var(--line);
+        background: #fcfcfd;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .compact-row {
+        border-bottom: 1px solid var(--line);
+        font-size: 14px;
+        font-weight: 800;
+      }
+
+      .compact-row:last-child {
+        border-bottom: 0;
+      }
+
+      .compact-products {
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 750;
+        line-height: 1.4;
+      }
+
+      .select-mini {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        background: var(--white);
+        padding: 9px 10px;
+        font-size: 13px;
+        font-weight: 850;
+      }
+
+      @media (max-width: 900px) {
+        .toolbar,
+        .mockup-header,
+        .receipt-row,
+        .editorial-row,
+        .compact-head,
+        .compact-row {
+          grid-template-columns: 1fr;
+        }
+
+        .mockup-header {
+          align-items: start;
+        }
+
+        .orders-table,
+        .orders-table thead,
+        .orders-table tbody,
+        .orders-table tr,
+        .orders-table th,
+        .orders-table td {
+          display: block;
+        }
+
+        .orders-table thead {
+          display: none;
+        }
+
+        .orders-table tr {
+          border-bottom: 1px solid var(--line);
+          padding: 14px 18px;
+        }
+
+        .orders-table td {
+          display: grid;
+          grid-template-columns: 112px minmax(0, 1fr);
+          gap: 12px;
+          border: 0;
+          padding: 8px 0;
+        }
+
+        .orders-table td::before {
+          content: attr(data-label);
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+
+        .right {
+          text-align: left !important;
+        }
+
+        .receipt-main,
+        .editorial-fields {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .editorial-id,
+        .editorial-total {
+          border: 0;
+          justify-items: start;
+        }
+
+        .compact-head {
+          display: none;
+        }
+
+        .compact-row {
+          gap: 8px;
+        }
+
+        .compact-row > * {
+          display: grid;
+          grid-template-columns: 112px minmax(0, 1fr);
+          gap: 12px;
+        }
+
+        .compact-row > *::before {
+          content: attr(data-label);
+          color: var(--muted);
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Pedidos / mockups</p>
+        <h1>Alternativas para ordenar la lista de pedidos</h1>
+        <p class="intro">
+          Cuatro propuestas distintas para validar antes de tocar la app. Todas priorizan etiquetas claras, jerarquía visual y lectura rápida, sin usar cards dentro de cards.
+        </p>
+      </header>
+
+      <section class="mockup" id="diseno-1">
+        <div class="mockup-header">
+          <div>
+            <p class="eyebrow">Diseño 1</p>
+            <h2>Tabla operativa</h2>
+            <p>La opción más directa: columnas explícitas y lectura tipo planilla.</p>
+          </div>
+          <span class="tag">Más administrativo</span>
+        </div>
+        <div class="toolbar">
+          <input class="field" value="Buscar por pedido, cliente o celular" aria-label="Buscar" />
+          <button class="btn">Filtros</button>
+        </div>
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>Pedido</th>
+              <th>Cliente</th>
+              <th>Entrega</th>
+              <th>Productos</th>
+              <th class="right">Total</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-label="Pedido">
+                <div class="order-code">#1048 <span class="muted">26 ago · 14:32</span></div>
+              </td>
+              <td data-label="Cliente"><strong>Martín González</strong><br /><span class="muted">+54 9 11 5555-0198</span></td>
+              <td data-label="Entrega"><strong>Retiro por local</strong><br /><span class="muted">Sin envío</span></td>
+              <td data-label="Productos">
+                <div class="products-inline">
+                  <span><strong>2x</strong> Hamburguesa clásica · $10.400</span>
+                  <span><strong>1x</strong> Limonada · $2.300</span>
+                </div>
+              </td>
+              <td data-label="Total" class="right"><span class="price">$12.700</span></td>
+              <td data-label="Estado"><span class="status pending">Pendiente</span></td>
+              <td data-label="Acción"><button class="btn">Ver detalle</button></td>
+            </tr>
+            <tr>
+              <td data-label="Pedido">
+                <div class="order-code">#1047 <span class="muted">26 ago · 13:08</span></div>
+              </td>
+              <td data-label="Cliente"><strong>Sofía Romero</strong><br /><span class="muted">+54 9 11 4444-2200</span></td>
+              <td data-label="Entrega"><strong>Delivery</strong><br /><span class="muted">Palermo</span></td>
+              <td data-label="Productos">
+                <div class="products-inline">
+                  <span><strong>1x</strong> Combo doble · $9.900</span>
+                  <span><strong>2x</strong> Papas medianas · $5.000</span>
+                </div>
+              </td>
+              <td data-label="Total" class="right"><span class="price">$14.900</span></td>
+              <td data-label="Estado"><span class="status paid">Pagado</span></td>
+              <td data-label="Acción"><button class="btn">Ver detalle</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="mockup" id="diseno-2">
+        <div class="mockup-header">
+          <div>
+            <p class="eyebrow">Diseño 2</p>
+            <h2>Filas tipo recibo</h2>
+            <p>Cada pedido se lee como un comprobante horizontal, con productos separados por línea punteada.</p>
+          </div>
+          <span class="tag">Más claro sin tabla</span>
+        </div>
+        <div class="receipt-list">
+          <article class="receipt-row">
+            <div>
+              <p class="label">Pedido</p>
+              <p class="price">#1048</p>
+              <p class="muted" style="margin-top: 6px; font-weight: 750">26 ago · 14:32</p>
+              <p style="margin-top: 12px"><span class="status pending">Pendiente</span></p>
+            </div>
+            <div>
+              <div class="receipt-main">
+                <div>
+                  <p class="label">Cliente</p>
+                  <p class="value">Martín González</p>
+                </div>
+                <div>
+                  <p class="label">Celular</p>
+                  <p class="value">+54 9 11 5555-0198</p>
+                </div>
+                <div>
+                  <p class="label">Entrega</p>
+                  <p class="value">Retiro por local</p>
+                </div>
+              </div>
+              <div class="receipt-products">
+                <p class="receipt-product"><span><strong>2x</strong> Hamburguesa clásica</span><span>$10.400</span></p>
+                <p class="receipt-product"><span><strong>1x</strong> Limonada</span><span>$2.300</span></p>
+              </div>
+            </div>
+            <div>
+              <p class="label">Total</p>
+              <p class="price">$12.700</p>
+            </div>
+            <div class="receipt-actions">
+              <button class="btn">Ver detalle</button>
+              <select class="select-mini" aria-label="Estado"><option>Pendiente</option></select>
+            </div>
+          </article>
+          <article class="receipt-row">
+            <div>
+              <p class="label">Pedido</p>
+              <p class="price">#1047</p>
+              <p class="muted" style="margin-top: 6px; font-weight: 750">26 ago · 13:08</p>
+              <p style="margin-top: 12px"><span class="status paid">Pagado</span></p>
+            </div>
+            <div>
+              <div class="receipt-main">
+                <div>
+                  <p class="label">Cliente</p>
+                  <p class="value">Sofía Romero</p>
+                </div>
+                <div>
+                  <p class="label">Celular</p>
+                  <p class="value">+54 9 11 4444-2200</p>
+                </div>
+                <div>
+                  <p class="label">Entrega</p>
+                  <p class="value">Delivery</p>
+                </div>
+              </div>
+              <div class="receipt-products">
+                <p class="receipt-product"><span><strong>1x</strong> Combo doble</span><span>$9.900</span></p>
+                <p class="receipt-product"><span><strong>2x</strong> Papas medianas</span><span>$5.000</span></p>
+              </div>
+            </div>
+            <div>
+              <p class="label">Total</p>
+              <p class="price">$14.900</p>
+            </div>
+            <div class="receipt-actions">
+              <button class="btn">Ver detalle</button>
+              <select class="select-mini" aria-label="Estado"><option>Pagado</option></select>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mockup" id="diseno-3">
+        <div class="mockup-header">
+          <div>
+            <p class="eyebrow">Diseño 3</p>
+            <h2>Editorial horizontal</h2>
+            <p>Pedido, datos y total tienen zonas fijas; sirve si querés algo minimalista pero con más aire.</p>
+          </div>
+          <span class="tag">Más visual</span>
+        </div>
+        <div class="editorial-list">
+          <article class="editorial-row">
+            <div class="editorial-id">
+              <div>
+                <p class="label">Pedido</p>
+                <strong>#1048</strong>
+              </div>
+              <span class="status pending">Pendiente</span>
+            </div>
+            <div class="editorial-body">
+              <div class="editorial-fields">
+                <div>
+                  <p class="label">Cliente</p>
+                  <p class="value">Martín González</p>
+                </div>
+                <div>
+                  <p class="label">Celular</p>
+                  <p class="value">+54 9 11 5555-0198</p>
+                </div>
+                <div>
+                  <p class="label">Entrega</p>
+                  <p class="value">Retiro</p>
+                </div>
+                <div>
+                  <p class="label">Fecha</p>
+                  <p class="value">26 ago · 14:32</p>
+                </div>
+              </div>
+              <div>
+                <p class="label">Productos</p>
+                <div class="editorial-products" style="margin-top: 8px">
+                  <span>2x Hamburguesa clásica</span>
+                  <span>1x Limonada</span>
+                </div>
+              </div>
+              <p class="muted" style="font-size: 13px; font-weight: 750">Nota: sin cebolla, retirar por mostrador.</p>
+            </div>
+            <div class="editorial-total">
+              <div>
+                <p class="label">Total</p>
+                <p class="price">$12.700</p>
+              </div>
+              <button class="btn">Ver detalle</button>
+            </div>
+          </article>
+          <article class="editorial-row">
+            <div class="editorial-id">
+              <div>
+                <p class="label">Pedido</p>
+                <strong>#1046</strong>
+              </div>
+              <span class="status delivered">Entregado</span>
+            </div>
+            <div class="editorial-body">
+              <div class="editorial-fields">
+                <div>
+                  <p class="label">Cliente</p>
+                  <p class="value">Lucas Pereira</p>
+                </div>
+                <div>
+                  <p class="label">Celular</p>
+                  <p class="value">+54 9 11 2222-7811</p>
+                </div>
+                <div>
+                  <p class="label">Entrega</p>
+                  <p class="value">Delivery</p>
+                </div>
+                <div>
+                  <p class="label">Fecha</p>
+                  <p class="value">25 ago · 21:12</p>
+                </div>
+              </div>
+              <div>
+                <p class="label">Productos</p>
+                <div class="editorial-products" style="margin-top: 8px">
+                  <span>3x Empanadas</span>
+                  <span>1x Gaseosa</span>
+                  <span>1x Flan casero</span>
+                </div>
+              </div>
+            </div>
+            <div class="editorial-total">
+              <div>
+                <p class="label">Total</p>
+                <p class="price">$8.600</p>
+              </div>
+              <button class="btn">Ver detalle</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mockup" id="diseno-4">
+        <div class="mockup-header">
+          <div>
+            <p class="eyebrow">Diseño 4</p>
+            <h2>Compacto de gestión</h2>
+            <p>Más denso y rápido para negocios con muchos pedidos. Mantiene etiquetas por columna.</p>
+          </div>
+          <span class="tag">Más eficiente</span>
+        </div>
+        <div class="compact-list">
+          <div class="compact-head">
+            <span>Pedido / fecha</span>
+            <span>Cliente</span>
+            <span>Entrega</span>
+            <span>Productos</span>
+            <span>Total</span>
+            <span>Estado</span>
+          </div>
+          <article class="compact-row">
+            <div data-label="Pedido"><strong>#1048</strong><span class="muted">26 ago · 14:32</span></div>
+            <div data-label="Cliente"><strong>Martín González</strong><span class="muted">+54 9 11 5555-0198</span></div>
+            <div data-label="Entrega">Retiro por local</div>
+            <div data-label="Productos" class="compact-products">2x Hamburguesa clásica<br />1x Limonada</div>
+            <div data-label="Total"><span class="price" style="font-size: 18px">$12.700</span></div>
+            <div data-label="Estado"><select class="select-mini"><option>Pendiente</option></select></div>
+          </article>
+          <article class="compact-row">
+            <div data-label="Pedido"><strong>#1047</strong><span class="muted">26 ago · 13:08</span></div>
+            <div data-label="Cliente"><strong>Sofía Romero</strong><span class="muted">+54 9 11 4444-2200</span></div>
+            <div data-label="Entrega">Delivery</div>
+            <div data-label="Productos" class="compact-products">1x Combo doble<br />2x Papas medianas</div>
+            <div data-label="Total"><span class="price" style="font-size: 18px">$14.900</span></div>
+            <div data-label="Estado"><select class="select-mini"><option>Pagado</option></select></div>
+          </article>
+          <article class="compact-row">
+            <div data-label="Pedido"><strong>#1046</strong><span class="muted">25 ago · 21:12</span></div>
+            <div data-label="Cliente"><strong>Lucas Pereira</strong><span class="muted">+54 9 11 2222-7811</span></div>
+            <div data-label="Entrega">Delivery</div>
+            <div data-label="Productos" class="compact-products">3x Empanadas<br />1x Gaseosa · 1x Flan</div>
+            <div data-label="Total"><span class="price" style="font-size: 18px">$8.600</span></div>
+            <div data-label="Estado"><select class="select-mini"><option>Entregado</option></select></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

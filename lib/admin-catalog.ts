@@ -1,14 +1,26 @@
+import { Buffer } from "node:buffer";
+import { randomUUID } from "node:crypto";
+
 import { z } from "zod";
 
 import { SelectionType } from "@/lib/generated/prisma/enums";
 import { parsePriceToCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+import { deletePublicObject, getPublicObjectKeyFromUrl, uploadPublicObject } from "@/lib/storage";
 
 const nullableNumber = z.preprocess(
   (value) => (value === "" || value === null || value === undefined ? null : Number(value)),
   z.number().int().min(1).max(30).nullable()
 );
+
+const nullableStockQuantity = z.preprocess((value) => {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+  const normalized = String(value).replace(/\D/g, "");
+  return normalized ? Number(normalized) : null;
+}, z.number().int().min(0).max(999999).nullable());
 
 const optionGroupSchema = z.object({
   name: z.string().min(1).max(60),
@@ -36,10 +48,91 @@ export const productSchema = z.object({
   categoryId: z.string().optional().nullable(),
   categoryName: z.string().max(80).optional().nullable(),
   isVisible: z.boolean().default(true),
+  stockQuantity: nullableStockQuantity.default(null),
   optionGroups: z.array(optionGroupSchema).max(12).default([])
 });
 
 export type ProductPayload = z.infer<typeof productSchema>;
+
+const productImageExtensionsByType: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif"
+};
+
+export async function parseProductRequest(request: Request) {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.includes("multipart/form-data")) {
+    return {
+      body: await request.json().catch(() => null),
+      imageFiles: [] as File[]
+    };
+  }
+
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return { body: null, imageFiles: [] as File[] };
+  }
+
+  const payload = formData.get("payload");
+  let body = null;
+  if (typeof payload === "string") {
+    try {
+      body = JSON.parse(payload);
+    } catch {
+      body = null;
+    }
+  }
+  const imageFiles = formData.getAll("images").filter((file): file is File => file instanceof File && file.size > 0);
+
+  return { body, imageFiles };
+}
+
+export function validateProductImageFiles(files: File[]) {
+  for (const file of files) {
+    if (!file.type.startsWith("image/") || !productImageExtensionsByType[file.type]) {
+      return "Formato de imagen no soportado.";
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      return "Cada imagen no puede superar 6 MB.";
+    }
+  }
+  return null;
+}
+
+export async function uploadProductImages(storeId: string, files: File[]) {
+  const uploaded: Array<{ url: string; key: string }> = [];
+
+  try {
+    for (const file of files) {
+      const extension = productImageExtensionsByType[file.type];
+      const key = `products/${storeId}/${randomUUID()}.${extension}`;
+      const url = await uploadPublicObject({
+        key,
+        body: Buffer.from(await file.arrayBuffer()),
+        contentType: file.type
+      });
+      uploaded.push({ url, key });
+    }
+  } catch (error) {
+    await Promise.all(uploaded.map((image) => deletePublicObject(image.key).catch(() => null)));
+    throw error;
+  }
+
+  return uploaded;
+}
+
+export async function deleteProductImagesForStore(storeId: string, imageUrls: string[]) {
+  await Promise.all(
+    imageUrls.map(async (imageUrl) => {
+      const key = getPublicObjectKeyFromUrl(imageUrl);
+      if (key?.startsWith(`products/${storeId}/`)) {
+        await deletePublicObject(key).catch(() => null);
+      }
+    })
+  );
+}
 
 export function normalizePromoPrice(value: ProductPayload["promoPrice"], basePrice: number) {
   if (value === undefined || value === null || String(value).trim() === "") {

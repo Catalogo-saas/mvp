@@ -35,6 +35,7 @@ select {
 
 .field {
   width: 100%;
+  min-width: 0;
   border: 1px solid #d1d5db;
   border-radius: 14px;
   padding: 12px 14px;
@@ -80,4 +81,12 @@ select {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 24px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+@media (max-width: 767px) {
+  .gestion-shell input,
+  .gestion-shell textarea,
+  .gestion-shell select {
+    font-size: 16px;
+  }
 }

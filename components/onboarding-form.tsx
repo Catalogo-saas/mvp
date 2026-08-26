@@ -35,7 +35,7 @@ export function OnboardingForm() {
     }
 
     setLoading(false);
-    router.push("/admin");
+    router.push("/gestion");
     router.refresh();
   }
 

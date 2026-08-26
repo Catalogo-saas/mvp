@@ -29,12 +29,14 @@ export type AggregateProduct = {
 export type ProductAvgAggregateOutputType = {
   basePrice: number | null
   promoPrice: number | null
+  stockQuantity: number | null
   sortOrder: number | null
 }
 
 export type ProductSumAggregateOutputType = {
   basePrice: number | null
   promoPrice: number | null
+  stockQuantity: number | null
   sortOrder: number | null
 }
 
@@ -48,6 +50,7 @@ export type ProductMinAggregateOutputType = {
   basePrice: number | null
   promoPrice: number | null
   isVisible: boolean | null
+  stockQuantity: number | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -63,6 +66,7 @@ export type ProductMaxAggregateOutputType = {
   basePrice: number | null
   promoPrice: number | null
   isVisible: boolean | null
+  stockQuantity: number | null
   sortOrder: number | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -79,6 +83,7 @@ export type ProductCountAggregateOutputType = {
   promoPrice: number
   imageUrls: number
   isVisible: number
+  stockQuantity: number
   sortOrder: number
   createdAt: number
   updatedAt: number
@@ -89,12 +94,14 @@ export type ProductCountAggregateOutputType = {
 export type ProductAvgAggregateInputType = {
   basePrice?: true
   promoPrice?: true
+  stockQuantity?: true
   sortOrder?: true
 }
 
 export type ProductSumAggregateInputType = {
   basePrice?: true
   promoPrice?: true
+  stockQuantity?: true
   sortOrder?: true
 }
 
@@ -108,6 +115,7 @@ export type ProductMinAggregateInputType = {
   basePrice?: true
   promoPrice?: true
   isVisible?: true
+  stockQuantity?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -123,6 +131,7 @@ export type ProductMaxAggregateInputType = {
   basePrice?: true
   promoPrice?: true
   isVisible?: true
+  stockQuantity?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -139,6 +148,7 @@ export type ProductCountAggregateInputType = {
   promoPrice?: true
   imageUrls?: true
   isVisible?: true
+  stockQuantity?: true
   sortOrder?: true
   createdAt?: true
   updatedAt?: true
@@ -242,6 +252,7 @@ export type ProductGroupByOutputType = {
   promoPrice: number | null
   imageUrls: string[]
   isVisible: boolean
+  stockQuantity: number | null
   sortOrder: number
   createdAt: Date
   updatedAt: Date
@@ -281,6 +292,7 @@ export type ProductWhereInput = {
   promoPrice?: Prisma.IntNullableFilter<"Product"> | number | null
   imageUrls?: Prisma.StringNullableListFilter<"Product">
   isVisible?: Prisma.BoolFilter<"Product"> | boolean
+  stockQuantity?: Prisma.IntNullableFilter<"Product"> | number | null
   sortOrder?: Prisma.IntFilter<"Product"> | number
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
@@ -301,6 +313,7 @@ export type ProductOrderByWithRelationInput = {
   promoPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   imageUrls?: Prisma.SortOrder
   isVisible?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -325,6 +338,7 @@ export type ProductWhereUniqueInput = Prisma.AtLeast<{
   promoPrice?: Prisma.IntNullableFilter<"Product"> | number | null
   imageUrls?: Prisma.StringNullableListFilter<"Product">
   isVisible?: Prisma.BoolFilter<"Product"> | boolean
+  stockQuantity?: Prisma.IntNullableFilter<"Product"> | number | null
   sortOrder?: Prisma.IntFilter<"Product"> | number
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
@@ -345,6 +359,7 @@ export type ProductOrderByWithAggregationInput = {
   promoPrice?: Prisma.SortOrderInput | Prisma.SortOrder
   imageUrls?: Prisma.SortOrder
   isVisible?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrderInput | Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -369,6 +384,7 @@ export type ProductScalarWhereWithAggregatesInput = {
   promoPrice?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
   imageUrls?: Prisma.StringNullableListFilter<"Product">
   isVisible?: Prisma.BoolWithAggregatesFilter<"Product"> | boolean
+  stockQuantity?: Prisma.IntNullableWithAggregatesFilter<"Product"> | number | null
   sortOrder?: Prisma.IntWithAggregatesFilter<"Product"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Product"> | Date | string
@@ -383,6 +399,7 @@ export type ProductCreateInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -403,6 +420,7 @@ export type ProductUncheckedCreateInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -419,6 +437,7 @@ export type ProductUpdateInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -439,6 +458,7 @@ export type ProductUncheckedUpdateInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -457,6 +477,7 @@ export type ProductCreateManyInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -471,6 +492,7 @@ export type ProductUpdateManyMutationInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -487,6 +509,7 @@ export type ProductUncheckedUpdateManyInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -526,6 +549,7 @@ export type ProductCountOrderByAggregateInput = {
   promoPrice?: Prisma.SortOrder
   imageUrls?: Prisma.SortOrder
   isVisible?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -534,6 +558,7 @@ export type ProductCountOrderByAggregateInput = {
 export type ProductAvgOrderByAggregateInput = {
   basePrice?: Prisma.SortOrder
   promoPrice?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
 }
 
@@ -547,6 +572,7 @@ export type ProductMaxOrderByAggregateInput = {
   basePrice?: Prisma.SortOrder
   promoPrice?: Prisma.SortOrder
   isVisible?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -562,6 +588,7 @@ export type ProductMinOrderByAggregateInput = {
   basePrice?: Prisma.SortOrder
   promoPrice?: Prisma.SortOrder
   isVisible?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -570,6 +597,7 @@ export type ProductMinOrderByAggregateInput = {
 export type ProductSumOrderByAggregateInput = {
   basePrice?: Prisma.SortOrder
   promoPrice?: Prisma.SortOrder
+  stockQuantity?: Prisma.SortOrder
   sortOrder?: Prisma.SortOrder
 }
 
@@ -715,6 +743,7 @@ export type ProductCreateWithoutStoreInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -733,6 +762,7 @@ export type ProductUncheckedCreateWithoutStoreInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -780,6 +810,7 @@ export type ProductScalarWhereInput = {
   promoPrice?: Prisma.IntNullableFilter<"Product"> | number | null
   imageUrls?: Prisma.StringNullableListFilter<"Product">
   isVisible?: Prisma.BoolFilter<"Product"> | boolean
+  stockQuantity?: Prisma.IntNullableFilter<"Product"> | number | null
   sortOrder?: Prisma.IntFilter<"Product"> | number
   createdAt?: Prisma.DateTimeFilter<"Product"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Product"> | Date | string
@@ -794,6 +825,7 @@ export type ProductCreateWithoutCategoryInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -812,6 +844,7 @@ export type ProductUncheckedCreateWithoutCategoryInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -854,6 +887,7 @@ export type ProductCreateWithoutOptionGroupsInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -873,6 +907,7 @@ export type ProductUncheckedCreateWithoutOptionGroupsInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -904,6 +939,7 @@ export type ProductUpdateWithoutOptionGroupsInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -923,6 +959,7 @@ export type ProductUncheckedUpdateWithoutOptionGroupsInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -938,6 +975,7 @@ export type ProductCreateWithoutOrderItemsInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -957,6 +995,7 @@ export type ProductUncheckedCreateWithoutOrderItemsInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -988,6 +1027,7 @@ export type ProductUpdateWithoutOrderItemsInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1007,6 +1047,7 @@ export type ProductUncheckedUpdateWithoutOrderItemsInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1023,6 +1064,7 @@ export type ProductCreateManyStoreInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1037,6 +1079,7 @@ export type ProductUpdateWithoutStoreInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1055,6 +1098,7 @@ export type ProductUncheckedUpdateWithoutStoreInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1072,6 +1116,7 @@ export type ProductUncheckedUpdateManyWithoutStoreInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1087,6 +1132,7 @@ export type ProductCreateManyCategoryInput = {
   promoPrice?: number | null
   imageUrls?: Prisma.ProductCreateimageUrlsInput | string[]
   isVisible?: boolean
+  stockQuantity?: number | null
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1101,6 +1147,7 @@ export type ProductUpdateWithoutCategoryInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1119,6 +1166,7 @@ export type ProductUncheckedUpdateWithoutCategoryInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1136,6 +1184,7 @@ export type ProductUncheckedUpdateManyWithoutCategoryInput = {
   promoPrice?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   imageUrls?: Prisma.ProductUpdateimageUrlsInput | string[]
   isVisible?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  stockQuantity?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1192,6 +1241,7 @@ export type ProductSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   promoPrice?: boolean
   imageUrls?: boolean
   isVisible?: boolean
+  stockQuantity?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1213,6 +1263,7 @@ export type ProductSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   promoPrice?: boolean
   imageUrls?: boolean
   isVisible?: boolean
+  stockQuantity?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1231,6 +1282,7 @@ export type ProductSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   promoPrice?: boolean
   imageUrls?: boolean
   isVisible?: boolean
+  stockQuantity?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1249,12 +1301,13 @@ export type ProductSelectScalar = {
   promoPrice?: boolean
   imageUrls?: boolean
   isVisible?: boolean
+  stockQuantity?: boolean
   sortOrder?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "categoryId" | "name" | "slug" | "description" | "basePrice" | "promoPrice" | "imageUrls" | "isVisible" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
+export type ProductOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "categoryId" | "name" | "slug" | "description" | "basePrice" | "promoPrice" | "imageUrls" | "isVisible" | "stockQuantity" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["product"]>
 export type ProductInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   store?: boolean | Prisma.StoreDefaultArgs<ExtArgs>
   category?: boolean | Prisma.Product$categoryArgs<ExtArgs>
@@ -1290,6 +1343,7 @@ export type $ProductPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     promoPrice: number | null
     imageUrls: string[]
     isVisible: boolean
+    stockQuantity: number | null
     sortOrder: number
     createdAt: Date
     updatedAt: Date
@@ -1730,6 +1784,7 @@ export interface ProductFieldRefs {
   readonly promoPrice: Prisma.FieldRef<"Product", 'Int'>
   readonly imageUrls: Prisma.FieldRef<"Product", 'String[]'>
   readonly isVisible: Prisma.FieldRef<"Product", 'Boolean'>
+  readonly stockQuantity: Prisma.FieldRef<"Product", 'Int'>
   readonly sortOrder: Prisma.FieldRef<"Product", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Product", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Product", 'DateTime'>

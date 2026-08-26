@@ -71,6 +71,9 @@ export async function POST(request: Request) {
     if (!product) {
       return NextResponse.json({ error: "Producto no disponible" }, { status: 400 });
     }
+    if (product.stockQuantity !== null && inputItem.quantity > product.stockQuantity) {
+      return NextResponse.json({ error: `Stock insuficiente para ${product.name}` }, { status: 409 });
+    }
 
     const selectedIds = new Set(inputItem.selectedOptionIds);
     const selectedOptions = [];

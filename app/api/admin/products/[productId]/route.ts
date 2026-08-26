@@ -2,16 +2,21 @@ import { NextResponse } from "next/server";
 
 import {
   buildOptionGroupCreates,
+  deleteProductImagesForStore,
   makeUniqueProductSlug,
   normalizeImageUrls,
   normalizePromoPrice,
+  parseProductRequest,
   productInclude,
   productSchema,
-  resolveCategoryId
+  resolveCategoryId,
+  uploadProductImages,
+  validateProductImageFiles
 } from "@/lib/admin-catalog";
 import { getMerchantStore } from "@/lib/merchant";
 import { parsePriceToCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { deletePublicObject } from "@/lib/storage";
 
 type Params = Promise<{ productId: string }>;
 
@@ -27,10 +32,17 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 
-  const body = await request.json().catch(() => null);
+  const { body, imageFiles } = await parseProductRequest(request).catch(() => ({ body: null, imageFiles: [] }));
   const result = productSchema.safeParse(body);
   if (!result.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
+  }
+  const imageError = validateProductImageFiles(imageFiles);
+  if (imageError) {
+    return NextResponse.json({ error: imageError }, { status: 400 });
+  }
+  if (result.data.imageUrls.length + imageFiles.length > 6) {
+    return NextResponse.json({ error: "El máximo es 6 imágenes por producto." }, { status: 400 });
   }
 
   const basePrice = parsePriceToCents(String(result.data.basePrice));
@@ -47,27 +59,42 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   const nextName = result.data.name.trim();
   const slug =
     existingProduct.name === nextName ? existingProduct.slug : await makeUniqueProductSlug(store.id, nextName, existingProduct.id);
+  const uploadedImages = imageFiles.length ? await uploadProductImages(store.id, imageFiles).catch(() => null) : [];
+  if (uploadedImages === null) {
+    return NextResponse.json({ error: "No se pudieron subir las imágenes." }, { status: 500 });
+  }
+  const nextImageUrls = normalizeImageUrls({ ...result.data, imageUrls: [...result.data.imageUrls, ...uploadedImages.map((image) => image.url)] });
+  const removedImageUrls = existingProduct.imageUrls.filter((url) => !nextImageUrls.includes(url));
 
-  const product = await prisma.$transaction(async (tx) => {
-    await tx.optionGroup.deleteMany({ where: { productId: existingProduct.id } });
-    return tx.product.update({
-      where: { id: existingProduct.id },
-      data: {
-        categoryId,
-        name: nextName,
-        slug,
-        description: result.data.description?.trim() || null,
-        basePrice,
-        promoPrice,
-        imageUrls: normalizeImageUrls(result.data),
-        isVisible: result.data.isVisible,
-        optionGroups: {
-          create: buildOptionGroupCreates(result.data.optionGroups)
-        }
-      },
-      include: productInclude()
+  let product;
+  try {
+    product = await prisma.$transaction(async (tx) => {
+      await tx.optionGroup.deleteMany({ where: { productId: existingProduct.id } });
+      return tx.product.update({
+        where: { id: existingProduct.id },
+        data: {
+          categoryId,
+          name: nextName,
+          slug,
+          description: result.data.description?.trim() || null,
+          basePrice,
+          promoPrice,
+          imageUrls: nextImageUrls,
+          isVisible: result.data.isVisible,
+          stockQuantity: result.data.stockQuantity,
+          optionGroups: {
+            create: buildOptionGroupCreates(result.data.optionGroups)
+          }
+        },
+        include: productInclude()
+      });
     });
-  });
+  } catch (error) {
+    await Promise.all(uploadedImages.map((image) => deletePublicObject(image.key).catch(() => null)));
+    throw error;
+  }
+
+  await deleteProductImagesForStore(store.id, removedImageUrls);
 
   return NextResponse.json({ product });
 }
@@ -85,5 +112,6 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
   }
 
   await prisma.product.delete({ where: { id: existingProduct.id } });
+  await deleteProductImagesForStore(store.id, existingProduct.imageUrls);
   return NextResponse.json({ ok: true });
 }

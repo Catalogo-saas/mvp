@@ -12,7 +12,8 @@ const nextConfig: NextConfig = {
         hostname: "**"
       }
     ]
-  }
+  },
+  allowedDevOrigins:["mendy-certificatory-nonsequaciously.ngrok-free.dev"]
 };
 
 export default nextConfig;
