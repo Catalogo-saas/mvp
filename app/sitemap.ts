@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const stores = await prisma.store.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, owner: { status: "ACTIVE" } },
       include: { products: { where: { isVisible: true } } }
     });
 

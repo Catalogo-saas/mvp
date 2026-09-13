@@ -31,7 +31,6 @@ function loadEnvFile(path: string, override = false) {
 }
 
 loadEnvFile(".env");
-loadEnvFile(".env.local", true);
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

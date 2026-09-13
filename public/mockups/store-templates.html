@@ -1,41 +1,62 @@
-<section style="font-family: Inter, system-ui, sans-serif; background:#f8fafc; color:#111827; padding:28px; min-height:100vh;">
-  <div style="max-width:1120px; margin:0 auto; display:grid; gap:18px;">
-    <header style="background:white; border:1px solid #e5e7eb; border-radius:24px; padding:22px; box-shadow:0 18px 48px rgba(15,23,42,.06);">
-      <p style="color:#16a34a; font-size:12px; font-weight:900; letter-spacing:.18em; margin:0 0 8px;">CONFIGURACION DE TIENDA</p>
-      <h1 style="font-size:32px; margin:0;">Elegir experiencia publica</h1>
-      <p style="color:#6b7280; margin:8px 0 0;">El usuario puede cambiar el estilo segun su rubro sin perder productos.</p>
-    </header>
-
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
-      <article style="background:white; border:2px solid #16a34a; border-radius:22px; padding:16px; box-shadow:0 18px 48px rgba(15,23,42,.06);">
-        <div style="height:180px; border-radius:18px; background:#fff7ed; padding:12px;">
-          <div style="height:44px; border-radius:14px; background:#111827; margin-bottom:10px;"></div>
-          <div style="height:84px; border-radius:16px; background:linear-gradient(135deg,#fed7aa,#fb923c); position:relative;"><span style="position:absolute; left:8px; top:8px; background:#ef4444; color:white; border-radius:999px; padding:4px 7px; font-size:10px; font-weight:900;">OFF</span></div>
-          <div style="height:20px; width:70%; background:#dc2626; border-radius:999px; margin-top:10px;"></div>
-        </div>
-        <h2 style="margin:14px 0 6px;">Ecommerce promo</h2>
-        <p style="color:#6b7280; margin:0;">Cards visuales, badges de descuento y precio promocional protagonista.</p>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plantillas públicas — Comparador</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f4f4f0;color:#17201b;font-family:Inter,ui-sans-serif,system-ui,sans-serif}.wrap{width:min(1180px,calc(100% - 32px));margin:auto}.top{display:flex;justify-content:space-between;align-items:center;padding:28px 0}.brand{font-weight:900;font-size:20px}.pill{border:1px solid #d9ddd8;border-radius:999px;padding:9px 14px;background:#fff;font-size:13px;font-weight:800}.hero{padding:64px 0 36px}.eyebrow{color:#19733b;font-weight:900;text-transform:uppercase;letter-spacing:.16em;font-size:12px}.hero h1{font-size:clamp(38px,7vw,78px);line-height:.95;letter-spacing:-.06em;max-width:900px;margin:14px 0 20px}.hero p{max-width:660px;font-size:19px;line-height:1.6;color:#5f6863}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:28px 0 70px}.card{position:relative;overflow:hidden;min-height:620px;border-radius:36px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 28px 80px #18231c18}.ecom{background:#e9e5dc}.food{background:#ed4a2e;color:#fff}.preview{height:390px;border-radius:25px;background:#fff;overflow:hidden;box-shadow:0 18px 40px #17201b25}.browser{height:32px;background:#17201b;display:flex;align-items:center;gap:5px;padding:0 12px}.browser i{width:7px;height:7px;border-radius:50%;background:#fff5}.mini-nav{display:flex;justify-content:space-between;padding:15px;color:#111;font-weight:900}.tiles{display:grid;grid-template-columns:1.25fr .75fr;gap:10px;padding:0 14px}.feature{height:138px;border-radius:18px;background:url('https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80') center/cover}.side{display:grid;gap:10px}.side span{border-radius:16px;background:#ece8e0}.products{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:13px}.products span{height:100px;border-radius:14px;background:#f2f2ef}.food-ui{background:#fff8ec;color:#231914;height:100%}.food-hero{height:125px;background:linear-gradient(90deg,#1f1712b8,#1f171220),url('https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80') center/cover;padding:22px;color:#fff}.food-hero b{font-size:24px}.menu-row{display:grid;grid-template-columns:64px 1fr 28px;gap:10px;margin:10px 14px;padding:10px;background:#fff;border-radius:15px;align-items:center}.menu-row i{height:58px;border-radius:12px;background:#f3c890}.menu-row small{display:block;margin-top:6px;color:#876f61}.plus{display:grid;place-items:center;background:#ed4a2e;color:#fff;border-radius:50%;width:28px;height:28px}.meta{padding:22px 4px 2px}.meta h2{font-size:32px;letter-spacing:-.04em;margin:0 0 9px}.meta p{line-height:1.55;max-width:480px;margin:0;color:#58615b}.food .meta p{color:#ffe1d8}.actions{display:flex;gap:10px;margin-top:22px}.action{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:13px 18px;background:#17201b;color:#fff;text-decoration:none;font-weight:900}.food .action{background:#fff;color:#d83b22}.ghost{background:transparent!important;border:1px solid currentColor!important;color:inherit!important}.alternatives{padding:10px 0 70px}.alternatives h2{font-size:clamp(34px,5vw,58px);letter-spacing:-.055em;margin:10px 0}.alternatives>p{max-width:720px;color:#5f6863;line-height:1.6}.alt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}.alt-card{min-height:500px;border-radius:30px;padding:18px;display:flex;flex-direction:column;box-shadow:0 22px 60px #18231c16}.alt-card.pop{background:#f44599}.alt-card.minimal{background:#161616;color:#fff}.alt-card.soft{background:#f4d8d5}.alt-preview{height:270px;border-radius:20px;overflow:hidden;background:#fff;position:relative}.alt-preview::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,#0009)}.alt-preview img{width:100%;height:100%;object-fit:cover}.alt-preview b{position:absolute;z-index:1;left:17px;bottom:16px;color:#fff;font-size:28px;letter-spacing:-.05em}.alt-card.soft .alt-preview{border-radius:100px 100px 20px 20px}.alt-card h3{font-size:27px;letter-spacing:-.04em;margin:22px 0 8px}.alt-card p{font-size:13px;line-height:1.5;margin:0;color:#493d42}.alt-card.minimal p{color:#c7c7c7}.alt-card .action{margin-top:auto;align-self:flex-start}.alt-card.pop .action{background:#efff63;color:#17131b;border:2px solid #17131b}.alt-card.minimal .action{background:#fff;color:#111;border-radius:0}.alt-card.soft .action{background:#402f36}.note{margin:0 0 70px;border:1px solid #d9ddd8;background:#fff;border-radius:24px;padding:22px;line-height:1.6;color:#5f6863}.note strong{color:#17201b}@media(max-width:900px){.alt-grid{grid-template-columns:1fr 1fr}}@media(max-width:760px){.top{padding:18px 0}.hero{padding:40px 0 20px}.grid,.alt-grid{grid-template-columns:1fr}.card{min-height:580px;padding:18px;border-radius:28px}.preview{height:350px}.hero p{font-size:16px}.pill{display:none}}
+  </style>
+  <style>
+    .baby-natural{background:#dfe4d5}.baby-atelier{background:#5b3033;color:#fff}.baby-mini{background:#f8cf4c;color:#172c3d;border:2px solid #172c3d;box-shadow:7px 7px 0 #172c3d}.baby-atelier p{color:#eadcce}.baby-preview{height:270px;border-radius:20px;overflow:hidden;background:#fff;position:relative}.baby-preview::after{content:"";position:absolute;inset:35% 0 0;background:linear-gradient(transparent,#000a)}.baby-preview img{width:100%;height:100%;object-fit:cover}.baby-preview b{position:absolute;z-index:1;left:17px;bottom:16px;color:#fff;font-size:28px;letter-spacing:-.05em}.baby-natural .baby-preview{border-radius:90px 90px 20px 20px}.baby-atelier .baby-preview{border-radius:0}.baby-mini .baby-preview{border:2px solid #172c3d;box-shadow:4px 4px 0 #172c3d}.baby-natural .action{background:#384b3d}.baby-atelier .action{background:#fff;color:#5b3033;border-radius:0}.baby-mini .action{background:#4b67d1;border:2px solid #172c3d;box-shadow:3px 3px 0 #172c3d}
+    .cute-sky{background:#dfe9ff}.cute-dream{background:#dde6cf}.cute-hug{background:#ffd7d3}.cute-sky .baby-preview{border-radius:50%}.cute-sky .baby-preview b{left:50%;bottom:25px;white-space:nowrap;transform:translateX(-50%)}.cute-dream .baby-preview{border:10px solid #fff8e8;border-radius:18px 48px 48px 18px}.cute-hug .baby-preview{border:2px dashed #a87468;border-radius:24px 70px 24px 70px}.cute-sky .action{background:#7f70b4}.cute-dream .action{background:#61745d}.cute-hug .action{background:#b96369}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top"><div class="brand">Landing<span style="color:#19733b">SaaS</span></div><span class="pill">Ronda de aprobación visual</span></header>
+    <section class="hero"><div class="eyebrow">Plantillas por rubro</div><h1>Más formas de vender.<br>Una experiencia clara.</h1><p>Estas demos son independientes de la aplicación actual. Recorré catálogo, detalle, variantes y carrito antes de elegir qué dirección llevar al producto.</p></section>
+    <main class="grid">
+      <article class="card ecom">
+        <div class="preview"><div class="browser"><i></i><i></i><i></i></div><div class="mini-nav"><span>NORTE®</span><span>Buscar · Carrito (1)</span></div><div class="tiles"><div class="feature"></div><div class="side"><span></span><span></span></div></div><div class="products"><span></span><span></span><span></span></div></div>
+        <div class="meta"><h2>Ecommerce</h2><p>Portada, categorías, catálogo, promociones, stock, variantes y cierre del pedido por WhatsApp, usando únicamente datos configurables.</p><div class="actions"><a class="action" href="template-ecommerce.html">Abrir demo</a><a class="action ghost" href="product-options.html">Editor actual</a></div></div>
       </article>
-
-      <article style="background:white; border:1px solid #e5e7eb; border-radius:22px; padding:16px; box-shadow:0 18px 48px rgba(15,23,42,.06);">
-        <div style="height:180px; border-radius:18px; background:#f8fafc; padding:12px; display:grid; gap:10px;">
-          <div style="height:36px; border-radius:12px; background:#111827;"></div>
-          <div style="display:grid; grid-template-columns:58px 1fr 34px; gap:8px;"><span style="border-radius:12px; background:#fed7aa;"></span><span style="border-radius:12px; background:white; border:1px solid #e5e7eb;"></span><span style="border-radius:999px; background:#16a34a;"></span></div>
-          <div style="display:grid; grid-template-columns:58px 1fr 34px; gap:8px;"><span style="border-radius:12px; background:#bbf7d0;"></span><span style="border-radius:12px; background:white; border:1px solid #e5e7eb;"></span><span style="border-radius:999px; background:#111827;"></span></div>
-        </div>
-        <h2 style="margin:14px 0 6px;">Menu rapido</h2>
-        <p style="color:#6b7280; margin:0;">Lista compacta para comida, bebidas y negocios que necesitan pocos taps.</p>
+      <article class="card food">
+        <div class="preview"><div class="food-ui"><div class="food-hero"><small>ABIERTO · 25–35 MIN</small><br><b>Fuego Burger</b></div><div class="menu-row"><i></i><span><b>Doble Smash</b><small>Cheddar, cebolla y salsa Fuego</small></span><b class="plus">+</b></div><div class="menu-row"><i></i><span><b>Pollo Crispy</b><small>Coleslaw y alioli de lima</small></span><b class="plus">+</b></div><div class="menu-row"><i></i><span><b>Papas Fuego</b><small>Cheddar, verdeo y bacon</small></span><b class="plus">+</b></div></div></div>
+        <div class="meta"><h2>Menú rápido</h2><p>Lista compacta, disponibilidad visible y presets de tamaño, guarnición, salsas y extras.</p><div class="actions"><a class="action" href="template-food.html">Abrir demo</a><a class="action ghost" href="storefront.html">Mockup anterior</a></div></div>
       </article>
-
-      <article style="background:white; border:1px solid #e5e7eb; border-radius:22px; padding:16px; box-shadow:0 18px 48px rgba(15,23,42,.06);">
-        <div style="height:180px; border-radius:18px; background:#111827; padding:12px;">
-          <div style="height:112px; border-radius:16px; background:linear-gradient(135deg,#bfdbfe,#60a5fa);"></div>
-          <div style="height:18px; width:82%; background:white; border-radius:999px; margin-top:12px;"></div>
-          <div style="height:18px; width:52%; background:#fbbf24; border-radius:999px; margin-top:8px;"></div>
-        </div>
-        <h2 style="margin:14px 0 6px;">Retail premium</h2>
-        <p style="color:#6b7280; margin:0;">Fotos grandes, grilla mas editorial y detalle de producto mas cuidado.</p>
-      </article>
-    </div>
+    </main>
+    <section class="alternatives">
+      <div class="eyebrow">Nueva plantilla ecommerce femenina</div>
+      <h2>Tres direcciones para comparar.</h2>
+      <p>Las tres demos usan exactamente la misma tienda, productos y flujo. Cambia únicamente la identidad visual y la forma de recorrer el catálogo.</p>
+      <div class="alt-grid">
+        <article class="alt-card pop"><div class="alt-preview"><img src="https://images.unsplash.com/photo-1487412912498-0447578fcca8?auto=format&fit=crop&w=900&q=80" alt=""><b>Beauty Pop</b></div><h3>Beauty Pop</h3><p>Joven, colorida y enérgica. Inspirada en marcas de belleza y moda digital.</p><a class="action" href="template-beauty-pop.html">Abrir demo completa</a></article>
+        <article class="alt-card minimal"><div class="alt-preview"><img src="https://images.unsplash.com/photo-1511556820780-d912e42b4980?auto=format&fit=crop&w=900&q=80" alt=""><b>Premium Minimal</b></div><h3>Premium Minimal</h3><p>Fotografía dominante, tipografía editorial y una grilla limpia de producto.</p><a class="action" href="template-premium-minimal.html">Abrir demo completa</a></article>
+        <article class="alt-card soft"><div class="alt-preview"><img src="https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=900&q=80" alt=""><b>Boutique Suave</b></div><h3>Boutique Suave</h3><p>Cálida, cercana y delicada, con curvas, tonos pastel y ritmo visual amable.</p><a class="action" href="template-boutique-soft.html">Abrir demo completa</a></article>
+      </div>
+    </section>
+    <section class="alternatives">
+      <div class="eyebrow">Nuevas plantillas para tiendas de bebé</div>
+      <h2>Tres universos, el mismo catálogo.</h2>
+      <p>Ropa, calzado y accesorios presentados con tres identidades distintas. Todas las demos usan únicamente contenido que la tienda puede configurar.</p>
+      <div class="alt-grid">
+        <article class="alt-card baby-natural"><div class="baby-preview"><img src="https://images.pexels.com/photos/16681603/pexels-photo-16681603.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Ropa de bebé en tonos naturales"><b>Nido Natural</b></div><h3>Nido Natural</h3><p>Serena, orgánica y cercana. Tonos tierra, curvas suaves y fotografía protagonista.</p><a class="action" href="template-baby-natural.html">Abrir demo completa</a></article>
+        <article class="alt-card baby-atelier"><div class="baby-preview"><img src="https://images.pexels.com/photos/3932934/pexels-photo-3932934.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Conjunto de ropa y calzado para bebé"><b>Petit Atelier</b></div><h3>Petit Atelier</h3><p>Clásica y editorial. Composición inmersiva, serif elegante y aire de boutique.</p><a class="action" href="template-baby-atelier.html">Abrir demo completa</a></article>
+        <article class="alt-card baby-mini"><div class="baby-preview"><img src="https://images.pexels.com/photos/5982382/pexels-photo-5982382.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Prenda de bebé sobre fondo de color"><b>Mundo Mini!</b></div><h3>Mundo Mini!</h3><p>Lúdica y enérgica. Bloques de color, contornos marcados y formas gráficas.</p><a class="action" href="template-baby-mini.html">Abrir demo completa</a></article>
+      </div>
+    </section>
+    <section class="alternatives">
+      <div class="eyebrow">Segunda ronda · 100% bebé</div>
+      <h2>Más tiernas, más infantiles.</h2>
+      <p>Tres estructuras nuevas inspiradas en sueños, cuentos y mantitas. Conservan el mismo catálogo y flujo para comparar solamente la experiencia visual.</p>
+      <div class="alt-grid">
+        <article class="alt-card cute-sky"><div class="baby-preview"><img src="https://images.pexels.com/photos/16681603/pexels-photo-16681603.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Ropita de bebé en colores suaves"><b>Cielito</b></div><h3>Cielito</h3><p>Nubes, estrellas, formas flotantes y una paleta pastel pensada desde el universo bebé.</p><a class="action" href="template-baby-cielito.html">Abrir demo completa</a></article>
+        <article class="alt-card cute-dream"><div class="baby-preview"><img src="https://images.pexels.com/photos/3932934/pexels-photo-3932934.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Ropa y accesorios de bebé en tonos cálidos"><b>Bosque de Sueños</b></div><h3>Bosque de Sueños</h3><p>Un pequeño cuento ilustrado con conejitos, hojas y un recorrido de categorías.</p><a class="action" href="template-baby-bosque.html">Abrir demo completa</a></article>
+        <article class="alt-card cute-hug"><div class="baby-preview"><img src="https://images.pexels.com/photos/32452339/pexels-photo-32452339.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=900" alt="Manta y accesorios de bebé"><b>Dulce Abrazo</b></div><h3>Dulce Abrazo</h3><p>Retazos, costuras y módulos suaves que recuerdan una manta hecha con cariño.</p><a class="action" href="template-baby-abrazo.html">Abrir demo completa</a></article>
+      </div>
+    </section>
+    <aside class="note"><strong>Qué se aprueba en esta ronda:</strong> jerarquía, estilo, densidad, navegación y presentación de variantes. Los botones simulan estados localmente; todavía no modifican productos ni plantillas reales.</aside>
   </div>
-</section>
+</body>
+</html>

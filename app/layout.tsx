@@ -7,10 +7,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Landing SaaS — Catálogos con pedidos por WhatsApp",
-    template: "%s | Landing SaaS"
+    default: "Tu tienda online — Vendé con tu marca",
+    template: "%s | Tu tienda online"
   },
-  description: "Crea una tienda simple, mobile-first y optimizada para compartir productos por WhatsApp.",
+  description: "Una tienda online personalizable para mostrar productos, recibir pedidos y administrar tu negocio desde un solo lugar.",
   metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000")
 };
 

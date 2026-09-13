@@ -10,8 +10,10 @@ const schema = z.object({
   storeSlug: z.string().min(2),
   customerName: z.string().min(2).max(100),
   customerPhone: z.string().min(6).max(40),
-  fulfillment: z.string().min(2).max(80),
+  fulfillment: z.enum(["pickup", "delivery"]),
+  deliveryAddress: z.string().trim().min(5).max(220).optional(),
   notes: z.string().max(500).optional(),
+  paymentMethod: z.enum(["cash", "transfer", "whatsapp"]).default("cash").transform((value) => value === "whatsapp" ? "cash" : value),
   items: z
     .array(
       z.object({
@@ -22,6 +24,10 @@ const schema = z.object({
     )
     .min(1)
     .max(80)
+}).superRefine((data, context) => {
+  if (data.fulfillment === "delivery" && !data.deliveryAddress) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ["deliveryAddress"], message: "Ingresá el domicilio de entrega." });
+  }
 });
 
 export async function POST(request: Request) {
@@ -31,8 +37,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
-  const store = await prisma.store.findUnique({
-    where: { slug: result.data.storeSlug },
+  const store = await prisma.store.findFirst({
+    where: { slug: result.data.storeSlug, owner: { status: "ACTIVE" } },
     include: {
       products: {
         where: {
@@ -61,6 +67,16 @@ export async function POST(request: Request) {
   if (!availability.isOpen) {
     return NextResponse.json({ error: availability.label }, { status: 409 });
   }
+
+  if (result.data.paymentMethod === "transfer" && !store.acceptTransferPayments) {
+    return NextResponse.json({ error: "La transferencia no está habilitada para esta tienda." }, { status: 400 });
+  }
+
+  const fulfillmentLabel = result.data.fulfillment === "delivery"
+    ? `Envío a domicilio: ${result.data.deliveryAddress}`
+    : store.address
+      ? `Retiro: ${store.address}`
+      : "Retiro";
 
   const productsById = new Map(store.products.map((product) => [product.id, product]));
   const orderItems = [];
@@ -123,14 +139,26 @@ export async function POST(request: Request) {
       code,
       customerName: result.data.customerName,
       customerPhone: result.data.customerPhone,
-      fulfillment: result.data.fulfillment,
+      fulfillment: fulfillmentLabel,
       notes: result.data.notes,
       total,
       checkout: {
         customerName: result.data.customerName,
         customerPhone: result.data.customerPhone,
-        fulfillment: result.data.fulfillment,
-        notes: result.data.notes
+        fulfillment: fulfillmentLabel,
+        fulfillmentMethod: result.data.fulfillment,
+        deliveryAddress: result.data.fulfillment === "delivery" ? result.data.deliveryAddress : null,
+        notes: result.data.notes,
+        paymentMethod: result.data.paymentMethod,
+        paymentDetails:
+          result.data.paymentMethod === "transfer"
+            ? {
+                accountHolder: store.paymentAccountHolder,
+                provider: store.paymentProvider,
+                alias: store.paymentAlias,
+                cbu: store.paymentCbu
+              }
+            : null
       },
       items: {
         create: orderItems.map((item) => ({
@@ -154,6 +182,13 @@ export async function POST(request: Request) {
     customerPhone: order.customerPhone,
     fulfillment: order.fulfillment,
     notes: order.notes,
+    paymentMethod: result.data.paymentMethod,
+    paymentDetails: {
+      accountHolder: store.paymentAccountHolder,
+      provider: store.paymentProvider,
+      alias: store.paymentAlias,
+      cbu: store.paymentCbu
+    },
     items: orderItems,
     total: order.total
   });

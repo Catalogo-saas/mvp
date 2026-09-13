@@ -30,8 +30,33 @@ export type SelectionType = (typeof SelectionType)[keyof typeof SelectionType]
 export const OrderStatus = {
   PENDING_WHATSAPP: 'PENDING_WHATSAPP',
   PAID: 'PAID',
+  IN_PREPARATION: 'IN_PREPARATION',
   DELIVERED: 'DELIVERED',
   CANCELLED: 'CANCELLED'
 } as const
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
+
+
+export const OrderSource = {
+  STOREFRONT: 'STOREFRONT',
+  BACKOFFICE: 'BACKOFFICE'
+} as const
+
+export type OrderSource = (typeof OrderSource)[keyof typeof OrderSource]
+
+
+export const UserRole = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  MERCHANT: 'MERCHANT'
+} as const
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole]
+
+
+export const UserStatus = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED'
+} as const
+
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]

@@ -1,14 +1,23 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   Banknote,
   Check,
+  Edit3,
   Eye,
   ListFilter,
+  MessageCircle,
+  Minus,
+  PackageOpen,
   PackageCheck,
+  Plus,
   Printer,
   Search,
+  Save,
   SlidersHorizontal,
+  Trash2,
   X,
   type LucideIcon
 } from "lucide-react";
@@ -19,7 +28,7 @@ import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { formatBuenosAiresDate } from "@/lib/date-format";
 import { formatMoney } from "@/lib/money";
 
-type OrderStatus = "PENDING_WHATSAPP" | "PAID" | "DELIVERED" | "CANCELLED";
+type OrderStatus = "PENDING_WHATSAPP" | "PAID" | "IN_PREPARATION" | "DELIVERED" | "CANCELLED";
 type StatusFilter = OrderStatus | "all";
 type TimeFilter = "today" | "yesterday" | "week" | "month" | "year" | "always" | "custom";
 
@@ -41,6 +50,7 @@ type OrderListItem = {
   id: string;
   code: string;
   status: OrderStatus;
+  source: "STOREFRONT" | "BACKOFFICE";
   customerName: string;
   customerPhone: string;
   fulfillment: string;
@@ -49,6 +59,7 @@ type OrderListItem = {
   createdAt: string;
   items: Array<{
     id: string;
+    productId: string | null;
     productName: string;
     quantity: number;
     unitPrice: number;
@@ -57,9 +68,42 @@ type OrderListItem = {
   }>;
 };
 
+type EditableProduct = {
+  id: string;
+  name: string;
+  basePrice: number;
+  promoPrice: number | null;
+  optionGroups: Array<{
+    id: string;
+    name: string;
+    selectionType: "SINGLE" | "MULTIPLE";
+    isRequired: boolean;
+    maxSelections: number | null;
+    options: Array<{ id: string; name: string; priceDelta: number; isAvailable: boolean }>;
+  }>;
+};
+
+type OrderEditItem = {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  selectedOptionIds: string[];
+};
+
+type OrderEditDraft = {
+  customerName: string;
+  customerPhone: string;
+  fulfillment: string;
+  notes: string;
+  status: OrderStatus;
+  items: OrderEditItem[];
+};
+
 const statusOptions: Array<{ value: OrderStatus; label: string; plural: string }> = [
   { value: "PENDING_WHATSAPP", label: "Pendiente", plural: "Pendientes" },
   { value: "PAID", label: "Pagado", plural: "Pagados" },
+  { value: "IN_PREPARATION", label: "En preparación", plural: "En preparación" },
   { value: "DELIVERED", label: "Entregado", plural: "Entregados" },
   { value: "CANCELLED", label: "Cancelado", plural: "Cancelados" }
 ];
@@ -68,6 +112,7 @@ const filterOptions: Array<{ value: StatusFilter; label: string; icon: LucideIco
   { value: "all", label: "Todos", icon: ListFilter },
   { value: "PENDING_WHATSAPP", label: "Pendientes", icon: Banknote },
   { value: "PAID", label: "Pagados", icon: Check },
+  { value: "IN_PREPARATION", label: "En preparación", icon: PackageOpen },
   { value: "DELIVERED", label: "Entregados", icon: PackageCheck },
   { value: "CANCELLED", label: "Cancelados", icon: X }
 ];
@@ -138,6 +183,9 @@ function statusBadgeClass(status: OrderStatus) {
   if (status === "PAID") {
     return "bg-blue-100 text-blue-800";
   }
+  if (status === "IN_PREPARATION") {
+    return "bg-violet-100 text-violet-800";
+  }
   if (status === "DELIVERED") {
     return "bg-green-100 text-green-800";
   }
@@ -150,6 +198,9 @@ function statusBadgeClass(status: OrderStatus) {
 function filterBadgeClass(status: StatusFilter, isActive: boolean) {
   if (status === "PAID") {
     return isActive ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700";
+  }
+  if (status === "IN_PREPARATION") {
+    return isActive ? "bg-violet-600 text-white" : "bg-violet-50 text-violet-700";
   }
   if (status === "DELIVERED") {
     return isActive ? "bg-green-600 text-white" : "bg-green-50 text-green-700";
@@ -306,6 +357,20 @@ function normalizeOrderOptions(options: unknown): OrderItemOption[] {
     .filter(Boolean) as OrderItemOption[];
 }
 
+function orderCustomerWhatsappHref(order: OrderListItem) {
+  const phone = order.customerPhone.replace(/\D/g, "");
+  return phone ? `https://wa.me/${phone}` : null;
+}
+
+function selectedOptionIdsFromSnapshot(product: EditableProduct, options: unknown) {
+  const snapshot = normalizeOrderOptions(options);
+  return product.optionGroups.flatMap((group) =>
+    group.options
+      .filter((option) => snapshot.some((item) => item.groupName === group.name && item.optionName === option.name))
+      .map((option) => option.id)
+  );
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -400,9 +465,15 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   const [draftFilters, setDraftFilters] = useState<AdvancedFilters>(appliedFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null);
+  const [actionOrder, setActionOrder] = useState<OrderListItem | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<OrderEditDraft | null>(null);
+  const [editableProducts, setEditableProducts] = useState<EditableProduct[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  useLockBodyScroll(filtersOpen || Boolean(selectedOrder));
+  useLockBodyScroll(filtersOpen || Boolean(selectedOrder) || Boolean(actionOrder) || editOpen);
 
   function replaceFilterParams(nextStatusFilter: StatusFilter, nextAdvancedFilters: AdvancedFilters) {
     const params = new URLSearchParams(searchParams.toString());
@@ -489,7 +560,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
         acc[order.status] += 1;
         return acc;
       },
-      { all: 0, PENDING_WHATSAPP: 0, PAID: 0, DELIVERED: 0, CANCELLED: 0 }
+      { all: 0, PENDING_WHATSAPP: 0, PAID: 0, IN_PREPARATION: 0, DELIVERED: 0, CANCELLED: 0 }
     );
   }, [advancedFilteredOrders]);
 
@@ -499,7 +570,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
 
   const metrics = useMemo(() => {
     const paidTotal = filteredOrders.reduce((sum, order) => {
-      if (order.status === "PAID" || order.status === "DELIVERED") {
+      if (order.status === "PAID" || order.status === "IN_PREPARATION" || order.status === "DELIVERED") {
         return sum + order.total;
       }
       return sum;
@@ -532,6 +603,173 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
 
     setOrders((current) => current.map((order) => (order.id === orderId ? { ...data.order, createdAt: data.order.createdAt } : order)));
     setSelectedOrder((current) => (current?.id === orderId ? { ...data.order, createdAt: data.order.createdAt } : current));
+  }
+
+  async function openOrderEditor(order: OrderListItem) {
+    setError("");
+    setActionOrder(null);
+    setEditLoading(true);
+    const response = await fetch("/api/admin/products");
+    const data = await response.json().catch(() => null);
+    setEditLoading(false);
+    if (!response.ok || !Array.isArray(data?.products)) {
+      setError(data?.error ?? "No se pudo cargar el catálogo para editar el pedido.");
+      return;
+    }
+
+    const products = data.products as EditableProduct[];
+    setEditableProducts(products);
+    setEditingOrderId(order.id);
+    setEditDraft({
+      customerName: order.customerName,
+      customerPhone: order.customerPhone,
+      fulfillment: order.fulfillment,
+      notes: order.notes ?? "",
+      status: order.status,
+      items: order.items.map((item) => {
+        const product = products.find((candidate) => candidate.id === item.productId || candidate.name === item.productName);
+        return {
+          id: item.id,
+          productId: product?.id ?? "",
+          productName: item.productName,
+          quantity: item.quantity,
+          selectedOptionIds: product ? selectedOptionIdsFromSnapshot(product, item.options) : []
+        };
+      })
+    });
+    setSelectedOrder(null);
+    setEditOpen(true);
+  }
+
+  async function openOrderCreator() {
+    setError("");
+    setEditLoading(true);
+    const response = await fetch("/api/admin/products");
+    const data = await response.json().catch(() => null);
+    setEditLoading(false);
+    if (!response.ok || !Array.isArray(data?.products)) {
+      setError(data?.error ?? "No se pudo cargar el catálogo para crear el pedido.");
+      return;
+    }
+    const products = data.products as EditableProduct[];
+    if (!products.length) {
+      setError("Primero cargá al menos un producto en el catálogo.");
+      return;
+    }
+    setEditableProducts(products);
+    setEditingOrderId(null);
+    setEditDraft({
+      customerName: "",
+      customerPhone: "",
+      fulfillment: "Retiro",
+      notes: "",
+      status: "PENDING_WHATSAPP",
+      items: [{ id: `new-${Date.now()}`, productId: products[0].id, productName: products[0].name, quantity: 1, selectedOptionIds: [] }]
+    });
+    setEditOpen(true);
+  }
+
+  function addEditItem() {
+    setEditDraft((current) => {
+      if (!current || editableProducts.length === 0) {
+        return current;
+      }
+      return {
+        ...current,
+        items: [
+          ...current.items,
+          { id: `new-${Date.now()}-${current.items.length}`, productId: editableProducts[0].id, productName: editableProducts[0].name, quantity: 1, selectedOptionIds: [] }
+        ]
+      };
+    });
+  }
+
+  function updateEditItem(itemId: string, patch: Partial<OrderEditItem>) {
+    setEditDraft((current) =>
+      current
+        ? { ...current, items: current.items.map((item) => (item.id === itemId ? { ...item, ...patch } : item)) }
+        : current
+    );
+  }
+
+  function toggleEditOption(itemId: string, group: EditableProduct["optionGroups"][number], optionId: string) {
+    setEditDraft((current) => {
+      if (!current) {
+        return current;
+      }
+      return {
+        ...current,
+        items: current.items.map((item) => {
+          if (item.id !== itemId) {
+            return item;
+          }
+          if (group.selectionType === "SINGLE") {
+            const withoutGroup = item.selectedOptionIds.filter((id) => !group.options.some((option) => option.id === id));
+            return { ...item, selectedOptionIds: [...withoutGroup, optionId] };
+          }
+          return {
+            ...item,
+            selectedOptionIds: item.selectedOptionIds.includes(optionId)
+              ? item.selectedOptionIds.filter((id) => id !== optionId)
+              : [...item.selectedOptionIds, optionId]
+          };
+        })
+      };
+    });
+  }
+
+  async function saveOrderEdits(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editDraft || editDraft.items.some((item) => item.quantity < 1)) {
+      setError("Cada línea debe tener una cantidad válida.");
+      return;
+    }
+    setEditLoading(true);
+    setError("");
+    const isCreating = editingOrderId === null;
+    const response = await fetch(isCreating ? "/api/admin/orders" : `/api/admin/orders/${editingOrderId}`, {
+      method: isCreating ? "POST" : "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...editDraft,
+        items: editDraft.items.every((item) => item.productId)
+          ? editDraft.items.map((item) => ({ productId: item.productId, quantity: item.quantity, selectedOptionIds: item.selectedOptionIds }))
+          : undefined
+      })
+    });
+    const data = await response.json().catch(() => null);
+    setEditLoading(false);
+    if (!response.ok) {
+      setError(data?.error ?? "No se pudo guardar el pedido.");
+      return;
+    }
+    const nextOrder = { ...data.order, createdAt: data.order.createdAt } as OrderListItem;
+    setOrders((current) => isCreating ? [nextOrder, ...current] : current.map((order) => (order.id === nextOrder.id ? nextOrder : order)));
+    setEditOpen(false);
+    setEditingOrderId(null);
+    setEditDraft(null);
+    router.refresh();
+  }
+
+  async function deleteOrder(order: OrderListItem) {
+    if (!window.confirm(`¿Eliminar el pedido #${order.code}? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    setUpdatingId(order.id);
+    setError("");
+    const response = await fetch(`/api/admin/orders/${order.id}`, { method: "DELETE" });
+    const data = await response.json().catch(() => null);
+    setUpdatingId(null);
+    if (!response.ok) {
+      setError(data?.error ?? "No se pudo eliminar el pedido.");
+      return;
+    }
+    setOrders((current) => current.filter((item) => item.id !== order.id));
+    setSelectedOrder(null);
+    setActionOrder(null);
+    setEditOpen(false);
+    setEditingOrderId(null);
+    setEditDraft(null);
   }
 
   function resetAdvancedFilters() {
@@ -574,6 +812,10 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
 
       <section className="panel overflow-hidden">
         <div className="grid gap-3 border-b border-line p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div><p className="text-sm font-black uppercase tracking-[0.16em] text-brand">Operación</p><h2 className="mt-1 text-xl font-black">Listado de pedidos</h2></div>
+            <button className="btn-primary" type="button" onClick={() => void openOrderCreator()}><Plus size={18} /> Nuevo pedido</button>
+          </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <label className="grid gap-2">
               <span className="text-sm font-black text-ink">Buscar pedido</span>
@@ -592,7 +834,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
               Filtros{activeAdvancedFilters ? ` (${activeAdvancedFilters})` : ""}
             </button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible">
             {filterOptions.map((option) => {
               const Icon = option.icon;
               const isActive = statusFilter === option.value;
@@ -617,15 +859,15 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
           <p className="p-5 text-muted">No hay pedidos para mostrar.</p>
         ) : (
           <>
-            <div className="hidden lg:block">
-              <table className="w-full table-fixed border-collapse">
+            <div className="hidden overflow-x-auto lg:block">
+              <table className="w-full min-w-[1180px] table-fixed border-collapse">
                 <colgroup>
-                  <col className="w-[20%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[27%]" />
-                  <col className="w-[12%]" />
                   <col className="w-[16%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[18%]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-line bg-surface">
@@ -642,6 +884,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
                     <tr key={order.id} className="border-b border-line last:border-b-0">
                       <td className="px-3 py-4 align-top">
                         <p className="font-black text-ink">#{order.code}</p>
+                        {order.source === "BACKOFFICE" ? <span className="mt-1 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-blue-700">Manual</span> : null}
                         <p className="mt-1 text-sm font-semibold leading-snug text-muted">{formatBuenosAiresDate(order.createdAt)}</p>
                       </td>
                       <td className="px-3 py-4 align-top">
@@ -663,7 +906,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
                       </td>
                       <td className="px-3 py-4 align-top">
                         <select
-                          className="field !py-2 !pl-3 !pr-8 text-sm font-bold"
+                          className="field w-full min-w-0 !py-2 !pl-3 !pr-8 text-sm font-bold"
                           value={order.status}
                           disabled={updatingId === order.id}
                           aria-label={`Cambiar estado del pedido ${order.code}`}
@@ -677,15 +920,27 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
                         </select>
                       </td>
                       <td className="px-3 py-4 align-top">
-                        <button
-                          className="btn-secondary w-full !rounded-2xl !px-2 !py-2 text-sm"
-                          type="button"
-                          aria-label={`Ver detalle del pedido ${order.code}`}
-                          onClick={() => setSelectedOrder(order)}
-                        >
-                          <Eye size={16} />
-                          Ver
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            className="btn-secondary min-w-[68px] flex-1 !rounded-xl !px-2 !py-2 text-sm"
+                            type="button"
+                            aria-label={`Ver detalle del pedido ${order.code}`}
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <Eye size={16} /> Ver
+                          </button>
+                          {orderCustomerWhatsappHref(order) ? (
+                            <a className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700" href={orderCustomerWhatsappHref(order) ?? "#"} target="_blank" rel="noreferrer" aria-label={`Abrir WhatsApp de ${order.customerName}`}>
+                              <MessageCircle size={16} />
+                            </a>
+                          ) : null}
+                          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-ink" type="button" onClick={() => void openOrderEditor(order)} aria-label={`Editar pedido ${order.code}`}>
+                            <Edit3 size={16} />
+                          </button>
+                          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-red-600" type="button" onClick={() => void deleteOrder(order)} aria-label={`Eliminar pedido ${order.code}`}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -696,80 +951,81 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
             <div className="grid gap-3 bg-surface p-3 lg:hidden">
               {filteredOrders.map((order) => (
                 <article key={order.id} className="grid overflow-hidden rounded-[28px] border border-line bg-white">
-                  <div className="grid gap-4 bg-surface p-5">
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Pedido</p>
-                      <p className="mt-1 text-3xl font-black tracking-[-0.04em] text-ink">#{order.code}</p>
-                      <p className="mt-1 text-sm font-bold text-muted">{formatBuenosAiresDate(order.createdAt)}</p>
-                    </div>
-                    <span className={`w-max rounded-full px-2.5 py-1 text-xs font-black ${statusBadgeClass(order.status)}`}>
-                      {statusLabel(order.status)}
-                    </span>
-                  </div>
-
-                  <div className="grid gap-4 border-t border-line p-5">
-                    <div className="grid gap-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Cliente</p>
-                          <p className="mt-1 truncate text-sm font-black text-ink">{order.customerName}</p>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Celular</p>
-                          <p className="mt-1 truncate text-sm font-black text-ink">{order.customerPhone}</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Entrega</p>
-                          <p className="mt-1 truncate text-sm font-black text-ink">{order.fulfillment}</p>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Items</p>
-                          <p className="mt-1 text-sm font-black text-ink">
-                            {order.items.length} producto{order.items.length === 1 ? "" : "s"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Productos</p>
-                      <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-muted">
-                        {order.items.map((item) => (
-                          <li key={item.id} className="before:mr-2 before:text-brand before:content-['•']">
-                            <span className="font-black text-ink">{item.quantity}x</span> {item.productName}
-                            <span className="ml-1 whitespace-nowrap text-ink">{formatMoney(item.subtotal)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {order.notes ? (
+                  <button className="grid text-left" type="button" onClick={() => setSelectedOrder(order)} aria-label={`Ver detalle del pedido ${order.code}`}>
+                    <div className="grid gap-4 bg-surface p-5">
                       <div>
-                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Nota del cliente</p>
-                        <p className="mt-1 line-clamp-2 text-sm font-semibold text-muted">{order.notes}</p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Pedido</p>
+                        <p className="mt-1 text-3xl font-black tracking-[-0.04em] text-ink">#{order.code}</p>
+                        {order.source === "BACKOFFICE" ? <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700">Manual</span> : null}
+                        <p className="mt-1 text-sm font-bold text-muted">{formatBuenosAiresDate(order.createdAt)}</p>
                       </div>
-                    ) : null}
-                  </div>
+                      <span className={`w-max rounded-full px-2.5 py-1 text-xs font-black ${statusBadgeClass(order.status)}`}>
+                        {statusLabel(order.status)}
+                      </span>
+                    </div>
 
-                  <div className="grid gap-4 border-t border-line p-5">
-                    <div>
+                    <div className="grid gap-4 border-t border-line p-5">
+                      <div className="grid gap-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Cliente</p>
+                            <p className="mt-1 truncate text-sm font-black text-ink">{order.customerName}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Celular</p>
+                            <p className="mt-1 truncate text-sm font-black text-ink">{order.customerPhone}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Entrega</p>
+                            <p className="mt-1 truncate text-sm font-black text-ink">{order.fulfillment}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Items</p>
+                            <p className="mt-1 text-sm font-black text-ink">
+                              {order.items.length} producto{order.items.length === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Productos</p>
+                        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-muted">
+                          {order.items.map((item) => (
+                            <li key={item.id} className="before:mr-2 before:text-brand before:content-['•']">
+                              <span className="font-black text-ink">{item.quantity}x</span> {item.productName}
+                              <span className="ml-1 whitespace-nowrap text-ink">{formatMoney(item.subtotal)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {order.notes ? (
+                        <div>
+                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Nota del cliente</p>
+                          <p className="mt-1 line-clamp-2 text-sm font-semibold text-muted">{order.notes}</p>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="border-t border-line p-5">
                       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted">Total</p>
                       <p className="mt-1 text-2xl font-black tracking-[-0.04em] text-ink">{formatMoney(order.total)}</p>
                     </div>
-                    <div className="grid gap-2">
-                      <button
-                        className="btn-secondary !rounded-2xl !px-4 !py-2.5"
-                        type="button"
-                        aria-label={`Ver detalle del pedido ${order.code}`}
-                        onClick={() => setSelectedOrder(order)}
-                      >
-                        <Eye size={18} />
-                        Ver detalle
-                      </button>
+                  </button>
+
+                  <div className="grid gap-2 border-t border-line p-5">
+                    {orderCustomerWhatsappHref(order) ? (
+                      <a className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#16803d] px-4 py-3 font-black text-white" href={orderCustomerWhatsappHref(order) ?? "#"} target="_blank" rel="noreferrer" aria-label={`Abrir WhatsApp de ${order.customerName}`}>
+                        <img className="h-[18px] w-[18px] shrink-0" src="/whatsapp.svg" alt="" aria-hidden="true" />
+                        WhatsApp
+                      </a>
+                    ) : null}
+                    <div className="grid grid-cols-2 gap-2">
                       <select
-                        className="field !py-2.5 text-sm font-bold"
+                        className="field !py-2.5 !pl-3 !pr-8 text-sm font-bold"
                         value={order.status}
                         disabled={updatingId === order.id}
                         aria-label={`Cambiar estado del pedido ${order.code}`}
@@ -781,6 +1037,9 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
                           </option>
                         ))}
                       </select>
+                      <button className="btn-secondary !rounded-2xl !px-3 !py-2.5 text-sm" type="button" onClick={() => setActionOrder(order)} aria-label={`Acciones del pedido ${order.code}`}>
+                        <SlidersHorizontal size={17} /> Acciones
+                      </button>
                     </div>
                   </div>
                 </article>
@@ -789,6 +1048,31 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
           </>
         )}
       </section>
+
+      {actionOrder ? (
+        <div className="fixed inset-0 z-[110] flex items-end bg-ink/45 p-4 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true" aria-label={`Acciones del pedido ${actionOrder.code}`} onClick={() => setActionOrder(null)}>
+          <div className="grid w-full gap-3 rounded-[28px] bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-brand">Pedido #{actionOrder.code}</p>
+                <h2 className="mt-1 text-2xl font-black">Acciones</h2>
+              </div>
+              <button className="btn-secondary !h-11 !w-11 !p-0" type="button" onClick={() => setActionOrder(null)} aria-label="Cerrar acciones">
+                <X size={20} />
+              </button>
+            </div>
+            <button className="btn-secondary w-full !justify-start !rounded-2xl" type="button" onClick={() => { setSelectedOrder(actionOrder); setActionOrder(null); }}>
+              <Eye size={18} /> Ver detalle
+            </button>
+            <button className="btn-secondary w-full !justify-start !rounded-2xl" type="button" onClick={() => void openOrderEditor(actionOrder)}>
+              <Edit3 size={18} /> Editar
+            </button>
+            <button className="btn-secondary w-full !justify-start !rounded-2xl !text-red-600" type="button" onClick={() => void deleteOrder(actionOrder)}>
+              <Trash2 size={18} /> Eliminar
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {filtersOpen ? (
         <div className="fixed inset-0 z-[100] flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Filtrar pedidos">
@@ -875,6 +1159,114 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
         </div>
       ) : null}
 
+      {editOpen && editDraft ? (
+        <div className="fixed inset-0 z-[105] flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label={editingOrderId ? "Editar pedido" : "Crear pedido"}>
+          <form onSubmit={saveOrderEdits} className="grid max-h-[96dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden rounded-t-[32px] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-32px)] sm:rounded-[32px] sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Gestión</p>
+                <h2 className="mt-1 text-2xl font-black">{editingOrderId ? "Editar pedido" : "Nuevo pedido"}</h2>
+              </div>
+              <button className="btn-secondary !h-11 !w-11 !p-0" type="button" onClick={() => { setEditOpen(false); setEditDraft(null); setEditingOrderId(null); }} aria-label="Cerrar edición">
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="grid gap-5 overflow-y-auto overscroll-contain pb-6 pr-1">
+              <div className="grid gap-3 rounded-3xl border border-line bg-surface p-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm font-bold">
+                  Cliente
+                  <input className="field" value={editDraft.customerName} onChange={(event) => setEditDraft((current) => current ? { ...current, customerName: event.target.value } : current)} required />
+                </label>
+                <label className="grid gap-2 text-sm font-bold">
+                  Celular
+                  <input className="field" value={editDraft.customerPhone} onChange={(event) => setEditDraft((current) => current ? { ...current, customerPhone: event.target.value } : current)} required />
+                </label>
+                <label className="grid gap-2 text-sm font-bold">
+                  Modalidad
+                  <input className="field" value={editDraft.fulfillment} onChange={(event) => setEditDraft((current) => current ? { ...current, fulfillment: event.target.value } : current)} required />
+                </label>
+                <label className="grid gap-2 text-sm font-bold">
+                  Estado
+                  <select className="field" value={editDraft.status} onChange={(event) => setEditDraft((current) => current ? { ...current, status: event.target.value as OrderStatus } : current)}>
+                    {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label className="grid gap-2 text-sm font-bold sm:col-span-2">
+                  Notas
+                  <textarea className="field min-h-20" value={editDraft.notes} onChange={(event) => setEditDraft((current) => current ? { ...current, notes: event.target.value } : current)} />
+                </label>
+              </div>
+
+              <section className="grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Pedido</p>
+                    <h3 className="mt-1 text-xl font-black">Productos</h3>
+                  </div>
+                  <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={addEditItem} disabled={editableProducts.length === 0 || editDraft.items.some((item) => !item.productId)}>
+                    <Plus size={16} /> Agregar
+                  </button>
+                </div>
+
+                {editDraft.items.map((item) => {
+                  const product = editableProducts.find((candidate) => candidate.id === item.productId);
+                  return (
+                    <article key={item.id} className="grid gap-3 rounded-3xl border border-line p-4">
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto] sm:items-end">
+                        <label className="grid gap-2 text-sm font-bold">
+                          Producto
+                          {item.productId ? <select className="field" value={item.productId} onChange={(event) => { const nextProduct = editableProducts.find((candidate) => candidate.id === event.target.value); updateEditItem(item.id, { productId: event.target.value, productName: nextProduct?.name ?? item.productName, selectedOptionIds: [] }); }}>
+                            <option value="">Seleccionar producto</option>
+                            {editableProducts.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+                          </select> : <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{item.productName}<span className="mt-1 block text-xs font-semibold">El producto ya no está en el catálogo; esta línea se conservará.</span></div>}
+                        </label>
+                        <label className="grid gap-2 text-sm font-bold">
+                          Cantidad
+                          <input className="field" type="number" min={1} max={99} value={item.quantity} onChange={(event) => updateEditItem(item.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} />
+                        </label>
+                        <button className="grid h-12 place-items-center rounded-2xl border border-line px-3 text-red-600" type="button" onClick={() => setEditDraft((current) => current ? { ...current, items: current.items.filter((candidate) => candidate.id !== item.id) } : current)} disabled={editDraft.items.length === 1} aria-label="Quitar producto">
+                          <Minus size={17} />
+                        </button>
+                      </div>
+
+                      {product?.optionGroups.length ? (
+                        <div className="grid gap-3 rounded-2xl bg-surface p-3">
+                          {product.optionGroups.map((group) => (
+                            <fieldset key={group.id} className="grid gap-2">
+                              <legend className="text-sm font-black">{group.name}{group.isRequired ? " *" : ""}</legend>
+                              <div className="flex flex-wrap gap-2">
+                                {group.options.filter((option) => option.isAvailable).map((option) => {
+                                  const selected = item.selectedOptionIds.includes(option.id);
+                                  return (
+                                    <button key={option.id} className={`rounded-full border px-3 py-2 text-sm font-bold ${selected ? "border-brand bg-brand/10 text-brand" : "border-line bg-white"}`} type="button" onClick={() => toggleEditOption(item.id, group, option.id)}>
+                                      {option.name}{option.priceDelta ? ` +${formatMoney(option.priceDelta)}` : ""}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </fieldset>
+                          ))}
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </section>
+              {editLoading ? <p className="text-sm font-semibold text-muted">Guardando cambios...</p> : null}
+              {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
+            </div>
+
+            <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button className="btn-secondary" type="button" onClick={() => { setEditOpen(false); setEditDraft(null); setEditingOrderId(null); }}>Cancelar</button>
+                <button className="btn-primary" type="submit" disabled={editLoading || !editDraft.items.length}><Save size={18} /> {editingOrderId ? "Guardar cambios" : "Crear pedido"}</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      ) : null}
+
       {selectedOrder ? (
         <div className="fixed inset-0 z-[100] flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Detalle del pedido">
           <div className="grid max-h-[92dvh] w-full max-w-2xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden rounded-t-[32px] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-32px)] sm:rounded-[32px] sm:p-6">
@@ -898,16 +1290,16 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
               <div className="grid gap-3 rounded-3xl border border-line bg-surface p-4">
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Cliente</p>
-                  <p className="mt-1 truncate font-black">{selectedOrder.customerName}</p>
+                  <p className="mt-1 break-words font-black">{selectedOrder.customerName}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Celular</p>
-                    <p className="mt-1 truncate font-black">{selectedOrder.customerPhone}</p>
+                    <p className="mt-1 break-words font-black">{selectedOrder.customerPhone}</p>
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Entrega</p>
-                    <p className="mt-1 truncate font-black">{selectedOrder.fulfillment}</p>
+                    <p className="mt-1 break-words font-black leading-snug">{selectedOrder.fulfillment}</p>
                   </div>
                 </div>
               </div>
@@ -951,11 +1343,9 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
             </div>
 
             <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <p className="text-2xl font-black">Total: {formatMoney(selectedOrder.total)}</p>
-                <button className="btn-primary" type="button" onClick={() => printOrder(selectedOrder)}>
-                  <Printer size={18} /> Imprimir pedido
-                </button>
+                <button className="btn-primary w-full sm:w-auto" type="button" onClick={() => printOrder(selectedOrder)}><Printer size={18} /> Imprimir pedido</button>
               </div>
             </div>
           </div>

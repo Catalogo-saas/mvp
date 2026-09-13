@@ -18,17 +18,21 @@ export async function proxy(request: NextRequest) {
     secureCookie: authUseSecureCookies
   });
 
-  if (pathname === "/login") {
-    return token?.id ? NextResponse.redirect(new URL("/gestion", request.url)) : NextResponse.next();
-  }
-
   if (!token?.id) {
     return loginRedirect(request);
+  }
+
+  if (pathname.startsWith("/superadmin") && token.role !== "SUPER_ADMIN") {
+    return NextResponse.redirect(new URL("/panel", request.url));
+  }
+
+  if ((pathname.startsWith("/gestion") || pathname === "/onboarding") && token.role === "SUPER_ADMIN") {
+    return NextResponse.redirect(new URL("/panel", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/gestion", "/gestion/:path*", "/onboarding", "/login"]
+  matcher: ["/gestion", "/gestion/:path*", "/onboarding", "/panel", "/superadmin", "/superadmin/:path*"]
 };

@@ -13,8 +13,10 @@ export const reservedSlugs = new Set([
   "admin",
   "api",
   "login",
+  "panel",
   "register",
   "onboarding",
+  "superadmin",
   "pricing",
   "mockups",
   "_next"

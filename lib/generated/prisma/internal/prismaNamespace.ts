@@ -1287,6 +1287,8 @@ export const UserScalarFieldEnum = {
   emailVerified: 'emailVerified',
   image: 'image',
   passwordHash: 'passwordHash',
+  role: 'role',
+  status: 'status',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -1343,13 +1345,19 @@ export const StoreScalarFieldEnum = {
   logoUrl: 'logoUrl',
   heroTitle: 'heroTitle',
   heroSubtitle: 'heroSubtitle',
+  heroImageUrls: 'heroImageUrls',
   address: 'address',
   theme: 'theme',
+  showCategories: 'showCategories',
+  freeShippingEnabled: 'freeShippingEnabled',
+  freeShippingThreshold: 'freeShippingThreshold',
+  acceptTransferPayments: 'acceptTransferPayments',
   paymentAccountHolder: 'paymentAccountHolder',
   paymentProvider: 'paymentProvider',
   paymentAlias: 'paymentAlias',
   paymentCbu: 'paymentCbu',
   restrictBySchedule: 'restrictBySchedule',
+  businessHoursText: 'businessHoursText',
   businessHours: 'businessHours',
   mobileProductColumns: 'mobileProductColumns',
   isPublished: 'isPublished',
@@ -1365,6 +1373,7 @@ export const CategoryScalarFieldEnum = {
   storeId: 'storeId',
   name: 'name',
   slug: 'slug',
+  imageUrl: 'imageUrl',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1428,6 +1437,7 @@ export const OrderScalarFieldEnum = {
   storeId: 'storeId',
   code: 'code',
   status: 'status',
+  source: 'source',
   customerName: 'customerName',
   customerPhone: 'customerPhone',
   fulfillment: 'fulfillment',
@@ -1530,6 +1540,34 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'UserRole'
+ */
+export type EnumUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserRole'>
+    
+
+
+/**
+ * Reference to a field of type 'UserRole[]'
+ */
+export type ListEnumUserRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserRole[]'>
+    
+
+
+/**
+ * Reference to a field of type 'UserStatus'
+ */
+export type EnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'UserStatus[]'
+ */
+export type ListEnumUserStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UserStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -1603,6 +1641,20 @@ export type EnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$Pris
  * Reference to a field of type 'OrderStatus[]'
  */
 export type ListEnumOrderStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderSource'
+ */
+export type EnumOrderSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderSource'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderSource[]'
+ */
+export type ListEnumOrderSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderSource[]'>
     
 
 

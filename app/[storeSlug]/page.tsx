@@ -9,7 +9,7 @@ type Params = Promise<{ storeSlug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { storeSlug } = await params;
-  const store = await prisma.store.findUnique({ where: { slug: storeSlug } });
+  const store = await prisma.store.findFirst({ where: { slug: storeSlug, isPublished: true, owner: { status: "ACTIVE" } } });
   if (!store) {
     return {};
   }
@@ -30,9 +30,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
 export default async function StorePage({ params }: { params: Params }) {
   const { storeSlug } = await params;
-  const store = await prisma.store.findUnique({
-    where: { slug: storeSlug },
+  const store = await prisma.store.findFirst({
+    where: { slug: storeSlug, isPublished: true, owner: { status: "ACTIVE" } },
     include: {
+      categories: {
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+      },
       products: {
         where: { isVisible: true },
         include: {
@@ -49,7 +52,7 @@ export default async function StorePage({ params }: { params: Params }) {
     }
   });
 
-  if (!store?.isPublished) {
+  if (!store) {
     notFound();
   }
 
@@ -63,6 +66,7 @@ export default async function StorePage({ params }: { params: Params }) {
       store={{
         name: store.name,
         slug: store.slug,
+        whatsappPhone: store.whatsappPhone,
         description: store.description,
         heroTitle: store.heroTitle,
         heroSubtitle: store.heroSubtitle,
@@ -70,9 +74,21 @@ export default async function StorePage({ params }: { params: Params }) {
         template: store.template,
         theme: store.theme,
         mobileProductColumns: store.mobileProductColumns,
+        heroImageUrls: store.heroImageUrls,
+        showCategories: store.showCategories,
+        freeShippingEnabled: store.freeShippingEnabled,
+        freeShippingThreshold: store.freeShippingThreshold,
+        acceptTransferPayments: store.acceptTransferPayments,
+        paymentAccountHolder: store.acceptTransferPayments ? store.paymentAccountHolder : null,
+        paymentProvider: store.acceptTransferPayments ? store.paymentProvider : null,
+        paymentAlias: store.acceptTransferPayments ? store.paymentAlias : null,
+        paymentCbu: store.acceptTransferPayments ? store.paymentCbu : null,
+        address: store.address,
+        businessHoursText: store.businessHoursText,
         availability
       }}
       products={store.products}
+      categories={store.categories}
     />
   );
 }

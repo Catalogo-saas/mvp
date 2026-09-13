@@ -16,8 +16,8 @@ Crear un SaaS multi-tienda donde cada comercio tenga una página pública mobile
 
 ## Alcance MVP
 
-- Registro/login con email y contraseña.
-- Alta de tienda por usuario registrado.
+- Login con email y contraseña; las cuentas se crean desde el superadmin.
+- Alta, edición, baja, reactivación y borrado de tenants desde `/superadmin`.
 - Página pública por ruta `/{storeSlug}`.
 - Backoffice en `/gestion`.
 - Gestión de datos de tienda, categorías y productos.
@@ -56,10 +56,10 @@ Crear un SaaS multi-tienda donde cada comercio tenga una página pública mobile
 
 ## Flujo backoffice
 
-1. Usuario se registra o inicia sesión.
-2. Si no tiene tienda, completa onboarding.
+1. El superadmin crea la cuenta y la tienda.
+2. El comerciante inicia sesión con las credenciales asignadas.
 3. Administra datos de tienda, productos, categorías, opciones y extras.
-4. Revisa pedidos recibidos.
+4. Revisa, crea y edita pedidos.
 
 ## Modelo de datos resumido
 
@@ -92,8 +92,8 @@ Antes de profundizar la UI final se deben validar mockups HTML ubicados en `publ
 
 ## Criterios de aceptación manual
 
-- Crear usuario con email/password.
-- Crear tienda y configurar WhatsApp.
+- Crear tenant con email/password, tienda y WhatsApp desde el superadmin.
+- Dar de baja/reactivar un tenant y comprobar el bloqueo del acceso y la tienda pública.
 - Crear producto con opciones/extras.
 - Ver tienda pública en mobile y desktop.
 - Agregar producto al carrito.

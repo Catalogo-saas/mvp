@@ -1,11 +1,18 @@
 import { StoreSettingsForm } from "@/components/store-settings-form";
 import { getMerchantStore } from "@/lib/merchant";
+import { prisma } from "@/lib/prisma";
 
 export default async function GestionSettingsPage() {
   const store = await getMerchantStore();
   if (!store) {
     return null;
   }
+
+  const categories = await prisma.category.findMany({
+    where: { storeId: store.id },
+    include: { _count: { select: { products: true } } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }]
+  });
 
   return (
     <div className="space-y-6">
@@ -14,7 +21,7 @@ export default async function GestionSettingsPage() {
         <h1 className="mt-2 text-3xl font-black">Configuración de la tienda</h1>
         <p className="mt-2 text-muted">Datos públicos, WhatsApp, pagos, horarios, logo y colores.</p>
       </header>
-      <StoreSettingsForm store={store} />
+      <StoreSettingsForm store={store} categories={categories} />
     </div>
   );
 }

@@ -12,6 +12,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
+    "superadmin:bootstrap": "tsx scripts/bootstrap-superadmin.ts",
+    "demo:seed": "tsx scripts/seed-demo-tenant.ts",
     "seed": "tsx prisma/seed.ts"
   },
   "pnpm": {

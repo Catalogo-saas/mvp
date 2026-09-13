@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { getDiscountPercent, getEffectiveProductPrice } from "@/lib/catalog";
+import { getDiscountPercent, getEffectiveProductPrice, isPanelStorefrontTemplate, normalizeStoreTemplate } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 
@@ -13,7 +13,7 @@ async function getProduct(storeSlug: string, productSlug: string) {
     where: {
       slug: productSlug,
       isVisible: true,
-      store: { slug: storeSlug, isPublished: true }
+      store: { slug: storeSlug, isPublished: true, owner: { status: "ACTIVE" } }
     },
     include: {
       store: true,
@@ -28,6 +28,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   const product = await getProduct(storeSlug, productSlug);
   if (!product) {
     return {};
+  }
+  if (normalizeStoreTemplate(product.store.template) === "food") {
+    return { title: product.store.name };
   }
 
   return {
@@ -49,6 +52,13 @@ export default async function ProductPage({ params }: { params: Params }) {
   const product = await getProduct(storeSlug, productSlug);
   if (!product) {
     notFound();
+  }
+  const template = normalizeStoreTemplate(product.store.template);
+  if (template === "food") {
+    redirect(`/${product.store.slug}`);
+  }
+  if (isPanelStorefrontTemplate(template)) {
+    redirect(`/${product.store.slug}?product=${encodeURIComponent(product.slug)}`);
   }
   const effectivePrice = getEffectiveProductPrice(product);
   const discount = getDiscountPercent(product);
@@ -120,7 +130,7 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
             ))}
           </div>
-          <Link href={`/${product.store.slug}`} className="btn-primary mt-8">
+          <Link href={`/${product.store.slug}?product=${encodeURIComponent(product.slug)}`} className="btn-primary mt-8">
             Armar pedido
           </Link>
         </div>

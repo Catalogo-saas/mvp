@@ -32,7 +32,7 @@ export default async function GestionProductsPage() {
         <h1 className="mt-2 text-3xl font-black">Productos y opciones</h1>
         <p className="mt-2 text-muted">Gestioná productos, categorías, imágenes, promos, extras y variantes.</p>
       </header>
-      <ProductForm products={products} categories={categories} />
+      <ProductForm products={products} categories={categories} storeTemplate={store.template} />
     </div>
   );
 }

@@ -20,6 +20,13 @@ export function buildWhatsAppOrderUrl(input: {
   customerPhone: string;
   fulfillment: string;
   notes?: string | null;
+  paymentMethod?: "cash" | "transfer";
+  paymentDetails?: {
+    accountHolder?: string | null;
+    provider?: string | null;
+    alias?: string | null;
+    cbu?: string | null;
+  };
   items: WhatsAppOrderItem[];
   total: number;
 }) {
@@ -29,6 +36,11 @@ export function buildWhatsAppOrderUrl(input: {
     `Cliente: ${input.customerName}`,
     `Teléfono: ${input.customerPhone}`,
     `Modalidad: ${input.fulfillment}`,
+    input.paymentMethod === "transfer" ? "Método de pago: Transferencia" : "Método de pago: Efectivo",
+    input.paymentMethod === "transfer" && input.paymentDetails?.provider ? `Proveedor: ${input.paymentDetails.provider}` : null,
+    input.paymentMethod === "transfer" && input.paymentDetails?.alias ? `Alias: ${input.paymentDetails.alias}` : null,
+    input.paymentMethod === "transfer" && input.paymentDetails?.cbu ? `CBU/CVU: ${input.paymentDetails.cbu}` : null,
+    input.paymentMethod === "transfer" && input.paymentDetails?.accountHolder ? `Titular: ${input.paymentDetails.accountHolder}` : null,
     input.notes ? `Notas: ${input.notes}` : null,
     "",
     "Pedido:",

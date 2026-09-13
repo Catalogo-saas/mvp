@@ -1,10 +1,11 @@
+import "../prisma.config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
 import { PrismaClient } from "../lib/generated/prisma/client";
 
 const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/landing_saas"
+  connectionString: process.env.DATABASE_URL
 });
 
 const prisma = new PrismaClient({ adapter });
@@ -31,7 +32,7 @@ async function main() {
       description: "Catálogo de ejemplo para validar el MVP.",
       whatsappPhone: "541123456789",
       businessType: "FOOD",
-      template: "market",
+      template: "food",
       heroTitle: "Pedidos simples por WhatsApp",
       heroSubtitle: "Elegí tus productos, armá el carrito y confirmá en segundos."
     }
@@ -82,6 +83,13 @@ async function main() {
 }
 
 main()
+  .then(() => {
+    console.log("✅ Seed aplicado correctamente");
+  })
+  .catch((error) => {
+    console.error("❌ Error aplicando el seed:", error);
+    process.exitCode = 1;
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });

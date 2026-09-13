@@ -39,6 +39,7 @@ export type OrderMinAggregateOutputType = {
   storeId: string | null
   code: string | null
   status: $Enums.OrderStatus | null
+  source: $Enums.OrderSource | null
   customerName: string | null
   customerPhone: string | null
   fulfillment: string | null
@@ -53,6 +54,7 @@ export type OrderMaxAggregateOutputType = {
   storeId: string | null
   code: string | null
   status: $Enums.OrderStatus | null
+  source: $Enums.OrderSource | null
   customerName: string | null
   customerPhone: string | null
   fulfillment: string | null
@@ -67,6 +69,7 @@ export type OrderCountAggregateOutputType = {
   storeId: number
   code: number
   status: number
+  source: number
   customerName: number
   customerPhone: number
   fulfillment: number
@@ -92,6 +95,7 @@ export type OrderMinAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  source?: true
   customerName?: true
   customerPhone?: true
   fulfillment?: true
@@ -106,6 +110,7 @@ export type OrderMaxAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  source?: true
   customerName?: true
   customerPhone?: true
   fulfillment?: true
@@ -120,6 +125,7 @@ export type OrderCountAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  source?: true
   customerName?: true
   customerPhone?: true
   fulfillment?: true
@@ -222,6 +228,7 @@ export type OrderGroupByOutputType = {
   storeId: string
   code: string
   status: $Enums.OrderStatus
+  source: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -260,6 +267,7 @@ export type OrderWhereInput = {
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
   fulfillment?: Prisma.StringFilter<"Order"> | string
@@ -277,6 +285,7 @@ export type OrderOrderByWithRelationInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   fulfillment?: Prisma.SortOrder
@@ -298,6 +307,7 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
   fulfillment?: Prisma.StringFilter<"Order"> | string
@@ -315,6 +325,7 @@ export type OrderOrderByWithAggregationInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   fulfillment?: Prisma.SortOrder
@@ -338,6 +349,7 @@ export type OrderScalarWhereWithAggregatesInput = {
   storeId?: Prisma.StringWithAggregatesFilter<"Order"> | string
   code?: Prisma.StringWithAggregatesFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceWithAggregatesFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringWithAggregatesFilter<"Order"> | string
   customerPhone?: Prisma.StringWithAggregatesFilter<"Order"> | string
   fulfillment?: Prisma.StringWithAggregatesFilter<"Order"> | string
@@ -352,6 +364,7 @@ export type OrderCreateInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -369,6 +382,7 @@ export type OrderUncheckedCreateInput = {
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -384,6 +398,7 @@ export type OrderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -401,6 +416,7 @@ export type OrderUncheckedUpdateInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -417,6 +433,7 @@ export type OrderCreateManyInput = {
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -431,6 +448,7 @@ export type OrderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -446,6 +464,7 @@ export type OrderUncheckedUpdateManyInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -476,6 +495,7 @@ export type OrderCountOrderByAggregateInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   fulfillment?: Prisma.SortOrder
@@ -495,6 +515,7 @@ export type OrderMaxOrderByAggregateInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   fulfillment?: Prisma.SortOrder
@@ -509,6 +530,7 @@ export type OrderMinOrderByAggregateInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
   fulfillment?: Prisma.SortOrder
@@ -573,6 +595,10 @@ export type EnumOrderStatusFieldUpdateOperationsInput = {
   set?: $Enums.OrderStatus
 }
 
+export type EnumOrderSourceFieldUpdateOperationsInput = {
+  set?: $Enums.OrderSource
+}
+
 export type OrderCreateNestedOneWithoutItemsInput = {
   create?: Prisma.XOR<Prisma.OrderCreateWithoutItemsInput, Prisma.OrderUncheckedCreateWithoutItemsInput>
   connectOrCreate?: Prisma.OrderCreateOrConnectWithoutItemsInput
@@ -591,6 +617,7 @@ export type OrderCreateWithoutStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -606,6 +633,7 @@ export type OrderUncheckedCreateWithoutStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -651,6 +679,7 @@ export type OrderScalarWhereInput = {
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
   fulfillment?: Prisma.StringFilter<"Order"> | string
@@ -665,6 +694,7 @@ export type OrderCreateWithoutItemsInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -681,6 +711,7 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -711,6 +742,7 @@ export type OrderUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -727,6 +759,7 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -741,6 +774,7 @@ export type OrderCreateManyStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
   fulfillment: string
@@ -755,6 +789,7 @@ export type OrderUpdateWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -770,6 +805,7 @@ export type OrderUncheckedUpdateWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -785,6 +821,7 @@ export type OrderUncheckedUpdateManyWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
   fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
@@ -831,6 +868,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   storeId?: boolean
   code?: boolean
   status?: boolean
+  source?: boolean
   customerName?: boolean
   customerPhone?: boolean
   fulfillment?: boolean
@@ -849,6 +887,7 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   storeId?: boolean
   code?: boolean
   status?: boolean
+  source?: boolean
   customerName?: boolean
   customerPhone?: boolean
   fulfillment?: boolean
@@ -865,6 +904,7 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   storeId?: boolean
   code?: boolean
   status?: boolean
+  source?: boolean
   customerName?: boolean
   customerPhone?: boolean
   fulfillment?: boolean
@@ -881,6 +921,7 @@ export type OrderSelectScalar = {
   storeId?: boolean
   code?: boolean
   status?: boolean
+  source?: boolean
   customerName?: boolean
   customerPhone?: boolean
   fulfillment?: boolean
@@ -891,7 +932,7 @@ export type OrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "code" | "status" | "customerName" | "customerPhone" | "fulfillment" | "notes" | "total" | "checkout" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "code" | "status" | "source" | "customerName" | "customerPhone" | "fulfillment" | "notes" | "total" | "checkout" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   store?: boolean | Prisma.StoreDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
@@ -915,6 +956,7 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     storeId: string
     code: string
     status: $Enums.OrderStatus
+    source: $Enums.OrderSource
     customerName: string
     customerPhone: string
     fulfillment: string
@@ -1352,6 +1394,7 @@ export interface OrderFieldRefs {
   readonly storeId: Prisma.FieldRef<"Order", 'String'>
   readonly code: Prisma.FieldRef<"Order", 'String'>
   readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
+  readonly source: Prisma.FieldRef<"Order", 'OrderSource'>
   readonly customerName: Prisma.FieldRef<"Order", 'String'>
   readonly customerPhone: Prisma.FieldRef<"Order", 'String'>
   readonly fulfillment: Prisma.FieldRef<"Order", 'String'>

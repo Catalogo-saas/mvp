@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 const statusLabels: Record<string, string> = {
   PENDING_WHATSAPP: "Pendiente",
   PAID: "Pagado",
+  IN_PREPARATION: "En preparación",
   DELIVERED: "Entregado",
   CANCELLED: "Cancelado"
 };
@@ -25,7 +26,7 @@ export default async function GestionDashboardPage() {
     prisma.order.aggregate({
       where: {
         storeId: store.id,
-        status: { in: [OrderStatus.PAID, OrderStatus.DELIVERED] }
+        status: { in: [OrderStatus.PAID, OrderStatus.IN_PREPARATION, OrderStatus.DELIVERED] }
       },
       _sum: { total: true }
     }),
@@ -84,7 +85,7 @@ export default async function GestionDashboardPage() {
             <Banknote className="text-brand" size={20} />
           </div>
           <p className="mt-3 text-3xl font-black">{formatMoney(earned._sum.total ?? 0)}</p>
-          <p className="mt-1 text-sm text-muted">Pedidos pagados o entregados</p>
+          <p className="mt-1 text-sm text-muted">Pedidos pagados, en preparación o entregados</p>
         </article>
       </section>
 

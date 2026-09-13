@@ -18,6 +18,7 @@ export default async function GestionOrdersPage() {
     id: order.id,
     code: order.code,
     status: order.status,
+    source: order.source,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
     fulfillment: order.fulfillment,
@@ -26,6 +27,7 @@ export default async function GestionOrdersPage() {
     createdAt: order.createdAt.toISOString(),
     items: order.items.map((item) => ({
       id: item.id,
+      productId: item.productId,
       productName: item.productName,
       quantity: item.quantity,
       unitPrice: item.unitPrice,

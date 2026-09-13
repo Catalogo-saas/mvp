@@ -22,8 +22,7 @@ export function OnboardingForm() {
       body: JSON.stringify({
         name: form.get("name"),
         slug: form.get("slug"),
-        whatsappPhone: whatsappLocal,
-        businessType: form.get("businessType")
+        whatsappPhone: whatsappLocal
       })
     });
 
@@ -60,12 +59,6 @@ export function OnboardingForm() {
           />
         </div>
       </label>
-      <select className="field" name="businessType" defaultValue="MIXED">
-        <option value="FOOD">Comida</option>
-        <option value="RETAIL">Retail</option>
-        <option value="SERVICES">Servicios</option>
-        <option value="MIXED">Multirubro</option>
-      </select>
       {error ? <p className="text-sm font-semibold text-red-600">{error}</p> : null}
       <button className="btn-primary" disabled={loading}>
         {loading ? "Creando tienda..." : "Crear tienda"}

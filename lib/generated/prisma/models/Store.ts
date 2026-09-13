@@ -27,10 +27,12 @@ export type AggregateStore = {
 }
 
 export type StoreAvgAggregateOutputType = {
+  freeShippingThreshold: number | null
   mobileProductColumns: number | null
 }
 
 export type StoreSumAggregateOutputType = {
+  freeShippingThreshold: number | null
   mobileProductColumns: number | null
 }
 
@@ -47,11 +49,16 @@ export type StoreMinAggregateOutputType = {
   heroTitle: string | null
   heroSubtitle: string | null
   address: string | null
+  showCategories: boolean | null
+  freeShippingEnabled: boolean | null
+  freeShippingThreshold: number | null
+  acceptTransferPayments: boolean | null
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
   paymentCbu: string | null
   restrictBySchedule: boolean | null
+  businessHoursText: string | null
   mobileProductColumns: number | null
   isPublished: boolean | null
   createdAt: Date | null
@@ -71,11 +78,16 @@ export type StoreMaxAggregateOutputType = {
   heroTitle: string | null
   heroSubtitle: string | null
   address: string | null
+  showCategories: boolean | null
+  freeShippingEnabled: boolean | null
+  freeShippingThreshold: number | null
+  acceptTransferPayments: boolean | null
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
   paymentCbu: string | null
   restrictBySchedule: boolean | null
+  businessHoursText: string | null
   mobileProductColumns: number | null
   isPublished: boolean | null
   createdAt: Date | null
@@ -94,13 +106,19 @@ export type StoreCountAggregateOutputType = {
   logoUrl: number
   heroTitle: number
   heroSubtitle: number
+  heroImageUrls: number
   address: number
   theme: number
+  showCategories: number
+  freeShippingEnabled: number
+  freeShippingThreshold: number
+  acceptTransferPayments: number
   paymentAccountHolder: number
   paymentProvider: number
   paymentAlias: number
   paymentCbu: number
   restrictBySchedule: number
+  businessHoursText: number
   businessHours: number
   mobileProductColumns: number
   isPublished: number
@@ -111,10 +129,12 @@ export type StoreCountAggregateOutputType = {
 
 
 export type StoreAvgAggregateInputType = {
+  freeShippingThreshold?: true
   mobileProductColumns?: true
 }
 
 export type StoreSumAggregateInputType = {
+  freeShippingThreshold?: true
   mobileProductColumns?: true
 }
 
@@ -131,11 +151,16 @@ export type StoreMinAggregateInputType = {
   heroTitle?: true
   heroSubtitle?: true
   address?: true
+  showCategories?: true
+  freeShippingEnabled?: true
+  freeShippingThreshold?: true
+  acceptTransferPayments?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
   paymentCbu?: true
   restrictBySchedule?: true
+  businessHoursText?: true
   mobileProductColumns?: true
   isPublished?: true
   createdAt?: true
@@ -155,11 +180,16 @@ export type StoreMaxAggregateInputType = {
   heroTitle?: true
   heroSubtitle?: true
   address?: true
+  showCategories?: true
+  freeShippingEnabled?: true
+  freeShippingThreshold?: true
+  acceptTransferPayments?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
   paymentCbu?: true
   restrictBySchedule?: true
+  businessHoursText?: true
   mobileProductColumns?: true
   isPublished?: true
   createdAt?: true
@@ -178,13 +208,19 @@ export type StoreCountAggregateInputType = {
   logoUrl?: true
   heroTitle?: true
   heroSubtitle?: true
+  heroImageUrls?: true
   address?: true
   theme?: true
+  showCategories?: true
+  freeShippingEnabled?: true
+  freeShippingThreshold?: true
+  acceptTransferPayments?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
   paymentCbu?: true
   restrictBySchedule?: true
+  businessHoursText?: true
   businessHours?: true
   mobileProductColumns?: true
   isPublished?: true
@@ -291,13 +327,19 @@ export type StoreGroupByOutputType = {
   logoUrl: string | null
   heroTitle: string | null
   heroSubtitle: string | null
+  heroImageUrls: string[]
   address: string | null
   theme: runtime.JsonValue
+  showCategories: boolean
+  freeShippingEnabled: boolean
+  freeShippingThreshold: number
+  acceptTransferPayments: boolean
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
   paymentCbu: string | null
   restrictBySchedule: boolean
+  businessHoursText: string | null
   businessHours: runtime.JsonValue
   mobileProductColumns: number
   isPublished: boolean
@@ -340,13 +382,19 @@ export type StoreWhereInput = {
   logoUrl?: Prisma.StringNullableFilter<"Store"> | string | null
   heroTitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableFilter<"Store"> | string | null
+  heroImageUrls?: Prisma.StringNullableListFilter<"Store">
   address?: Prisma.StringNullableFilter<"Store"> | string | null
   theme?: Prisma.JsonFilter<"Store">
+  showCategories?: Prisma.BoolFilter<"Store"> | boolean
+  freeShippingEnabled?: Prisma.BoolFilter<"Store"> | boolean
+  freeShippingThreshold?: Prisma.IntFilter<"Store"> | number
+  acceptTransferPayments?: Prisma.BoolFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentCbu?: Prisma.StringNullableFilter<"Store"> | string | null
   restrictBySchedule?: Prisma.BoolFilter<"Store"> | boolean
+  businessHoursText?: Prisma.StringNullableFilter<"Store"> | string | null
   businessHours?: Prisma.JsonFilter<"Store">
   mobileProductColumns?: Prisma.IntFilter<"Store"> | number
   isPublished?: Prisma.BoolFilter<"Store"> | boolean
@@ -370,13 +418,19 @@ export type StoreOrderByWithRelationInput = {
   logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   heroTitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrderInput | Prisma.SortOrder
+  heroImageUrls?: Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
+  showCategories?: Prisma.SortOrder
+  freeShippingEnabled?: Prisma.SortOrder
+  freeShippingThreshold?: Prisma.SortOrder
+  acceptTransferPayments?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProvider?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentCbu?: Prisma.SortOrderInput | Prisma.SortOrder
   restrictBySchedule?: Prisma.SortOrder
+  businessHoursText?: Prisma.SortOrderInput | Prisma.SortOrder
   businessHours?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
@@ -390,11 +444,11 @@ export type StoreOrderByWithRelationInput = {
 
 export type StoreWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  ownerId?: string
   slug?: string
   AND?: Prisma.StoreWhereInput | Prisma.StoreWhereInput[]
   OR?: Prisma.StoreWhereInput[]
   NOT?: Prisma.StoreWhereInput | Prisma.StoreWhereInput[]
-  ownerId?: Prisma.StringFilter<"Store"> | string
   name?: Prisma.StringFilter<"Store"> | string
   description?: Prisma.StringNullableFilter<"Store"> | string | null
   whatsappPhone?: Prisma.StringFilter<"Store"> | string
@@ -403,13 +457,19 @@ export type StoreWhereUniqueInput = Prisma.AtLeast<{
   logoUrl?: Prisma.StringNullableFilter<"Store"> | string | null
   heroTitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableFilter<"Store"> | string | null
+  heroImageUrls?: Prisma.StringNullableListFilter<"Store">
   address?: Prisma.StringNullableFilter<"Store"> | string | null
   theme?: Prisma.JsonFilter<"Store">
+  showCategories?: Prisma.BoolFilter<"Store"> | boolean
+  freeShippingEnabled?: Prisma.BoolFilter<"Store"> | boolean
+  freeShippingThreshold?: Prisma.IntFilter<"Store"> | number
+  acceptTransferPayments?: Prisma.BoolFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentCbu?: Prisma.StringNullableFilter<"Store"> | string | null
   restrictBySchedule?: Prisma.BoolFilter<"Store"> | boolean
+  businessHoursText?: Prisma.StringNullableFilter<"Store"> | string | null
   businessHours?: Prisma.JsonFilter<"Store">
   mobileProductColumns?: Prisma.IntFilter<"Store"> | number
   isPublished?: Prisma.BoolFilter<"Store"> | boolean
@@ -419,7 +479,7 @@ export type StoreWhereUniqueInput = Prisma.AtLeast<{
   categories?: Prisma.CategoryListRelationFilter
   products?: Prisma.ProductListRelationFilter
   orders?: Prisma.OrderListRelationFilter
-}, "id" | "slug">
+}, "id" | "ownerId" | "slug">
 
 export type StoreOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -433,13 +493,19 @@ export type StoreOrderByWithAggregationInput = {
   logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   heroTitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrderInput | Prisma.SortOrder
+  heroImageUrls?: Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
+  showCategories?: Prisma.SortOrder
+  freeShippingEnabled?: Prisma.SortOrder
+  freeShippingThreshold?: Prisma.SortOrder
+  acceptTransferPayments?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProvider?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentCbu?: Prisma.SortOrderInput | Prisma.SortOrder
   restrictBySchedule?: Prisma.SortOrder
+  businessHoursText?: Prisma.SortOrderInput | Prisma.SortOrder
   businessHours?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
@@ -467,13 +533,19 @@ export type StoreScalarWhereWithAggregatesInput = {
   logoUrl?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   heroTitle?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
+  heroImageUrls?: Prisma.StringNullableListFilter<"Store">
   address?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   theme?: Prisma.JsonWithAggregatesFilter<"Store">
+  showCategories?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  freeShippingEnabled?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  freeShippingThreshold?: Prisma.IntWithAggregatesFilter<"Store"> | number
+  acceptTransferPayments?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   paymentCbu?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   restrictBySchedule?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  businessHoursText?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   businessHours?: Prisma.JsonWithAggregatesFilter<"Store">
   mobileProductColumns?: Prisma.IntWithAggregatesFilter<"Store"> | number
   isPublished?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
@@ -492,19 +564,25 @@ export type StoreCreateInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  owner: Prisma.UserCreateNestedOneWithoutStoresInput
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
@@ -522,13 +600,19 @@ export type StoreUncheckedCreateInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -550,19 +634,25 @@ export type StoreUpdateInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  owner?: Prisma.UserUpdateOneRequiredWithoutStoresNestedInput
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
@@ -580,13 +670,19 @@ export type StoreUncheckedUpdateInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -609,13 +705,19 @@ export type StoreCreateManyInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -634,13 +736,19 @@ export type StoreUpdateManyMutationInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -660,13 +768,19 @@ export type StoreUncheckedUpdateManyInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -674,14 +788,17 @@ export type StoreUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
-export type StoreListRelationFilter = {
-  every?: Prisma.StoreWhereInput
-  some?: Prisma.StoreWhereInput
-  none?: Prisma.StoreWhereInput
+export type StoreNullableScalarRelationFilter = {
+  is?: Prisma.StoreWhereInput | null
+  isNot?: Prisma.StoreWhereInput | null
 }
 
-export type StoreOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type StoreCountOrderByAggregateInput = {
@@ -696,13 +813,19 @@ export type StoreCountOrderByAggregateInput = {
   logoUrl?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
+  heroImageUrls?: Prisma.SortOrder
   address?: Prisma.SortOrder
   theme?: Prisma.SortOrder
+  showCategories?: Prisma.SortOrder
+  freeShippingEnabled?: Prisma.SortOrder
+  freeShippingThreshold?: Prisma.SortOrder
+  acceptTransferPayments?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
   paymentCbu?: Prisma.SortOrder
   restrictBySchedule?: Prisma.SortOrder
+  businessHoursText?: Prisma.SortOrder
   businessHours?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
@@ -711,6 +834,7 @@ export type StoreCountOrderByAggregateInput = {
 }
 
 export type StoreAvgOrderByAggregateInput = {
+  freeShippingThreshold?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
 }
 
@@ -727,11 +851,16 @@ export type StoreMaxOrderByAggregateInput = {
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  showCategories?: Prisma.SortOrder
+  freeShippingEnabled?: Prisma.SortOrder
+  freeShippingThreshold?: Prisma.SortOrder
+  acceptTransferPayments?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
   paymentCbu?: Prisma.SortOrder
   restrictBySchedule?: Prisma.SortOrder
+  businessHoursText?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -751,11 +880,16 @@ export type StoreMinOrderByAggregateInput = {
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
   address?: Prisma.SortOrder
+  showCategories?: Prisma.SortOrder
+  freeShippingEnabled?: Prisma.SortOrder
+  freeShippingThreshold?: Prisma.SortOrder
+  acceptTransferPayments?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
   paymentCbu?: Prisma.SortOrder
   restrictBySchedule?: Prisma.SortOrder
+  businessHoursText?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
   isPublished?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -763,6 +897,7 @@ export type StoreMinOrderByAggregateInput = {
 }
 
 export type StoreSumOrderByAggregateInput = {
+  freeShippingThreshold?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
 }
 
@@ -771,50 +906,49 @@ export type StoreScalarRelationFilter = {
   isNot?: Prisma.StoreWhereInput
 }
 
-export type StoreCreateNestedManyWithoutOwnerInput = {
-  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput> | Prisma.StoreCreateWithoutOwnerInput[] | Prisma.StoreUncheckedCreateWithoutOwnerInput[]
-  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput | Prisma.StoreCreateOrConnectWithoutOwnerInput[]
-  createMany?: Prisma.StoreCreateManyOwnerInputEnvelope
-  connect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
+export type StoreCreateNestedOneWithoutOwnerInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput
+  connect?: Prisma.StoreWhereUniqueInput
 }
 
-export type StoreUncheckedCreateNestedManyWithoutOwnerInput = {
-  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput> | Prisma.StoreCreateWithoutOwnerInput[] | Prisma.StoreUncheckedCreateWithoutOwnerInput[]
-  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput | Prisma.StoreCreateOrConnectWithoutOwnerInput[]
-  createMany?: Prisma.StoreCreateManyOwnerInputEnvelope
-  connect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
+export type StoreUncheckedCreateNestedOneWithoutOwnerInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput
+  connect?: Prisma.StoreWhereUniqueInput
 }
 
-export type StoreUpdateManyWithoutOwnerNestedInput = {
-  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput> | Prisma.StoreCreateWithoutOwnerInput[] | Prisma.StoreUncheckedCreateWithoutOwnerInput[]
-  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput | Prisma.StoreCreateOrConnectWithoutOwnerInput[]
-  upsert?: Prisma.StoreUpsertWithWhereUniqueWithoutOwnerInput | Prisma.StoreUpsertWithWhereUniqueWithoutOwnerInput[]
-  createMany?: Prisma.StoreCreateManyOwnerInputEnvelope
-  set?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  disconnect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  delete?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  connect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  update?: Prisma.StoreUpdateWithWhereUniqueWithoutOwnerInput | Prisma.StoreUpdateWithWhereUniqueWithoutOwnerInput[]
-  updateMany?: Prisma.StoreUpdateManyWithWhereWithoutOwnerInput | Prisma.StoreUpdateManyWithWhereWithoutOwnerInput[]
-  deleteMany?: Prisma.StoreScalarWhereInput | Prisma.StoreScalarWhereInput[]
+export type StoreUpdateOneWithoutOwnerNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput
+  upsert?: Prisma.StoreUpsertWithoutOwnerInput
+  disconnect?: Prisma.StoreWhereInput | boolean
+  delete?: Prisma.StoreWhereInput | boolean
+  connect?: Prisma.StoreWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutOwnerInput, Prisma.StoreUpdateWithoutOwnerInput>, Prisma.StoreUncheckedUpdateWithoutOwnerInput>
 }
 
-export type StoreUncheckedUpdateManyWithoutOwnerNestedInput = {
-  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput> | Prisma.StoreCreateWithoutOwnerInput[] | Prisma.StoreUncheckedCreateWithoutOwnerInput[]
-  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput | Prisma.StoreCreateOrConnectWithoutOwnerInput[]
-  upsert?: Prisma.StoreUpsertWithWhereUniqueWithoutOwnerInput | Prisma.StoreUpsertWithWhereUniqueWithoutOwnerInput[]
-  createMany?: Prisma.StoreCreateManyOwnerInputEnvelope
-  set?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  disconnect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  delete?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  connect?: Prisma.StoreWhereUniqueInput | Prisma.StoreWhereUniqueInput[]
-  update?: Prisma.StoreUpdateWithWhereUniqueWithoutOwnerInput | Prisma.StoreUpdateWithWhereUniqueWithoutOwnerInput[]
-  updateMany?: Prisma.StoreUpdateManyWithWhereWithoutOwnerInput | Prisma.StoreUpdateManyWithWhereWithoutOwnerInput[]
-  deleteMany?: Prisma.StoreScalarWhereInput | Prisma.StoreScalarWhereInput[]
+export type StoreUncheckedUpdateOneWithoutOwnerNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutOwnerInput
+  upsert?: Prisma.StoreUpsertWithoutOwnerInput
+  disconnect?: Prisma.StoreWhereInput | boolean
+  delete?: Prisma.StoreWhereInput | boolean
+  connect?: Prisma.StoreWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutOwnerInput, Prisma.StoreUpdateWithoutOwnerInput>, Prisma.StoreUncheckedUpdateWithoutOwnerInput>
+}
+
+export type StoreCreateheroImageUrlsInput = {
+  set: string[]
 }
 
 export type EnumBusinessTypeFieldUpdateOperationsInput = {
   set?: $Enums.BusinessType
+}
+
+export type StoreUpdateheroImageUrlsInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type BoolFieldUpdateOperationsInput = {
@@ -882,13 +1016,19 @@ export type StoreCreateWithoutOwnerInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -910,13 +1050,19 @@ export type StoreUncheckedCreateWithoutOwnerInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -932,54 +1078,83 @@ export type StoreCreateOrConnectWithoutOwnerInput = {
   create: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
 }
 
-export type StoreCreateManyOwnerInputEnvelope = {
-  data: Prisma.StoreCreateManyOwnerInput | Prisma.StoreCreateManyOwnerInput[]
-  skipDuplicates?: boolean
-}
-
-export type StoreUpsertWithWhereUniqueWithoutOwnerInput = {
-  where: Prisma.StoreWhereUniqueInput
+export type StoreUpsertWithoutOwnerInput = {
   update: Prisma.XOR<Prisma.StoreUpdateWithoutOwnerInput, Prisma.StoreUncheckedUpdateWithoutOwnerInput>
   create: Prisma.XOR<Prisma.StoreCreateWithoutOwnerInput, Prisma.StoreUncheckedCreateWithoutOwnerInput>
+  where?: Prisma.StoreWhereInput
 }
 
-export type StoreUpdateWithWhereUniqueWithoutOwnerInput = {
-  where: Prisma.StoreWhereUniqueInput
+export type StoreUpdateToOneWithWhereWithoutOwnerInput = {
+  where?: Prisma.StoreWhereInput
   data: Prisma.XOR<Prisma.StoreUpdateWithoutOwnerInput, Prisma.StoreUncheckedUpdateWithoutOwnerInput>
 }
 
-export type StoreUpdateManyWithWhereWithoutOwnerInput = {
-  where: Prisma.StoreScalarWhereInput
-  data: Prisma.XOR<Prisma.StoreUpdateManyMutationInput, Prisma.StoreUncheckedUpdateManyWithoutOwnerInput>
+export type StoreUpdateWithoutOwnerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
 }
 
-export type StoreScalarWhereInput = {
-  AND?: Prisma.StoreScalarWhereInput | Prisma.StoreScalarWhereInput[]
-  OR?: Prisma.StoreScalarWhereInput[]
-  NOT?: Prisma.StoreScalarWhereInput | Prisma.StoreScalarWhereInput[]
-  id?: Prisma.StringFilter<"Store"> | string
-  ownerId?: Prisma.StringFilter<"Store"> | string
-  name?: Prisma.StringFilter<"Store"> | string
-  slug?: Prisma.StringFilter<"Store"> | string
-  description?: Prisma.StringNullableFilter<"Store"> | string | null
-  whatsappPhone?: Prisma.StringFilter<"Store"> | string
-  businessType?: Prisma.EnumBusinessTypeFilter<"Store"> | $Enums.BusinessType
-  template?: Prisma.StringFilter<"Store"> | string
-  logoUrl?: Prisma.StringNullableFilter<"Store"> | string | null
-  heroTitle?: Prisma.StringNullableFilter<"Store"> | string | null
-  heroSubtitle?: Prisma.StringNullableFilter<"Store"> | string | null
-  address?: Prisma.StringNullableFilter<"Store"> | string | null
-  theme?: Prisma.JsonFilter<"Store">
-  paymentAccountHolder?: Prisma.StringNullableFilter<"Store"> | string | null
-  paymentProvider?: Prisma.StringNullableFilter<"Store"> | string | null
-  paymentAlias?: Prisma.StringNullableFilter<"Store"> | string | null
-  paymentCbu?: Prisma.StringNullableFilter<"Store"> | string | null
-  restrictBySchedule?: Prisma.BoolFilter<"Store"> | boolean
-  businessHours?: Prisma.JsonFilter<"Store">
-  mobileProductColumns?: Prisma.IntFilter<"Store"> | number
-  isPublished?: Prisma.BoolFilter<"Store"> | boolean
-  createdAt?: Prisma.DateTimeFilter<"Store"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Store"> | Date | string
+export type StoreUncheckedUpdateWithoutOwnerInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreCreateWithoutCategoriesInput = {
@@ -993,19 +1168,25 @@ export type StoreCreateWithoutCategoriesInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  owner: Prisma.UserCreateNestedOneWithoutStoresInput
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
 }
@@ -1022,13 +1203,19 @@ export type StoreUncheckedCreateWithoutCategoriesInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -1065,19 +1252,25 @@ export type StoreUpdateWithoutCategoriesInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  owner?: Prisma.UserUpdateOneRequiredWithoutStoresNestedInput
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
 }
@@ -1094,13 +1287,19 @@ export type StoreUncheckedUpdateWithoutCategoriesInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1121,19 +1320,25 @@ export type StoreCreateWithoutProductsInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  owner: Prisma.UserCreateNestedOneWithoutStoresInput
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
 }
@@ -1150,13 +1355,19 @@ export type StoreUncheckedCreateWithoutProductsInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -1193,19 +1404,25 @@ export type StoreUpdateWithoutProductsInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  owner?: Prisma.UserUpdateOneRequiredWithoutStoresNestedInput
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
 }
@@ -1222,13 +1439,19 @@ export type StoreUncheckedUpdateWithoutProductsInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1249,19 +1472,25 @@ export type StoreCreateWithoutOrdersInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
   createdAt?: Date | string
   updatedAt?: Date | string
-  owner: Prisma.UserCreateNestedOneWithoutStoresInput
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
 }
@@ -1278,13 +1507,19 @@ export type StoreUncheckedCreateWithoutOrdersInput = {
   logoUrl?: string | null
   heroTitle?: string | null
   heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
   address?: string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
   paymentCbu?: string | null
   restrictBySchedule?: boolean
+  businessHoursText?: string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: number
   isPublished?: boolean
@@ -1321,19 +1556,25 @@ export type StoreUpdateWithoutOrdersInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  owner?: Prisma.UserUpdateOneRequiredWithoutStoresNestedInput
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
 }
@@ -1350,13 +1591,19 @@ export type StoreUncheckedUpdateWithoutOrdersInput = {
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
   isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1364,112 +1611,6 @@ export type StoreUncheckedUpdateWithoutOrdersInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
-}
-
-export type StoreCreateManyOwnerInput = {
-  id?: string
-  name: string
-  slug: string
-  description?: string | null
-  whatsappPhone: string
-  businessType?: $Enums.BusinessType
-  template?: string
-  logoUrl?: string | null
-  heroTitle?: string | null
-  heroSubtitle?: string | null
-  address?: string | null
-  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  paymentAccountHolder?: string | null
-  paymentProvider?: string | null
-  paymentAlias?: string | null
-  paymentCbu?: string | null
-  restrictBySchedule?: boolean
-  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  mobileProductColumns?: number
-  isPublished?: boolean
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type StoreUpdateWithoutOwnerInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
-  template?: Prisma.StringFieldUpdateOperationsInput | string
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
-  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
-  products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
-  orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
-}
-
-export type StoreUncheckedUpdateWithoutOwnerInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
-  template?: Prisma.StringFieldUpdateOperationsInput | string
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
-  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
-  products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
-  orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
-}
-
-export type StoreUncheckedUpdateManyWithoutOwnerInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  name?: Prisma.StringFieldUpdateOperationsInput | string
-  slug?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
-  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
-  template?: Prisma.StringFieldUpdateOperationsInput | string
-  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
-  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
-  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 
@@ -1533,13 +1674,19 @@ export type StoreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   logoUrl?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
+  heroImageUrls?: boolean
   address?: boolean
   theme?: boolean
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: boolean
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
   paymentCbu?: boolean
   restrictBySchedule?: boolean
+  businessHoursText?: boolean
   businessHours?: boolean
   mobileProductColumns?: boolean
   isPublished?: boolean
@@ -1564,13 +1711,19 @@ export type StoreSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   logoUrl?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
+  heroImageUrls?: boolean
   address?: boolean
   theme?: boolean
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: boolean
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
   paymentCbu?: boolean
   restrictBySchedule?: boolean
+  businessHoursText?: boolean
   businessHours?: boolean
   mobileProductColumns?: boolean
   isPublished?: boolean
@@ -1591,13 +1744,19 @@ export type StoreSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   logoUrl?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
+  heroImageUrls?: boolean
   address?: boolean
   theme?: boolean
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: boolean
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
   paymentCbu?: boolean
   restrictBySchedule?: boolean
+  businessHoursText?: boolean
   businessHours?: boolean
   mobileProductColumns?: boolean
   isPublished?: boolean
@@ -1618,13 +1777,19 @@ export type StoreSelectScalar = {
   logoUrl?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
+  heroImageUrls?: boolean
   address?: boolean
   theme?: boolean
+  showCategories?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: boolean
+  acceptTransferPayments?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
   paymentCbu?: boolean
   restrictBySchedule?: boolean
+  businessHoursText?: boolean
   businessHours?: boolean
   mobileProductColumns?: boolean
   isPublished?: boolean
@@ -1632,7 +1797,7 @@ export type StoreSelectScalar = {
   updatedAt?: boolean
 }
 
-export type StoreOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerId" | "name" | "slug" | "description" | "whatsappPhone" | "businessType" | "template" | "logoUrl" | "heroTitle" | "heroSubtitle" | "address" | "theme" | "paymentAccountHolder" | "paymentProvider" | "paymentAlias" | "paymentCbu" | "restrictBySchedule" | "businessHours" | "mobileProductColumns" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["store"]>
+export type StoreOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerId" | "name" | "slug" | "description" | "whatsappPhone" | "businessType" | "template" | "logoUrl" | "heroTitle" | "heroSubtitle" | "heroImageUrls" | "address" | "theme" | "showCategories" | "freeShippingEnabled" | "freeShippingThreshold" | "acceptTransferPayments" | "paymentAccountHolder" | "paymentProvider" | "paymentAlias" | "paymentCbu" | "restrictBySchedule" | "businessHoursText" | "businessHours" | "mobileProductColumns" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["store"]>
 export type StoreInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   categories?: boolean | Prisma.Store$categoriesArgs<ExtArgs>
@@ -1667,13 +1832,19 @@ export type $StorePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     logoUrl: string | null
     heroTitle: string | null
     heroSubtitle: string | null
+    heroImageUrls: string[]
     address: string | null
     theme: runtime.JsonValue
+    showCategories: boolean
+    freeShippingEnabled: boolean
+    freeShippingThreshold: number
+    acceptTransferPayments: boolean
     paymentAccountHolder: string | null
     paymentProvider: string | null
     paymentAlias: string | null
     paymentCbu: string | null
     restrictBySchedule: boolean
+    businessHoursText: string | null
     businessHours: runtime.JsonValue
     mobileProductColumns: number
     isPublished: boolean
@@ -2117,13 +2288,19 @@ export interface StoreFieldRefs {
   readonly logoUrl: Prisma.FieldRef<"Store", 'String'>
   readonly heroTitle: Prisma.FieldRef<"Store", 'String'>
   readonly heroSubtitle: Prisma.FieldRef<"Store", 'String'>
+  readonly heroImageUrls: Prisma.FieldRef<"Store", 'String[]'>
   readonly address: Prisma.FieldRef<"Store", 'String'>
   readonly theme: Prisma.FieldRef<"Store", 'Json'>
+  readonly showCategories: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly freeShippingEnabled: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly freeShippingThreshold: Prisma.FieldRef<"Store", 'Int'>
+  readonly acceptTransferPayments: Prisma.FieldRef<"Store", 'Boolean'>
   readonly paymentAccountHolder: Prisma.FieldRef<"Store", 'String'>
   readonly paymentProvider: Prisma.FieldRef<"Store", 'String'>
   readonly paymentAlias: Prisma.FieldRef<"Store", 'String'>
   readonly paymentCbu: Prisma.FieldRef<"Store", 'String'>
   readonly restrictBySchedule: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly businessHoursText: Prisma.FieldRef<"Store", 'String'>
   readonly businessHours: Prisma.FieldRef<"Store", 'Json'>
   readonly mobileProductColumns: Prisma.FieldRef<"Store", 'Int'>
   readonly isPublished: Prisma.FieldRef<"Store", 'Boolean'>
