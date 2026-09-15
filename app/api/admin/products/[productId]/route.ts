@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import {
   buildOptionGroupCreates,
   deleteProductImagesForStore,
-  makeUniqueProductSlug,
   normalizeImageUrls,
   normalizePromoPrice,
   parseProductRequest,
@@ -57,8 +56,6 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   const nextName = result.data.name.trim();
-  const slug =
-    existingProduct.name === nextName ? existingProduct.slug : await makeUniqueProductSlug(store.id, nextName, existingProduct.id);
   const uploadedImages = imageFiles.length ? await uploadProductImages(store.id, imageFiles).catch(() => null) : [];
   if (uploadedImages === null) {
     return NextResponse.json({ error: "No se pudieron subir las imágenes." }, { status: 500 });
@@ -75,10 +72,10 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
         data: {
           categoryId,
           name: nextName,
-          slug,
           description: result.data.description?.trim() || null,
           basePrice,
           promoPrice,
+          isFeatured: result.data.isFeatured,
           imageUrls: nextImageUrls,
           isVisible: result.data.isVisible,
           stockQuantity: result.data.stockQuantity,

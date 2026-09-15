@@ -81,6 +81,7 @@ export async function POST(request: Request) {
         description: result.data.description?.trim() || null,
         basePrice,
         promoPrice,
+        isFeatured: result.data.isFeatured,
         imageUrls: normalizeImageUrls({ ...result.data, imageUrls: [...result.data.imageUrls, ...uploadedImages.map((image) => image.url)] }),
         isVisible: result.data.isVisible,
         stockQuantity: result.data.stockQuantity,

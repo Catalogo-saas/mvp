@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Eye, EyeOff, ImagePlus, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { Check, Download, Eye, EyeOff, ImagePlus, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
@@ -41,6 +42,7 @@ type ProductListItem = {
   imageUrls: string[];
   isVisible: boolean;
   stockQuantity: number | null;
+  isFeatured: boolean;
   category: { id: string; name: string; slug: string } | null;
   optionGroups: ProductOptionGroup[];
 };
@@ -74,6 +76,7 @@ type ProductDraft = {
   categoryName: string;
   images: ImageDraft[];
   isVisible: boolean;
+  isFeatured: boolean;
   variantsEnabled: boolean;
   optionGroups: GroupDraft[];
   stockLimited: boolean;
@@ -103,6 +106,12 @@ type VariantPreset = {
   isRequired?: boolean;
   maxSelections?: string;
   preselect?: boolean;
+};
+
+type ImportPreview = {
+  rows: Array<Record<string, unknown> & { rowNumber: number; name: string; basePrice: number }>;
+  errors: Array<{ rowNumber: number; message: string }>;
+  total: number;
 };
 
 const colorSuggestions = [
@@ -181,6 +190,7 @@ function emptyDraft(categories: CategoryListItem[]): ProductDraft {
     categoryName: "",
     images: [],
     isVisible: true,
+    isFeatured: false,
     variantsEnabled: false,
     optionGroups: [],
     stockLimited: false,
@@ -198,6 +208,7 @@ function productToDraft(product: ProductListItem): ProductDraft {
     categoryName: "",
     images: product.imageUrls.map(imageDraftFromUrl),
     isVisible: product.isVisible,
+    isFeatured: product.isFeatured,
     variantsEnabled: product.optionGroups.length > 0,
     optionGroups: product.optionGroups.map((group) => ({
       name: group.name,
@@ -230,6 +241,7 @@ function draftToPayload(draft: ProductDraft) {
     categoryName: draft.categoryId === "__new" ? draft.categoryName : undefined,
     imageUrls: draft.images.filter((image) => !image.file).map((image) => image.url),
     isVisible: draft.isVisible,
+    isFeatured: draft.isFeatured,
     stockQuantity: draft.stockLimited ? unformatInteger(draft.stockQuantity) || "0" : null,
     optionGroups: draft.variantsEnabled
       ? draft.optionGroups
@@ -300,7 +312,7 @@ function PriceInput({
   );
 }
 
-function Toggle({
+function Switch({
   checked,
   onChange,
   label,
@@ -312,24 +324,35 @@ function Toggle({
   description?: string;
 }) {
   return (
-    <label className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-white p-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-line bg-white p-4">
       <span>
         <span className="block font-black">{label}</span>
         {description ? <span className="mt-1 block text-sm font-semibold text-muted">{description}</span> : null}
       </span>
-      <input className="h-5 w-5" type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
-    </label>
+      <button
+        className={`relative h-7 w-12 shrink-0 rounded-full p-1 transition ${checked ? "bg-brand" : "bg-slate-300"}`}
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+      >
+        <span className={`block h-5 w-5 rounded-full bg-white shadow transition ${checked ? "translate-x-5" : "translate-x-0"}`} />
+      </button>
+    </div>
   );
 }
 
 export function ProductForm({
   products: initialProducts,
   categories: initialCategories,
-  storeTemplate
+  storeTemplate,
+  showFeatured
 }: {
   products: ProductListItem[];
   categories: CategoryListItem[];
   storeTemplate: string;
+  showFeatured: boolean;
 }) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
@@ -344,9 +367,13 @@ export function ProductForm({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [isImportModalOpen, setImportModalOpen] = useState(false);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
+  const [importing, setImporting] = useState(false);
   const isFoodTemplate = normalizeStoreTemplate(storeTemplate) === "food";
   const variantPresets = isFoodTemplate ? foodVariantPresets : ecommerceVariantPresets;
-  useLockBodyScroll(isProductModalOpen || Boolean(variantDrawer) || offerModalOpen);
+  useLockBodyScroll(isProductModalOpen || Boolean(variantDrawer) || offerModalOpen || isImportModalOpen);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -676,6 +703,50 @@ export function ProductForm({
     router.refresh();
   }
 
+  async function previewImport(file: File | undefined) {
+    if (!file) return;
+    setImporting(true);
+    setError("");
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch("/api/admin/products/import/preview", { method: "POST", body: form });
+    const data = await response.json().catch(() => null);
+    setImporting(false);
+    if (!response.ok) { setError(data?.error ?? "No se pudo leer el archivo."); return; }
+    setImportPreview(data);
+  }
+
+  function closeImportModal() {
+    if (importing) return;
+    setImportPreview(null);
+    setImportModalOpen(false);
+    setError("");
+  }
+
+  async function commitImport() {
+    if (!importPreview?.rows.length) return;
+    setImporting(true);
+    const response = await fetch("/api/admin/products/import/commit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: importPreview.rows }) });
+    const data = await response.json().catch(() => null);
+    setImporting(false);
+    if (!response.ok) { setError(data?.error ?? "No se pudo importar el catálogo."); return; }
+    setImportPreview(null);
+    setImportModalOpen(false);
+    router.refresh();
+    window.location.reload();
+  }
+
+  async function applyBulkAction(action: "show" | "hide" | "feature" | "unfeature") {
+    if (!selectedProductIds.length) return;
+    const response = await fetch("/api/admin/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productIds: selectedProductIds, action }) });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) { setError(data?.error ?? "No se pudieron actualizar los productos."); return; }
+    const visible = action === "show" ? true : action === "hide" ? false : undefined;
+    const featured = action === "feature" ? true : action === "unfeature" ? false : undefined;
+    setProducts((current) => current.map((product) => selectedProductIds.includes(product.id) ? { ...product, ...(visible === undefined ? {} : { isVisible: visible }), ...(featured === undefined ? {} : { isFeatured: featured }) } : product));
+    setSelectedProductIds([]);
+  }
+
   return (
     <div className="grid gap-6">
       <section className="panel overflow-hidden">
@@ -696,10 +767,10 @@ export function ProductForm({
               ))}
             </select>
           </label>
-          <button className="btn-primary mt-auto w-full whitespace-nowrap md:w-auto" type="button" onClick={openNewProduct}>
-            <Plus size={17} /> Nuevo producto
-          </button>
+          <div className="grid grid-cols-2 gap-2 md:mt-auto md:flex md:justify-end"><button className="btn-secondary w-full !px-3" type="button" onClick={() => { setError(""); setImportPreview(null); setImportModalOpen(true); }}><Upload size={16} /> Importar</button><Link className="btn-secondary w-full !px-3" href="/api/admin/products/export"><Download size={16} /> Exportar</Link><button className="btn-primary col-span-2 w-full whitespace-nowrap md:w-auto" type="button" onClick={openNewProduct}><Plus size={17} /> Nuevo</button></div>
         </div>
+
+        {selectedProductIds.length ? <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-3 text-sm"><strong>{selectedProductIds.length} seleccionados</strong><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("show")}>Mostrar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("hide")}>Ocultar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("feature")}>Destacar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("unfeature")}>Quitar destacados</button><button className="ml-auto text-sm font-black text-muted" type="button" onClick={() => setSelectedProductIds([])}>Cancelar</button></div> : null}
 
         {error && !isProductModalOpen ? <p className="border-b border-line bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p> : null}
 
@@ -710,7 +781,8 @@ export function ProductForm({
             filteredProducts.map((product) => {
               const label = discountLabel(product);
               return (
-                <article key={product.id} className="grid gap-4 p-4 sm:p-5 md:grid-cols-[112px_1fr_auto] md:items-center">
+                <article key={product.id} className="grid gap-4 p-4 sm:p-5 md:grid-cols-[auto_112px_1fr_auto] md:items-center">
+                  <input className="h-5 w-5" type="checkbox" aria-label={`Seleccionar ${product.name}`} checked={selectedProductIds.includes(product.id)} onChange={(event) => setSelectedProductIds((current) => event.target.checked ? [...current, product.id] : current.filter((id) => id !== product.id))} />
                   <div className="relative aspect-[16/9] overflow-hidden rounded-2xl bg-surface md:aspect-square">
                     {product.imageUrls[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -731,6 +803,8 @@ export function ProductForm({
                       <span className={`rounded-full px-2.5 py-1 text-xs font-black ${product.isVisible ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}>
                         {product.isVisible ? "Visible" : "Oculto"}
                       </span>
+                      {product.isFeatured ? <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-800">Destacado</span> : null}
+                      {product.stockQuantity === 0 ? <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-black text-red-700">Sin stock</span> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted">
                       {product.category?.name ?? "Sin categoría"} · {product.imageUrls.length} imagen(es) · {product.optionGroups.length} variante(s) · {stockLabel(product)}
@@ -741,7 +815,7 @@ export function ProductForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-[auto_1fr_auto] gap-2 md:flex md:flex-wrap md:justify-end">
+                  <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:justify-end">
                     <button className="btn-secondary !px-3" type="button" onClick={() => toggleProductVisibility(product)} aria-label={product.isVisible ? "Ocultar producto" : "Mostrar producto"}>
                       {product.isVisible ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
@@ -802,18 +876,24 @@ export function ProductForm({
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <Toggle
+                <Switch
                   checked={Boolean(draft.promoPrice)}
                   onChange={toggleOffer}
                   label="Producto de oferta"
                   description="Mostrá un precio promocional en la tienda pública."
                 />
-                <Toggle
+                <Switch
                   checked={draft.isVisible}
                   onChange={(checked) => updateDraft("isVisible", checked)}
                   label="Visible en la web"
                   description="Controlá si el producto aparece en el catálogo público."
                 />
+                {showFeatured ? <Switch
+                  checked={draft.isFeatured}
+                  onChange={(checked) => updateDraft("isFeatured", checked)}
+                  label="Producto destacado"
+                  description="Aparece en la selección principal de la página pública."
+                /> : null}
               </div>
 
               <label className="grid gap-2 text-sm font-bold">
@@ -865,7 +945,7 @@ export function ProductForm({
                 </div>
               </section>
 
-              <Toggle
+              <Switch
                 checked={draft.variantsEnabled}
                 onChange={toggleVariants}
                 label="Variantes"
@@ -927,10 +1007,11 @@ export function ProductForm({
                   ) : (
                     <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Activaste variantes. Agregá una propiedad preparada para esta plantilla.</p>
                   )}
+
                 </section>
               ) : null}
 
-              <Toggle
+              <Switch
                 checked={draft.stockLimited}
                 onChange={(checked) => updateDraft("stockLimited", checked)}
                 label="Stock limitado"
@@ -952,6 +1033,16 @@ export function ProductForm({
               </button>
             </div>
           </form>
+        </div>
+      ) : null}
+
+      {isImportModalOpen ? (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Importar productos">
+          <section className="panel grid max-h-[90dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+            <header className="flex items-start justify-between gap-4 border-b border-line p-5"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-brand">Importar catálogo</p><h2 className="mt-1 text-2xl font-black">{importPreview ? "Revisá antes de confirmar" : "Subí tus productos"}</h2>{importPreview ? <p className="mt-1 text-sm text-muted">{importPreview.rows.length} listos · {importPreview.errors.length} con errores · {importPreview.total} filas</p> : <p className="mt-1 text-sm text-muted">Descargá la plantilla, completala y seleccioná el archivo.</p>}</div><button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={closeImportModal} aria-label="Cerrar importación"><X size={17} /></button></header>
+            {importPreview ? <div className="overflow-auto p-5"><div className="grid gap-2">{importPreview.rows.slice(0, 100).map((row) => <div key={row.rowNumber} className="grid grid-cols-[54px_1fr_auto] gap-3 rounded-xl border border-line p-3 text-sm"><span className="text-muted">Fila {row.rowNumber}</span><strong className="truncate">{row.name}</strong><span>{formatMoney(row.basePrice)}</span></div>)}</div>{importPreview.rows.length > 100 ? <p className="mt-3 text-sm text-muted">Se muestran las primeras 100 filas válidas.</p> : null}{importPreview.errors.length ? <div className="mt-5 rounded-2xl bg-red-50 p-4"><h3 className="font-black text-red-800">Filas a corregir</h3><ul className="mt-2 grid gap-1 text-sm text-red-700">{importPreview.errors.slice(0, 20).map((item) => <li key={item.rowNumber}>Fila {item.rowNumber}: {item.message}</li>)}</ul></div> : null}</div> : <div className="grid gap-4 overflow-auto p-5"><Link className="btn-secondary w-full" href="/api/admin/products/export?mode=template"><Download size={17} /> Descargar plantilla</Link><label className="grid cursor-pointer place-items-center gap-3 rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center"><Upload className="text-brand" size={28} /><span className="font-black">{importing ? "Leyendo archivo..." : "Seleccionar archivo"}</span><span className="text-sm text-muted">Excel o CSV · hasta 500 productos</span><input className="sr-only" type="file" accept=".csv,.xlsx,.xls" disabled={importing} onChange={(event) => { void previewImport(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}</div>}
+            {importPreview ? <footer className="grid gap-2 border-t border-line bg-white p-4 sm:grid-cols-2"><button className="btn-secondary" type="button" onClick={() => { setImportPreview(null); setError(""); }}>Elegir otro archivo</button><button className="btn-primary" type="button" disabled={importing || !importPreview.rows.length || Boolean(importPreview.errors.length)} onClick={commitImport}>{importing ? "Importando..." : `Importar ${importPreview.rows.length} productos`}</button></footer> : <footer className="border-t border-line bg-white p-4"><button className="btn-secondary w-full" type="button" onClick={closeImportModal}>Cancelar</button></footer>}
+          </section>
         </div>
       ) : null}
 

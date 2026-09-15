@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PublicStore } from "@/components/public-store";
 import { prisma } from "@/lib/prisma";
+import { publicStoreCanonicalUrl } from "@/lib/public-store-url";
 import { getStoreAvailability } from "@/lib/store-settings";
 
 type Params = Promise<{ storeSlug: string }>;
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       images: store.logoUrl ? [store.logoUrl] : []
     },
     alternates: {
-      canonical: `/${store.slug}`
+      canonical: publicStoreCanonicalUrl(store)
     }
   };
 }
@@ -76,6 +77,7 @@ export default async function StorePage({ params }: { params: Params }) {
         mobileProductColumns: store.mobileProductColumns,
         heroImageUrls: store.heroImageUrls,
         showCategories: store.showCategories,
+        showFeatured: store.showFeatured,
         freeShippingEnabled: store.freeShippingEnabled,
         freeShippingThreshold: store.freeShippingThreshold,
         acceptTransferPayments: store.acceptTransferPayments,
@@ -85,6 +87,7 @@ export default async function StorePage({ params }: { params: Params }) {
         paymentCbu: store.acceptTransferPayments ? store.paymentCbu : null,
         address: store.address,
         businessHoursText: store.businessHoursText,
+        publicPageConfig: store.publicPageConfig,
         availability
       }}
       products={store.products}

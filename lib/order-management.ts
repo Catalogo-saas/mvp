@@ -42,8 +42,10 @@ export async function restoreStockForItems(tx: Prisma.TransactionClient, items: 
 }
 
 function getDemand(items: OrderItemForStock[]) {
-  return items.reduce<Map<string, number>>((demand, item) => {
-    if (item.productId) demand.set(item.productId, (demand.get(item.productId) ?? 0) + item.quantity);
+  return items.reduce<Map<string, { quantity: number; item: OrderItemForStock }>>((demand, item) => {
+    if (item.productId) {
+      demand.set(item.productId, { quantity: (demand.get(item.productId)?.quantity ?? 0) + item.quantity, item });
+    }
     return demand;
   }, new Map());
 }
@@ -58,16 +60,19 @@ export async function applyStockDelta(
 ) {
   const previousDemand = getDemand(previousItems);
   const nextDemand = getDemand(nextItems);
-  const productIds = new Set([...previousDemand.keys(), ...nextDemand.keys()]);
-  for (const productId of productIds) {
-    const previousConsumed = hasDiscountedStock(previousStatus) ? previousDemand.get(productId) ?? 0 : 0;
-    const nextConsumed = hasDiscountedStock(nextStatus) ? nextDemand.get(productId) ?? 0 : 0;
+  const stockKeys = new Set([...previousDemand.keys(), ...nextDemand.keys()]);
+  for (const key of stockKeys) {
+    const previousEntry = previousDemand.get(key);
+    const nextEntry = nextDemand.get(key);
+    const previousConsumed = hasDiscountedStock(previousStatus) ? previousEntry?.quantity ?? 0 : 0;
+    const nextConsumed = hasDiscountedStock(nextStatus) ? nextEntry?.quantity ?? 0 : 0;
     const delta = nextConsumed - previousConsumed;
     if (delta > 0) {
-      const productName = nextItems.find((item) => item.productId === productId)?.productName ?? "producto";
-      await decrementStockForItems(tx, [{ productId, productName, quantity: delta }], storeId);
+      const item = nextEntry?.item;
+      if (item) await decrementStockForItems(tx, [{ ...item, quantity: delta }], storeId);
     } else if (delta < 0) {
-      await restoreStockForItems(tx, [{ productId, productName: "producto", quantity: Math.abs(delta) }], storeId);
+      const item = previousEntry?.item;
+      if (item) await restoreStockForItems(tx, [{ ...item, quantity: Math.abs(delta) }], storeId);
     }
   }
 }
@@ -91,7 +96,7 @@ export async function buildOrderItems(
     }, new Map());
     for (const [productId, quantity] of demand) {
       const product = productsById.get(productId);
-      if (product?.stockQuantity !== null && product?.stockQuantity !== undefined && product.stockQuantity < quantity) {
+      if (product && product.stockQuantity !== null && product.stockQuantity < quantity) {
         throw new Error(`Stock insuficiente para ${product.name}`);
       }
     }

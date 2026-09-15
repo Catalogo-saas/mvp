@@ -44,16 +44,16 @@ enum UserStatus {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String     @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String     @unique
   emailVerified DateTime?
   image         String?
   passwordHash  String?
   role          UserRole   @default(MERCHANT)
   status        UserStatus @default(ACTIVE)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   accounts Account[]
   sessions Session[]
@@ -98,40 +98,43 @@ model VerificationToken {
 }
 
 model Store {
-  id            String       @id @default(cuid())
-  ownerId       String       @unique
-  name          String
-  slug          String       @unique
-  description   String?
-  whatsappPhone String
-  businessType  BusinessType @default(MIXED)
-  template      String       @default("ecommerce")
-  logoUrl       String?
-  heroTitle     String?
-  heroSubtitle  String?
-  heroImageUrls String[] @default([])
-  address       String?
-  theme         Json         @default("{\"primary\":\"#16a34a\",\"accent\":\"#f97316\",\"font\":\"Inter\"}")
-  showCategories Boolean @default(true)
-  freeShippingEnabled Boolean @default(false)
-  freeShippingThreshold Int @default(35000)
-  acceptTransferPayments Boolean @default(false)
-  paymentAccountHolder String?
-  paymentProvider      String?
-  paymentAlias         String?
-  paymentCbu           String?
-  restrictBySchedule   Boolean @default(false)
-  businessHoursText    String?
-  businessHours        Json    @default("{\"timezone\":\"America/Argentina/Buenos_Aires\",\"days\":{\"monday\":[],\"tuesday\":[],\"wednesday\":[],\"thursday\":[],\"friday\":[],\"saturday\":[],\"sunday\":[]}}")
-  mobileProductColumns Int     @default(1)
-  isPublished   Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                     String       @id @default(cuid())
+  ownerId                String       @unique
+  name                   String
+  slug                   String       @unique
+  description            String?
+  whatsappPhone          String
+  businessType           BusinessType @default(MIXED)
+  template               String       @default("ecommerce")
+  logoUrl                String?
+  heroTitle              String?
+  heroSubtitle           String?
+  heroImageUrls          String[]     @default([])
+  address                String?
+  theme                  Json         @default("{\"primary\":\"#16a34a\",\"accent\":\"#f97316\",\"font\":\"Inter\"}")
+  showCategories         Boolean      @default(true)
+  showFeatured           Boolean      @default(true)
+  freeShippingEnabled    Boolean      @default(false)
+  freeShippingThreshold  Int          @default(35000)
+  acceptTransferPayments Boolean      @default(false)
+  paymentAccountHolder   String?
+  paymentProvider        String?
+  paymentAlias           String?
+  paymentCbu             String?
+  restrictBySchedule     Boolean      @default(false)
+  businessHoursText      String?
+  businessHours          Json         @default("{\"timezone\":\"America/Argentina/Buenos_Aires\",\"days\":{\"monday\":[],\"tuesday\":[],\"wednesday\":[],\"thursday\":[],\"friday\":[],\"saturday\":[],\"sunday\":[]}}")
+  mobileProductColumns   Int          @default(1)
+  publicPageConfig       Json         @default("{\"version\":2,\"sections\":[\"featured\",\"categories\",\"catalog\",\"info\"],\"announcement\":{\"enabled\":false,\"text\":\"\"},\"info\":{\"enabled\":false,\"shipping\":\"\",\"returns\":\"\",\"sizeGuide\":\"\"},\"socials\":{\"instagram\":\"\",\"tiktok\":\"\",\"facebook\":\"\"},\"featuredTitle\":\"Elegidos para vos\",\"categoriesTitle\":\"\"}")
+  isPublished            Boolean      @default(true)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
-  owner      User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  categories Category[]
-  products   Product[]
-  orders     Order[]
+  owner            User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  categories       Category[]
+  products         Product[]
+  orders           Order[]
+  storefrontEvents StorefrontEvent[]
 }
 
 model Category {
@@ -162,14 +165,16 @@ model Product {
   imageUrls     String[] @default([])
   isVisible     Boolean  @default(true)
   stockQuantity Int?
+  isFeatured    Boolean  @default(false)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  store        Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  optionGroups OptionGroup[]
-  orderItems   OrderItem[]
+  store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  optionGroups     OptionGroup[]
+  orderItems       OrderItem[]
+  storefrontEvents StorefrontEvent[]
 
   @@unique([storeId, slug])
 }
@@ -196,9 +201,9 @@ model ProductOption {
   name          String
   priceDelta    Int      @default(0)
   isAvailable   Boolean  @default(true)
-  sortOrder      Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   optionGroup OptionGroup @relation(fields: [optionGroupId], references: [id], onDelete: Cascade)
 }
@@ -225,7 +230,7 @@ model Order {
 }
 
 model OrderItem {
-  id          String @id @default(cuid())
+  id          String  @id @default(cuid())
   orderId     String
   productId   String?
   productName String
@@ -236,4 +241,19 @@ model OrderItem {
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+model StorefrontEvent {
+  id        String   @id @default(cuid())
+  storeId   String
+  productId String?
+  type      String
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  store   Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([storeId, type, createdAt])
+  @@index([storeId, productId, createdAt])
 }

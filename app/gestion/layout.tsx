@@ -17,9 +17,9 @@ export default async function GestionLayout({ children }: { children: React.Reac
 
   return (
     <UnsavedChangesProvider>
-      <main className="gestion-shell container-page grid gap-6 py-6 lg:grid-cols-[260px_1fr]">
+      <main className="gestion-shell container-page grid min-w-0 gap-6 py-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <AdminNav storeSlug={store.slug} />
-        <section>{children}</section>
+        <section className="min-w-0">{children}</section>
       </main>
     </UnsavedChangesProvider>
   );

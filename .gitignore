@@ -4,6 +4,8 @@ node_modules
 .env.local
 dist
 coverage
+playwright-report
+test-results
 *.log
 /uploads
 tsconfig.tsbuildinfo

@@ -14,11 +14,18 @@ async function main() {
   const passwordHash = await bcrypt.hash("demo1234", 10);
   const user = await prisma.user.upsert({
     where: { email: "demo@landing.test" },
-    update: {},
+    update: {
+      name: "Demo Merchant",
+      passwordHash,
+      role: "MERCHANT",
+      status: "ACTIVE"
+    },
     create: {
       email: "demo@landing.test",
       name: "Demo Merchant",
-      passwordHash
+      passwordHash,
+      role: "MERCHANT",
+      status: "ACTIVE"
     }
   });
 
@@ -63,6 +70,7 @@ async function main() {
     }
   });
 
+  await prisma.optionGroup.deleteMany({ where: { productId: product.id } });
   const group = await prisma.optionGroup.create({
     data: {
       productId: product.id,

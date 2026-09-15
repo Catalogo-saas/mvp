@@ -85,7 +85,7 @@ const features: Array<{ icon: LucideIcon; title: string; text: string; tag: stri
 ];
 
 const steps = [
-  { number: "01", title: "Armamos tu espacio", text: "Cargás tu identidad, tus datos y la forma en que trabaja tu negocio." },
+  { number: "01", title: "La configuramos con vos", text: "Elegimos una base simple, cargamos tu identidad y dejamos lista la forma de trabajar de tu negocio." },
   { number: "02", title: "Publicás tus productos", text: "Sumás fotos, precios, categorías, stock y todas las opciones de cada producto." },
   { number: "03", title: "Compartís tu tienda", text: "Usás un solo link en Instagram, WhatsApp, redes o donde ya estén tus clientes." },
   { number: "04", title: "Recibís pedidos listos", text: "Cada compra queda registrada en el panel y llega ordenada a tu WhatsApp." }
@@ -315,7 +315,7 @@ export default function HomePage() {
               Tu tienda online, <span className={styles.heroAccent}>con tu marca</span> y sin vueltas.
             </h1>
             <p className="mt-7 max-w-xl text-lg font-medium leading-8 text-[#50645e] sm:text-xl">
-              Mostrá tus productos como se merecen. Tus clientes arman el carrito y vos recibís cada pedido ordenado, listo para cerrar.
+              Mostrá tus productos como se merecen. Te acompañamos en la puesta en marcha para que tu tienda se vea profesional desde el primer día.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <WhatsappLink className={styles.primaryCta}><MessageCircle size={19} /> Quiero mi tienda <ArrowRight size={18} /></WhatsappLink>

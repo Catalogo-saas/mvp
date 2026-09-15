@@ -3,14 +3,17 @@
 /* eslint-disable @next/next/no-img-element */
 
 import clsx from "clsx";
-import { Check, Copy, ImageIcon, MapPin, Minus, Plus, Search, ShoppingBag, X } from "lucide-react";
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { Check, Copy, ImageIcon, MapPin, Minus, Plus, Search, Share2, ShoppingBag, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { getDiscountPercent, getEffectiveProductPrice, getStoreThemeColors, isBabyTemplate, isFashionTemplate, normalizeStoreTemplate, type StoreTemplate } from "@/lib/catalog";
+import { getDefaultCategoryTitle, getDiscountPercent, getEffectiveProductPrice, getStoreThemeColors, isBabyTemplate, isFashionTemplate, normalizeStoreTemplate, type StoreTemplate } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
+import { normalizePublicPageConfig } from "@/lib/public-page-config";
+import { calculateSelectedPrice, isOptionAvailable, remainingProductStock } from "@/lib/storefront-product-selection";
 import { BabyStorefront } from "./baby-storefront";
 import { FashionStorefront } from "./fashion-storefront";
+import { StorefrontBrandSection, StoreSocialLinks } from "./storefront-brand-content";
 
 export type StorefrontProduct = {
   id: string;
@@ -21,6 +24,7 @@ export type StorefrontProduct = {
   promoPrice: number | null;
   imageUrls: string[];
   stockQuantity: number | null;
+  isFeatured: boolean;
   category: { id: string; name: string; slug: string; imageUrl?: string | null } | null;
   optionGroups: Array<{
     id: string;
@@ -63,6 +67,7 @@ export type StorefrontStore = {
   mobileProductColumns: number;
   heroImageUrls: string[];
   showCategories: boolean;
+  showFeatured: boolean;
   freeShippingEnabled: boolean;
   freeShippingThreshold: number;
   acceptTransferPayments: boolean;
@@ -72,16 +77,9 @@ export type StorefrontStore = {
   paymentCbu: string | null;
   address: string | null;
   businessHoursText: string | null;
+  publicPageConfig: unknown;
   availability: { isOpen: boolean; label: string };
 };
-
-function calculateUnitPrice(product: StorefrontProduct, selectedOptionIds: string[]) {
-  const selected = new Set(selectedOptionIds);
-  return product.optionGroups.reduce(
-    (total, group) => total + group.options.reduce((sum, option) => (selected.has(option.id) ? sum + option.priceDelta : sum), 0),
-    getEffectiveProductPrice(product)
-  );
-}
 
 function PriceBlock({ product, large = false, compact = false }: { product: StorefrontProduct; large?: boolean; compact?: boolean }) {
   const discount = getDiscountPercent(product);
@@ -120,14 +118,17 @@ export function PublicStore({ store, products, categories }: { store: Storefront
   const [copiedField, setCopiedField] = useState<"alias" | "cbu" | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const lastFocusedElement = useRef<HTMLElement | null>(null);
 
   const template = normalizeStoreTemplate(store.template);
+  const pageConfig = normalizePublicPageConfig(store.publicPageConfig);
   const isFood = template === "food";
   const isFashion = isFashionTemplate(template);
   const isBaby = isBabyTemplate(template);
   const { primary, accent } = getStoreThemeColors(template, store.theme);
   const heroImage = store.heroImageUrls[heroIndex] ?? store.heroImageUrls[0];
   const availableCategories = useMemo(() => categories.filter((item) => products.some((product) => product.category?.id === item.id)), [categories, products]);
+  const showcaseCategories = useMemo(() => categories.filter((item) => Boolean(item.imageUrl)), [categories]);
   const hasPromos = products.some((product) => Boolean(getDiscountPercent(product)));
   const filteredProducts = products.filter((product) => {
     const haystack = [product.name, product.description, product.category?.name].filter(Boolean).join(" ").toLowerCase();
@@ -148,6 +149,26 @@ export function PublicStore({ store, products, categories }: { store: Storefront
     store.businessHoursText ? { label: "Horario", value: store.businessHoursText } : null
   ].filter((item): item is { label: string; value: string } => Boolean(item));
 
+  const track = useCallback((type: "STOREFRONT_VIEW" | "PRODUCT_VIEW" | "ADD_TO_CART" | "CHECKOUT_STARTED" | "WHATSAPP_HANDOFF", productId?: string) => {
+    let sessionId = "";
+    try {
+      sessionId = window.sessionStorage.getItem("storefront-session") || crypto.randomUUID();
+      window.sessionStorage.setItem("storefront-session", sessionId);
+    } catch {
+      sessionId = crypto.randomUUID();
+    }
+    void fetch("/api/storefront-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storeSlug: store.slug, productId, type, sessionId }),
+      keepalive: true
+    }).catch(() => undefined);
+  }, [store.slug]);
+
+  useEffect(() => {
+    track("STOREFRONT_VIEW");
+  }, [track]);
+
   useEffect(() => {
     if (store.heroImageUrls.length < 2) return;
     const interval = window.setInterval(() => setHeroIndex((current) => (current + 1) % store.heroImageUrls.length), 5000);
@@ -156,16 +177,38 @@ export function PublicStore({ store, products, categories }: { store: Storefront
 
   useEffect(() => {
     if (!activeProduct && !checkoutOpen) return;
+    lastFocusedElement.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const frame = window.requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>("[role='dialog'] [data-dialog-close], [role='dialog'] button")?.focus();
+    });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (activeProduct) setActiveProduct(null);
+        else setCheckoutOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = document.querySelector<HTMLElement>("[role='dialog']");
+      const focusable = dialog ? Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])")) : [];
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
     return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previous;
+      lastFocusedElement.current?.focus();
     };
   }, [activeProduct, checkoutOpen]);
 
   function remainingStock(product: StorefrontProduct) {
-    if (product.stockQuantity === null) return null;
-    return product.stockQuantity - cart.filter((item) => item.productId === product.id).reduce((sum, item) => sum + item.quantity, 0);
+    return remainingProductStock(product, cart);
   }
 
   function isOutOfStock(product: StorefrontProduct) {
@@ -183,6 +226,7 @@ export function PublicStore({ store, products, categories }: { store: Storefront
     setActiveImageIndex(0);
     setSelectedOptionIds([]);
     setError("");
+    track("PRODUCT_VIEW", product.id);
   }
 
   function toggleOption(group: StorefrontProduct["optionGroups"][number], optionId: string) {
@@ -230,14 +274,35 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       quantity: 1,
       selectedOptionIds: optionIds.slice(),
       optionLabels,
-      unitPrice: calculateUnitPrice(product, optionIds)
+      unitPrice: calculateSelectedPrice(product, optionIds)
     }));
+    track("ADD_TO_CART", product.id);
     return true;
   }
 
   function quickAdd(product: StorefrontProduct) {
-    if (product.optionGroups.some((group) => group.isRequired)) return openProduct(product);
-    addProduct(product, []);
+    openProduct(product);
+  }
+
+  function openCheckout() {
+    setCheckoutOpen(true);
+    setError("");
+    track("CHECKOUT_STARTED");
+  }
+
+  async function shareProduct(product: StorefrontProduct) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("product", product.slug);
+    try {
+      if (navigator.share) await navigator.share({ title: product.name, text: `Mirá ${product.name} en ${store.name}`, url: url.toString() });
+      else {
+        await navigator.clipboard.writeText(url.toString());
+        setError("Enlace del producto copiado.");
+      }
+    } catch (shareError) {
+      if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+      setError("No se pudo compartir el producto.");
+    }
   }
 
   function addActiveProduct() {
@@ -267,8 +332,8 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       if (item.lineId !== lineId) return item;
       if (delta > 0) {
         const product = products.find((candidate) => candidate.id === item.productId);
-        const selectedQuantity = current.filter((candidate) => candidate.productId === item.productId).reduce((sum, candidate) => sum + candidate.quantity, 0);
-        if (product?.stockQuantity !== null && product?.stockQuantity !== undefined && selectedQuantity >= product.stockQuantity) {
+        const remaining = product ? remainingProductStock(product, current) : null;
+        if (remaining !== null && remaining <= 0) {
           setError("No hay más stock disponible para este producto.");
           return item;
         }
@@ -316,6 +381,7 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       setError(data?.error ?? "No se pudo crear el pedido.");
       return;
     }
+    track("WHATSAPP_HANDOFF");
     window.location.assign(data.whatsappUrl);
   }
 
@@ -324,6 +390,7 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       store,
       products,
       categories: availableCategories,
+      showcaseCategories,
       template,
       primary,
       accent,
@@ -353,13 +420,15 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       setCategory,
       selectCategory,
       quickAdd,
+      shareProduct,
       remainingStock,
       isOutOfStock,
+      isOptionSelectable: (_product, group, optionId) => isOptionAvailable(group, optionId),
       closeProduct: () => setActiveProduct(null),
       setActiveImageIndex,
       toggleOption,
       addActiveProduct,
-      openCart: () => { setCheckoutOpen(true); setError(""); },
+      openCart: openCheckout,
       closeCart: () => setCheckoutOpen(false),
       updateQuantity,
       setFulfillmentMethod,
@@ -374,6 +443,7 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       store,
       products,
       categories: availableCategories,
+      showcaseCategories,
       template,
       primary,
       accent,
@@ -404,13 +474,15 @@ export function PublicStore({ store, products, categories }: { store: Storefront
       setCategory,
       selectCategory,
       quickAdd,
+      shareProduct,
       remainingStock,
       isOutOfStock,
+      isOptionSelectable: (_product, group, optionId) => isOptionAvailable(group, optionId),
       closeProduct: () => setActiveProduct(null),
       setActiveImageIndex,
       toggleOption,
       addActiveProduct,
-      openCart: () => { setCheckoutOpen(true); setError(""); },
+      openCart: openCheckout,
       closeCart: () => setCheckoutOpen(false),
       updateQuantity,
       setFulfillmentMethod,
@@ -422,7 +494,7 @@ export function PublicStore({ store, products, categories }: { store: Storefront
 
   return (
     <div style={{ "--store-primary": primary, "--store-accent": accent } as CSSProperties} className={clsx("min-h-screen", isFood ? "bg-[#fffaf4]" : "bg-[#f6f5f0]")}>
-      {store.freeShippingEnabled ? <div className="bg-[var(--store-primary)] px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-white sm:text-xs">Envío gratis en pedidos desde {formatMoney(store.freeShippingThreshold)}</div> : null}
+      {pageConfig.announcement.enabled && pageConfig.announcement.text ? <div className="bg-[var(--store-primary)] px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-white sm:text-xs">{pageConfig.announcement.text}</div> : store.freeShippingEnabled ? <div className="bg-[var(--store-primary)] px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.14em] text-white sm:text-xs">Envío gratis en pedidos desde {formatMoney(store.freeShippingThreshold)}</div> : null}
 
       <header className={clsx("sticky top-0 z-30 border-b border-black/5 bg-white/90 backdrop-blur-xl", !isFood && "lg:static")}>
         <div className={clsx("container-page flex items-center justify-between gap-4 py-3", !isFood && "lg:grid lg:grid-cols-[1fr_auto_1fr] lg:py-4")}>
@@ -433,37 +505,39 @@ export function PublicStore({ store, products, categories }: { store: Storefront
           {!isFood ? <nav className="hidden items-center gap-5 lg:flex" aria-label="Categorías">{availableCategories.slice(0, 4).map((item) => <button key={item.id} className="text-xs font-black hover:underline" type="button" onClick={() => selectCategory(item.slug)}>{item.name}</button>)}{hasPromos ? <button className="text-xs font-black text-red-600 hover:underline" type="button" onClick={() => selectCategory("promos")}>Promociones</button> : null}</nav> : null}
           <div className="flex justify-end gap-2">
             {!isFood ? <button className="hidden items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-xs font-black sm:flex" type="button" onClick={() => { document.getElementById("store-search")?.focus(); document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth" }); }}><Search size={16} /> Buscar</button> : null}
-            <button className="flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-black text-white" onClick={() => { setCheckoutOpen(true); setError(""); }} type="button"><ShoppingBag size={17} /> {cartCount}</button>
+            <button className="flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-sm font-black text-white" onClick={openCheckout} type="button"><ShoppingBag size={17} /> {cartCount}</button>
           </div>
         </div>
       </header>
 
-      <main className="container-page pb-28 pt-5">
+      <main className="container-page pb-16 pt-5">
         {isFood ? <FoodHero store={store} heroImage={heroImage} heroIndex={heroIndex} setHeroIndex={setHeroIndex} /> : <EcommerceHero store={store} heroImage={heroImage} heroIndex={heroIndex} setHeroIndex={setHeroIndex} />}
 
         {!store.availability.isOpen ? <section className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{store.availability.label}</section> : null}
 
         {!isFood && storeFacts.length ? <section className={clsx("grid border-b border-line", storeFacts.length === 2 ? "sm:grid-cols-2" : storeFacts.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2 lg:grid-cols-4")}>{storeFacts.map((fact) => <div key={fact.label} className="border-b border-line px-3 py-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"><p className="text-xs font-black">{fact.label}</p><p className="mt-1 truncate text-[11px] text-muted">{fact.value}</p></div>)}</section> : null}
 
-        {store.showCategories && availableCategories.length ? <CategoryShowcase categories={availableCategories} template={template} selected={category} onSelect={selectCategory} /> : null}
-
-        <section id="catalogo" className={isFood ? "mt-8" : "mt-20"}>
+        {pageConfig.sections.map((section) => {
+          if (section === "categories") return store.showCategories && showcaseCategories.length ? <CategoryShowcase key={section} categories={showcaseCategories} template={template} title={pageConfig.categoriesTitle || getDefaultCategoryTitle(template)} selected={category} onSelect={selectCategory} /> : null;
+          if (section === "featured" || section === "info") return <StorefrontBrandSection key={section} section={section} store={store} products={products} onOpenProduct={openProduct} />;
+          return <section key={section} id="catalogo" className={isFood ? "mt-8" : "mt-20"}>
           <div className="flex items-end justify-between gap-4"><div className="min-w-0">{isFood ? <p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">Nuestro menú</p> : null}<h2 className={clsx(isFood ? "mt-2 text-2xl font-black" : "font-serif text-4xl tracking-tight sm:text-5xl")}>{category === "promos" ? "Promociones" : category === "all" ? (isFood ? "Todos los productos" : "Productos destacados") : availableCategories.find((item) => item.slug === category)?.name}</h2></div><p className="shrink-0 whitespace-nowrap text-xs font-bold text-muted">{filteredProducts.length} producto{filteredProducts.length === 1 ? "" : "s"}</p></div>
           <div className={clsx("sticky top-[69px] z-20 -mx-4 mt-5 bg-inherit/95 px-4 py-3 backdrop-blur", isFood ? "md:top-[73px]" : "lg:top-0")}><div className="relative"><Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} /><input id="store-search" className="field !rounded-full !border-black/10 !bg-white !pl-11" placeholder={isFood ? "Buscar en el menú" : "Buscar productos"} value={query} onChange={(event) => setQuery(event.target.value)} /></div><div className="mt-3 flex gap-2 overflow-x-auto pb-1"><FilterButton active={category === "all"} onClick={() => setCategory("all")}>Todo</FilterButton>{hasPromos ? <FilterButton active={category === "promos"} promo onClick={() => selectCategory("promos")}>Promos</FilterButton> : null}{store.showCategories ? availableCategories.map((item) => <FilterButton key={item.id} active={category === item.slug} onClick={() => selectCategory(item.slug)}>{item.name}</FilterButton>) : null}</div></div>
           <div className={clsx("mt-5 grid gap-4", mobileGrid, "sm:grid-cols-2", isFood ? "lg:grid-cols-1" : "xl:grid-cols-4")}>
             {filteredProducts.map((product) => <ProductCard key={product.id} product={product} template={template} remaining={remainingStock(product)} outOfStock={isOutOfStock(product)} onOpen={() => quickAdd(product)} />)}
           </div>
           {filteredProducts.length === 0 ? <p className="mt-6 border border-line bg-white p-8 text-center font-bold text-muted">No encontramos productos con esos filtros.</p> : null}
-        </section>
+        </section>;
+        })}
       </main>
 
-      {cartCount > 0 ? <button className="fixed bottom-4 left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 items-center justify-between rounded-full bg-ink px-5 py-4 font-black text-white shadow-2xl" onClick={() => { setCheckoutOpen(true); setError(""); }} type="button"><span>{cartCount} producto(s)</span><span>{formatMoney(cartTotal)}</span></button> : null}
+      {cartCount > 0 ? <button className="fixed bottom-4 left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[560px] -translate-x-1/2 items-center justify-between rounded-full bg-ink px-5 py-4 font-black text-white shadow-2xl" onClick={openCheckout} type="button"><span>{cartCount} producto(s)</span><span>{formatMoney(cartTotal)}</span></button> : null}
 
-      {activeProduct ? <ProductDialog product={activeProduct} template={template} activeImage={activeImage} activeImageIndex={activeImageIndex} selectedOptionIds={selectedOptionIds} error={error} remaining={remainingStock(activeProduct)} onClose={() => setActiveProduct(null)} onImage={setActiveImageIndex} onToggle={toggleOption} onAdd={addActiveProduct} /> : null}
+      {activeProduct ? <ProductDialog product={activeProduct} products={products} template={template} activeImage={activeImage} activeImageIndex={activeImageIndex} selectedOptionIds={selectedOptionIds} error={error} remaining={remainingStock(activeProduct)} defaultSizeGuide={pageConfig.info.sizeGuide} onClose={() => setActiveProduct(null)} onImage={setActiveImageIndex} onToggle={toggleOption} onAdd={addActiveProduct} onShare={() => shareProduct(activeProduct)} onOpenRelated={openProduct} /> : null}
 
       {checkoutOpen ? <CheckoutDialog store={store} template={template} cart={cart} cartTotal={cartTotal} shippingRemaining={shippingRemaining} shippingProgress={shippingProgress} fulfillmentMethod={fulfillmentMethod} paymentMethod={paymentMethod} copiedField={copiedField} error={error} loading={loading} onClose={() => setCheckoutOpen(false)} onQuantity={updateQuantity} onFulfillment={setFulfillmentMethod} onPayment={setPaymentMethod} onCopy={copyPaymentDetail} onSubmit={submitOrder} /> : null}
 
-      <footer className="border-t border-black/5 bg-white py-10"><div className="container-page flex flex-col justify-between gap-5 text-sm text-muted sm:flex-row sm:items-center"><div><p className="font-black text-ink">{store.name}</p><p className="mt-1">{store.address || "Pedidos simples por WhatsApp"}</p>{store.businessHoursText ? <p className="mt-1">{store.businessHoursText}</p> : null}</div><a className="btn-secondary !px-4 !py-2" href={"https://wa.me/" + store.whatsappPhone.replace(/\D/g, "")} target="_blank" rel="noreferrer"><img src="/whatsapp.svg" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 brightness-0" /> Escribir por WhatsApp</a></div></footer>
+      <footer className="border-t border-black/5 bg-white py-10"><div className="container-page flex min-w-0 flex-col justify-between gap-5 text-sm text-muted lg:flex-row lg:items-center"><div className="min-w-0"><p className="truncate font-black text-ink">{store.name}</p><p className="mt-1 break-words">{store.address || "Pedidos simples por WhatsApp"}</p>{store.businessHoursText ? <p className="mt-1 break-words">{store.businessHoursText}</p> : null}</div><div className="flex min-w-0 w-full flex-col items-stretch gap-3 lg:w-auto lg:flex-row lg:items-center lg:justify-end"><StoreSocialLinks store={store} className="w-full lg:w-auto" layoutClassName="grid grid-cols-2 lg:flex lg:flex-wrap" linkClassName="w-full justify-center lg:w-auto" /><a className="btn-secondary w-full !px-4 !py-2 lg:w-auto" href={"https://wa.me/" + store.whatsappPhone.replace(/\D/g, "")} target="_blank" rel="noreferrer"><img src="/whatsapp.svg" alt="" aria-hidden="true" className="h-4 w-4 shrink-0 brightness-0" /> Escribir por WhatsApp</a></div></div></footer>
     </div>
   );
 }
@@ -481,9 +555,9 @@ function FoodHero({ store, heroImage, heroIndex, setHeroIndex }: { store: Storef
   return <section className="relative overflow-hidden rounded-[32px] bg-white">{heroImage ? <img src={heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" /> : null}<div className={clsx("relative p-6 md:p-12", heroImage && "bg-black/45")}><div className="max-w-2xl"><p className={clsx("text-sm font-black uppercase tracking-[0.2em]", heroImage ? "text-white/70" : "text-[var(--store-primary)]")}>Pedí fácil y rápido</p><h1 className={clsx("mt-3 text-4xl font-black tracking-tight md:text-6xl", heroImage && "text-white")}>{store.heroTitle || store.name}</h1><p className={clsx("mt-4 max-w-xl text-lg leading-8", heroImage ? "text-white/80" : "text-muted")}>{store.heroSubtitle || store.description || "Elegí tus productos y confirmá tu pedido por WhatsApp."}</p>{store.address || store.businessHoursText ? <div className={clsx("mt-5 grid gap-2 text-sm font-bold", heroImage ? "text-white/80" : "text-muted")}>{store.address ? <span className="flex items-center gap-2"><MapPin size={15} /> {store.address}</span> : null}{store.businessHoursText ? <span>{store.businessHoursText}</span> : null}</div> : null}</div></div><HeroDots images={store.heroImageUrls} current={heroIndex} onSelect={setHeroIndex} /></section>;
 }
 
-function CategoryShowcase({ categories, template, selected, onSelect }: { categories: StorefrontCategory[]; template: StoreTemplate; selected: string; onSelect: (slug: string) => void }) {
+function CategoryShowcase({ categories, template, title, selected, onSelect }: { categories: StorefrontCategory[]; template: StoreTemplate; title: string; selected: string; onSelect: (slug: string) => void }) {
   const isFood = template === "food";
-  return <section className={isFood ? "mt-8" : "mt-16"}><p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">Explorá</p><h2 className={clsx("mt-2", isFood ? "text-2xl font-black" : "font-serif text-4xl tracking-tight sm:text-5xl")}>Categorías</h2><div className={clsx("mt-5 grid gap-3", isFood ? "grid-cols-2 sm:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3")}>{categories.slice(0, isFood ? 4 : 3).map((item, index) => <button key={item.id} className={clsx("group relative overflow-hidden text-left", isFood ? "aspect-[1.5] rounded-3xl" : index === 0 ? "min-h-[420px] sm:col-span-2 lg:col-span-1 lg:min-h-[500px]" : "min-h-[420px] lg:mt-20", selected === item.slug && "ring-4 ring-[var(--store-primary)]")} type="button" onClick={() => onSelect(item.slug)}>{item.imageUrl ? <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-pink-100" />}<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" /><span className={clsx("relative flex h-full items-end font-black text-white", isFood ? "p-4 text-lg" : "p-6 font-serif text-3xl")}>{item.name}</span></button>)}</div></section>;
+  return <section className={isFood ? "mt-8" : "mt-16"}><p className="text-xs font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">Explorá</p><h2 className={clsx("mt-2", isFood ? "text-2xl font-black" : "font-serif text-4xl tracking-tight sm:text-5xl")}>{title}</h2><div className={clsx("-mx-4 mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:px-0", isFood ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3")}>{categories.map((item) => <button key={item.id} className={clsx("group relative w-[78vw] max-w-[300px] shrink-0 snap-start overflow-hidden text-left sm:w-auto sm:max-w-none", isFood ? "aspect-[1.5] rounded-3xl" : "h-[380px]", selected === item.slug && "ring-4 ring-[var(--store-primary)]")} type="button" onClick={() => onSelect(item.slug)}><img src={item.imageUrl!} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" /><div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-transparent" /><span className={clsx("relative flex h-full items-end font-black text-white", isFood ? "p-4 text-lg" : "p-6 font-serif text-3xl")}>{item.name}</span></button>)}</div></section>;
 }
 
 function FilterButton({ active, promo = false, onClick, children }: { active: boolean; promo?: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -493,13 +567,15 @@ function FilterButton({ active, promo = false, onClick, children }: { active: bo
 function ProductCard({ product, template, remaining, outOfStock, onOpen }: { product: StorefrontProduct; template: StoreTemplate; remaining: number | null; outOfStock: boolean; onOpen: () => void }) {
   const isFood = template === "food";
   if (isFood) return <article className="group grid grid-cols-[84px_1fr_auto] items-center gap-3 rounded-3xl border border-line bg-white p-3 shadow-soft"><button className="contents text-left" type="button" onClick={onOpen}><ProductImage product={product} className="aspect-square rounded-2xl" /><div className="min-w-0"><p className="truncate text-base font-black">{product.name}</p><p className="mt-1 line-clamp-2 text-sm text-muted">{product.description}</p>{remaining !== null ? <p className={clsx("mt-1 text-xs font-black", outOfStock ? "text-red-600" : "text-muted")}>{outOfStock ? "Sin stock" : "Quedan " + remaining}</p> : null}<div className="mt-2"><PriceBlock product={product} /></div></div><span className={clsx("grid h-10 w-10 place-items-center rounded-full p-2 text-white", outOfStock ? "bg-slate-300" : "bg-ink")}>{outOfStock ? "—" : <Plus size={18} />}</span></button></article>;
-  return <article className="group min-w-0"><button className="flex h-full w-full flex-col items-stretch justify-start text-left" type="button" onClick={onOpen} disabled={outOfStock}><ProductImage product={product} className="aspect-[4/5]" /><div className="py-4"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--store-primary)]">{product.category?.name ?? "Producto"}</p><h3 className="mt-2 truncate text-sm font-black">{product.name}</h3><p className="mt-1 line-clamp-1 text-xs text-muted">{product.description}</p><div className="mt-3"><PriceBlock product={product} compact /></div>{remaining !== null ? <p className={clsx("mt-2 text-[10px] font-black", outOfStock || remaining <= 5 ? "text-orange-700" : "text-muted")}>{outOfStock ? "Sin stock" : remaining <= 5 ? "Quedan " + remaining + " unidades" : "Stock disponible"}</p> : null}<span className="mt-3 inline-block text-[11px] font-black underline underline-offset-4">{outOfStock ? "Sin stock" : "Ver detalle"}</span></div></button></article>;
+  return <article className="group min-w-0"><button className="flex h-full w-full flex-col items-stretch justify-start text-left" type="button" onClick={onOpen}><ProductImage product={product} className="aspect-[4/5]" /><div className="py-4"><p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--store-primary)]">{product.category?.name ?? "Producto"}</p><h3 className="mt-2 truncate text-sm font-black">{product.name}</h3><p className="mt-1 line-clamp-1 text-xs text-muted">{product.description}</p><div className="mt-3"><PriceBlock product={product} compact /></div>{remaining !== null ? <p className={clsx("mt-2 text-[10px] font-black", outOfStock || remaining <= 5 ? "text-orange-700" : "text-muted")}>{outOfStock ? "Sin stock" : remaining <= 5 ? "Quedan " + remaining + " unidades" : "Stock disponible"}</p> : null}<span className="mt-3 inline-block text-[11px] font-black underline underline-offset-4">Ver detalle</span></div></button></article>;
 }
 
-function ProductDialog({ product, template, activeImage, activeImageIndex, selectedOptionIds, error, remaining, onClose, onImage, onToggle, onAdd }: { product: StorefrontProduct; template: StoreTemplate; activeImage?: string; activeImageIndex: number; selectedOptionIds: string[]; error: string; remaining: number | null; onClose: () => void; onImage: (index: number) => void; onToggle: (group: StorefrontProduct["optionGroups"][number], optionId: string) => void; onAdd: () => void }) {
+function ProductDialog({ product, products, template, activeImage, activeImageIndex, selectedOptionIds, error, remaining, defaultSizeGuide, onClose, onImage, onToggle, onAdd, onShare, onOpenRelated }: { product: StorefrontProduct; products: StorefrontProduct[]; template: StoreTemplate; activeImage?: string; activeImageIndex: number; selectedOptionIds: string[]; error: string; remaining: number | null; defaultSizeGuide: string; onClose: () => void; onImage: (index: number) => void; onToggle: (group: StorefrontProduct["optionGroups"][number], optionId: string) => void; onAdd: () => void; onShare: () => void; onOpenRelated: (product: StorefrontProduct) => void }) {
   const isFood = template === "food";
   const outOfStock = remaining !== null && remaining <= 0;
-  return <div className="fixed inset-0 z-40 bg-black/55 p-0 backdrop-blur-sm sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="mx-auto flex h-full max-w-5xl items-end md:items-center"><section className={clsx("max-h-[96dvh] w-full overflow-auto bg-white sm:rounded-[30px]", !isFood && "md:grid md:grid-cols-[1.08fr_.92fr]")} role="dialog" aria-modal="true" aria-label={"Agregar " + product.name}>{!isFood && product.imageUrls.length ? <div className="bg-surface p-3 md:sticky md:top-0"><div className="aspect-[4/5] overflow-hidden bg-white"><img src={activeImage} alt={product.name} className="h-full w-full object-cover" /></div>{product.imageUrls.length > 1 ? <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{product.imageUrls.map((url, index) => <button key={url + "-" + index} className={clsx("h-16 w-16 shrink-0 overflow-hidden border-2", index === activeImageIndex ? "border-[var(--store-primary)]" : "border-transparent")} type="button" onClick={() => onImage(index)}><img src={url} alt="" className="h-full w-full object-cover" /></button>)}</div> : null}</div> : null}<div className="p-6 sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">{product.category?.name ?? "Producto"}</p><h2 className={clsx("mt-2", isFood ? "text-2xl font-black" : "font-serif text-4xl tracking-tight")}>{product.name}</h2>{!isFood ? <><p className="mt-3 leading-7 text-muted">{product.description}</p><div className="mt-5"><PriceBlock product={product} large /></div></> : <p className="mt-2 text-sm font-semibold text-muted">Elegí tus opciones para agregarlo al pedido.</p>}</div><button className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line" onClick={onClose} type="button" aria-label="Cerrar"><X size={18} /></button></div><div className="mt-6 grid gap-5">{product.optionGroups.map((group) => <fieldset key={group.id} data-product-option-group data-option-group-id={group.id}><legend className="text-sm font-black">{group.name} {group.isRequired ? <span className="text-red-600">*</span> : null}</legend><div className="mt-3 grid gap-2">{group.options.filter((option) => option.isAvailable).map((option) => <label key={option.id} className={clsx("flex items-center justify-between border p-3", isFood && "rounded-2xl", selectedOptionIds.includes(option.id) ? "border-[var(--store-primary)] bg-green-50" : "border-line")}><span><input className="mr-3 accent-[var(--store-primary)]" type={group.selectionType === "SINGLE" ? "radio" : "checkbox"} name={group.id} checked={selectedOptionIds.includes(option.id)} onChange={() => onToggle(group, option.id)} />{option.name}</span>{option.priceDelta ? <span className="font-bold">+{formatMoney(option.priceDelta)}</span> : null}</label>)}</div></fieldset>)}</div>{remaining !== null ? <p className="mt-5 bg-surface p-3 text-xs font-black">{outOfStock ? "Sin stock" : "Quedan " + remaining + " unidades disponibles"}</p> : null}{error ? <p className="mt-4 text-sm font-semibold text-red-600">{error}</p> : null}<button className="btn-primary mt-6 w-full disabled:bg-slate-300" style={{ background: "var(--store-primary)" }} onClick={onAdd} type="button" disabled={outOfStock}>{outOfStock ? "Sin stock" : "Agregar · " + formatMoney(calculateUnitPrice(product, selectedOptionIds))}</button></div></section></div></div>;
+  const sizeGuide = defaultSizeGuide;
+  const related = products.filter((candidate) => candidate.id !== product.id && candidate.category?.id === product.category?.id).slice(0, 3);
+  return <div className="fixed inset-0 z-40 bg-black/55 p-0 backdrop-blur-sm sm:p-4" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="mx-auto flex h-full max-w-5xl items-end md:items-center"><section className={clsx("max-h-[96dvh] w-full overflow-auto bg-white sm:rounded-[30px]", !isFood && "md:grid md:grid-cols-[1.08fr_.92fr]")} role="dialog" aria-modal="true" aria-label={"Detalle de " + product.name}>{product.imageUrls.length ? <div className="bg-surface p-3 md:sticky md:top-0"><div className="grid h-[52dvh] min-h-[280px] max-h-[560px] place-items-center overflow-hidden bg-white md:h-[calc(96dvh-110px)] md:max-h-[760px]"><img src={activeImage} alt={product.name} className="h-full w-full object-contain" /></div>{product.imageUrls.length > 1 ? <div className="mt-3 flex gap-2 overflow-x-auto pb-1">{product.imageUrls.map((url, index) => <button key={url + "-" + index} className={clsx("h-16 w-16 shrink-0 overflow-hidden border-2", index === activeImageIndex ? "border-[var(--store-primary)]" : "border-transparent")} type="button" onClick={() => onImage(index)}><img src={url} alt="" className="h-full w-full object-cover" /></button>)}</div> : null}</div> : null}<div className="p-6 sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">{product.category?.name ?? "Producto"}</p><h2 className={clsx("mt-2", isFood ? "text-2xl font-black" : "font-serif text-4xl tracking-tight")}>{product.name}</h2>{!isFood ? <><p className="mt-3 leading-7 text-muted">{product.description}</p><div className="mt-5"><PriceBlock product={product} large /></div></> : <p className="mt-2 text-sm font-semibold text-muted">Elegí tus opciones para agregarlo al pedido.</p>}</div><div className="flex shrink-0 items-center gap-2"><button className="grid h-10 w-10 place-items-center rounded-full border border-line" onClick={onShare} type="button" aria-label="Compartir producto"><Share2 size={17} /></button><button data-dialog-close className="grid h-10 w-10 place-items-center rounded-full border border-line" onClick={onClose} type="button" aria-label="Cerrar"><X size={18} /></button></div></div><div className="mt-6 grid gap-5">{product.optionGroups.map((group) => <fieldset key={group.id} data-product-option-group data-option-group-id={group.id}><legend className="text-sm font-black">{group.name} {group.isRequired ? <span className="text-red-600">*</span> : null}</legend><div className="mt-3 grid gap-2">{group.options.filter((option) => option.isAvailable).map((option) => { const disabled = !isOptionAvailable(group, option.id); return <label key={option.id} className={clsx("flex items-center justify-between border p-3", isFood && "rounded-2xl", selectedOptionIds.includes(option.id) ? "border-[var(--store-primary)] bg-green-50" : "border-line", disabled && "cursor-not-allowed opacity-45")}><span><input className="mr-3 accent-[var(--store-primary)]" type={group.selectionType === "SINGLE" ? "radio" : "checkbox"} name={group.id} checked={selectedOptionIds.includes(option.id)} disabled={disabled} onChange={() => onToggle(group, option.id)} />{option.name}</span>{option.priceDelta ? <span className="font-bold">+{formatMoney(option.priceDelta)}</span> : null}</label>; })}</div></fieldset>)}</div>{sizeGuide ? <details className="mt-5 border-y border-line py-4"><summary className="cursor-pointer text-sm font-black">Guía de talles</summary><p className="mt-3 whitespace-pre-line text-sm leading-6 text-muted">{sizeGuide}</p></details> : null}{remaining !== null ? <p className="mt-5 bg-surface p-3 text-xs font-black">{outOfStock ? "Sin stock por el momento. Podés compartir o volver a consultar más tarde." : "Quedan " + remaining + " unidades disponibles"}</p> : null}{error ? <p className="mt-4 text-sm font-semibold text-red-600" role="status">{error}</p> : null}<button className="btn-primary mt-6 w-full disabled:bg-slate-300" style={{ background: "var(--store-primary)" }} onClick={onAdd} type="button" disabled={outOfStock}>{outOfStock ? "Sin stock" : "Agregar · " + formatMoney(calculateSelectedPrice(product, selectedOptionIds))}</button>{related.length ? <div className="mt-8 border-t border-line pt-6"><h3 className="text-sm font-black">También te puede gustar</h3><div className="mt-3 grid grid-cols-3 gap-2">{related.map((item) => <button key={item.id} className="min-w-0 text-left" type="button" onClick={() => onOpenRelated(item)}>{item.imageUrls[0] ? <img className="aspect-square w-full object-cover" src={item.imageUrls[0]} alt="" /> : null}<span className="mt-2 block truncate text-xs font-black">{item.name}</span></button>)}</div></div> : null}</div></section></div></div>;
 }
 
 type CheckoutProps = {

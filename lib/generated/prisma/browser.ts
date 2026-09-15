@@ -72,3 +72,8 @@ export type Order = Prisma.OrderModel
  * 
  */
 export type OrderItem = Prisma.OrderItemModel
+/**
+ * Model StorefrontEvent
+ * 
+ */
+export type StorefrontEvent = Prisma.StorefrontEventModel

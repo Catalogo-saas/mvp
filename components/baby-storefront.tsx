@@ -3,12 +3,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import clsx from "clsx";
-import { Check, Copy, ImageIcon, Minus, Plus, Search, ShoppingBag, X } from "lucide-react";
+import { Check, Copy, ImageIcon, Minus, Plus, Search, Share2, ShoppingBag, X } from "lucide-react";
 import type { CSSProperties, Dispatch, FormEvent, SetStateAction } from "react";
 
 import type { CartItem, StorefrontCategory, StorefrontProduct, StorefrontStore } from "@/components/public-store";
-import { getDiscountPercent, getEffectiveProductPrice, type StoreTemplate } from "@/lib/catalog";
+import { StorefrontBrandSection, StoreSocialLinks } from "@/components/storefront-brand-content";
+import { getDefaultCategoryTitle, getDiscountPercent, getEffectiveProductPrice, type StoreTemplate } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
+import { normalizePublicPageConfig } from "@/lib/public-page-config";
+import { calculateSelectedPrice } from "@/lib/storefront-product-selection";
 import styles from "./baby-storefront.module.css";
 
 type BabyTemplate = Extract<StoreTemplate, `baby-${string}`>;
@@ -17,6 +20,7 @@ export type BabyStorefrontController = {
   store: StorefrontStore;
   products: StorefrontProduct[];
   categories: StorefrontCategory[];
+  showcaseCategories: StorefrontCategory[];
   template: BabyTemplate;
   primary: string;
   accent: string;
@@ -46,8 +50,10 @@ export type BabyStorefrontController = {
   setCategory: Dispatch<SetStateAction<string>>;
   selectCategory: (slug: string) => void;
   quickAdd: (product: StorefrontProduct) => void;
-  remainingStock: (product: StorefrontProduct) => number | null;
+  shareProduct: (product: StorefrontProduct) => void;
+  remainingStock: (product: StorefrontProduct, optionIds?: string[]) => number | null;
   isOutOfStock: (product: StorefrontProduct) => boolean;
+  isOptionSelectable: (product: StorefrontProduct, group: StorefrontProduct["optionGroups"][number], optionId: string) => boolean;
   closeProduct: () => void;
   setActiveImageIndex: (index: number) => void;
   toggleOption: (group: StorefrontProduct["optionGroups"][number], optionId: string) => void;
@@ -82,11 +88,6 @@ const copy: Record<BabyTemplate, {
   "baby-abrazo": { announcement: "Todo lo lindo para envolver sus primeros momentos", eyebrow: "Hecho para abrazar", fallbackTitle: "Un pedacito de ternura.", fallbackSubtitle: "Prendas suaves, primeros pasos y pequeños accesorios reunidos como una manta de recuerdos.", action: "Descubrir todo", categoryEyebrow: "Cada retazo guarda algo especial", categoryTitle: "Armá su pequeño mundo", catalogTitle: "Favoritos para abrazar", search: "Buscar productos", cart: "Mi carrito", add: "Agregar al carrito" }
 };
 
-function unitPrice(product: StorefrontProduct, selectedOptionIds: string[]) {
-  const selected = new Set(selectedOptionIds);
-  return product.optionGroups.reduce((total, group) => total + group.options.reduce((sum, option) => selected.has(option.id) ? sum + option.priceDelta : sum, 0), getEffectiveProductPrice(product));
-}
-
 function Price({ product }: { product: StorefrontProduct }) {
   const discount = getDiscountPercent(product);
   return <span className={styles.price}>{discount ? <del>{formatMoney(product.basePrice)}</del> : null}<b>{formatMoney(getEffectiveProductPrice(product))}</b>{discount ? <mark>{discount}% OFF</mark> : null}</span>;
@@ -98,14 +99,15 @@ function Logo({ store }: { store: StorefrontStore }) {
 
 export function BabyStorefront({ controller: c }: { controller: BabyStorefrontController }) {
   const text = copy[c.template];
+  const pageConfig = normalizePublicPageConfig(c.store.publicPageConfig);
   const facts = [
     "Pedidos simples por WhatsApp",
     c.store.address || (c.store.acceptTransferPayments ? "Efectivo o transferencia" : "Pago en efectivo"),
     c.store.businessHoursText || c.store.availability.label
   ];
 
-  return <div data-template={c.template} className={styles.storefront} style={{ "--template-primary": c.primary, "--template-accent": c.accent } as CSSProperties}>
-    <div className={styles.announcement}>{c.store.freeShippingEnabled ? `Envío gratis en pedidos desde ${formatMoney(c.store.freeShippingThreshold)}` : text.announcement}</div>
+  return <div data-template={c.template} className={styles.storefront} style={{ "--template-primary": c.primary, "--template-accent": c.accent, "--store-primary": c.primary, "--store-accent": c.accent } as CSSProperties}>
+    <div className={styles.announcement}>{pageConfig.announcement.enabled && pageConfig.announcement.text ? pageConfig.announcement.text : c.store.freeShippingEnabled ? `Envío gratis en pedidos desde ${formatMoney(c.store.freeShippingThreshold)}` : text.announcement}</div>
     <header className={styles.siteHeader}><div className={clsx(styles.wrap, styles.nav)}>
       <button className={styles.brandButton} type="button" onClick={() => { c.setCategory("all"); window.scrollTo({ top: 0, behavior: "smooth" }); }}><Logo store={c.store} /></button>
       <nav className={styles.navLinks} aria-label="Categorías">{c.categories.slice(0, 3).map((item) => <button key={item.id} type="button" onClick={() => c.selectCategory(item.slug)}>{item.name}</button>)}</nav>
@@ -116,16 +118,14 @@ export function BabyStorefront({ controller: c }: { controller: BabyStorefrontCo
       <BabyHero c={c} text={text} />
       <section className={clsx(styles.wrap, styles.facts)}>{facts.map((fact) => <div key={fact}>{fact}</div>)}</section>
       {!c.store.availability.isOpen ? <div className={clsx(styles.wrap, styles.closed)}>{c.store.availability.label}</div> : null}
-      {c.store.showCategories && c.categories.length ? <BabyCategories c={c} text={text} /> : null}
-      <section className={clsx(styles.wrap, styles.catalog)} id="catalogo">
-        <header className={styles.catalogHead}><h2>{c.category === "all" ? text.catalogTitle : c.category === "promos" ? "Promociones" : c.categories.find((item) => item.slug === c.category)?.name}</h2><b>{c.filteredProducts.length} producto{c.filteredProducts.length === 1 ? "" : "s"}</b></header>
-        <div className={styles.catalogTools}><input id="baby-search" type="search" placeholder={text.search} aria-label="Buscar productos" value={c.query} onChange={(event) => c.setQuery(event.target.value)} /><div className={styles.filters}><button className={c.category === "all" ? styles.active : undefined} type="button" onClick={() => c.setCategory("all")}>Todo</button>{c.hasPromos ? <button className={c.category === "promos" ? styles.active : undefined} type="button" onClick={() => c.setCategory("promos")}>Promos</button> : null}{c.categories.map((item) => <button key={item.id} className={c.category === item.slug ? styles.active : undefined} type="button" onClick={() => c.setCategory(item.slug)}>{item.name}</button>)}</div></div>
-        <div className={clsx(styles.productGrid, c.mobileProductColumns === 1 && styles.oneMobileColumn)}>{c.filteredProducts.map((product) => <ProductCard key={product.id} product={product} remaining={c.remainingStock(product)} outOfStock={c.isOutOfStock(product)} onOpen={() => c.quickAdd(product)} />)}</div>
-        {!c.filteredProducts.length ? <p className={styles.empty}>No encontramos productos para esa búsqueda.</p> : null}
-      </section>
+      {pageConfig.sections.map((section) => {
+        if (section === "categories") return c.store.showCategories && c.showcaseCategories.length ? <BabyCategories key={section} c={c} text={text} title={pageConfig.categoriesTitle || getDefaultCategoryTitle(c.template)} /> : null;
+        if (section === "catalog") return <BabyCatalog key={section} c={c} text={text} />;
+        return <StorefrontBrandSection key={section} section={section} store={c.store} products={c.products} onOpenProduct={c.quickAdd} />;
+      })}
     </main>
 
-    <footer className={styles.footer}><div className={styles.wrap}><Logo store={c.store} /><span>{c.store.address || "Pedidos por WhatsApp"}</span></div></footer>
+    <footer className={styles.footer}><div className={styles.wrap}><div className={styles.footerBrand}><Logo store={c.store} /><span>{c.store.address || "Pedidos por WhatsApp"}</span></div><StoreSocialLinks store={c.store} /></div></footer>
     {c.activeProduct ? <ProductPanel c={c} product={c.activeProduct} addLabel={text.add} /> : null}
     {c.checkoutOpen ? <CartPanel c={c} title={text.cart} /> : null}
   </div>;
@@ -144,19 +144,48 @@ function BabyHero({ c, text }: { c: BabyStorefrontController; text: (typeof copy
   return <section className={clsx(styles.wrap, styles.hero)}><div className={styles.heroCopy}>{content}</div><div className={styles.heroVisual}><Slides c={c} /></div></section>;
 }
 
-function BabyCategories({ c, text }: { c: BabyStorefrontController; text: (typeof copy)[BabyTemplate] }) {
-  const cards = c.categories.slice(0, 3).map((item) => <button className={styles.categoryCard} key={item.id} type="button" onClick={() => c.selectCategory(item.slug)}>{item.imageUrl ? <img src={item.imageUrl} alt="" /> : <span className={styles.imageFallback}><ImageIcon /></span>}<span>{c.template === "baby-bosque" ? `${item.name} para soñar` : item.name} →</span></button>);
-  return <section className={styles.wrap}><header className={styles.sectionTitle}><small>{text.categoryEyebrow}</small><h2>{text.categoryTitle}</h2></header><div className={styles.categories}>{cards}</div></section>;
+function BabyCategories({ c, text, title }: { c: BabyStorefrontController; text: (typeof copy)[BabyTemplate]; title: string }) {
+  const cards = c.showcaseCategories.map((item) => <button className={styles.categoryCard} key={item.id} type="button" onClick={() => c.selectCategory(item.slug)}><img src={item.imageUrl!} alt="" /><span>{c.template === "baby-bosque" ? `${item.name} para soñar` : item.name} →</span></button>);
+  return <section className={styles.wrap}><header className={styles.sectionTitle}><small>{text.categoryEyebrow}</small><h2>{title}</h2></header><div className={styles.categories}>{cards}</div></section>;
+}
+
+function BabyCatalog({ c, text }: { c: BabyStorefrontController; text: (typeof copy)[BabyTemplate] }) {
+  return <section className={clsx(styles.wrap, styles.catalog)} id="catalogo">
+    <header className={styles.catalogHead}><h2>{c.category === "all" ? text.catalogTitle : c.category === "promos" ? "Promociones" : c.categories.find((item) => item.slug === c.category)?.name}</h2><b>{c.filteredProducts.length} producto{c.filteredProducts.length === 1 ? "" : "s"}</b></header>
+    <div className={styles.catalogTools}><input id="baby-search" type="search" placeholder={text.search} aria-label="Buscar productos" value={c.query} onChange={(event) => c.setQuery(event.target.value)} /><div className={styles.filters}><button className={c.category === "all" ? styles.active : undefined} type="button" onClick={() => c.setCategory("all")}>Todo</button>{c.hasPromos ? <button className={c.category === "promos" ? styles.active : undefined} type="button" onClick={() => c.setCategory("promos")}>Promos</button> : null}{c.categories.map((item) => <button key={item.id} className={c.category === item.slug ? styles.active : undefined} type="button" onClick={() => c.setCategory(item.slug)}>{item.name}</button>)}</div></div>
+    <div className={clsx(styles.productGrid, c.mobileProductColumns === 1 && styles.oneMobileColumn)}>{c.filteredProducts.map((product) => <ProductCard key={product.id} product={product} remaining={c.remainingStock(product)} outOfStock={c.isOutOfStock(product)} onOpen={() => c.quickAdd(product)} />)}</div>
+    {!c.filteredProducts.length ? <p className={styles.empty}>No encontramos productos para esa búsqueda.</p> : null}
+  </section>;
 }
 
 function ProductCard({ product, remaining, outOfStock, onOpen }: { product: StorefrontProduct; remaining: number | null; outOfStock: boolean; onOpen: () => void }) {
-  return <article className={styles.productCard}><button className={styles.productOpen} type="button" onClick={onOpen} disabled={outOfStock}><span className={styles.productMedia}>{product.imageUrls[0] ? <img src={product.imageUrls[0]} alt={product.name} /> : <span className={styles.imageFallback}><ImageIcon /></span>}{getDiscountPercent(product) ? <span className={styles.productTag}>{getDiscountPercent(product)}% OFF</span> : null}{outOfStock ? <span className={styles.productAction}>Sin stock</span> : null}{!outOfStock && product.imageUrls.length > 1 ? <small>{product.imageUrls.length} fotos</small> : null}</span><span className={styles.productCopy}><span><small>{product.category?.name || "Producto"}</small><strong>{product.name}</strong><em>{product.description}</em></span><Price product={product} />{remaining !== null ? <span className={clsx(styles.stock, remaining <= 5 && styles.low)}>{outOfStock ? "Sin stock" : remaining <= 5 ? `Quedan ${remaining} unidades` : "Stock disponible"}</span> : null}</span></button></article>;
+  return <article className={styles.productCard}><button className={styles.productOpen} type="button" onClick={onOpen}><span className={styles.productMedia}>{product.imageUrls[0] ? <img src={product.imageUrls[0]} alt={product.name} /> : <span className={styles.imageFallback}><ImageIcon /></span>}{getDiscountPercent(product) ? <span className={styles.productTag}>{getDiscountPercent(product)}% OFF</span> : null}{outOfStock ? <span className={styles.productAction}>Sin stock</span> : null}{!outOfStock && product.imageUrls.length > 1 ? <small>{product.imageUrls.length} fotos</small> : null}</span><span className={styles.productCopy}><span><small>{product.category?.name || "Producto"}</small><strong>{product.name}</strong><em>{product.description}</em></span><Price product={product} />{remaining !== null ? <span className={clsx(styles.stock, remaining <= 5 && styles.low)}>{outOfStock ? "Sin stock · Ver detalle" : remaining <= 5 ? `Quedan ${remaining} unidades` : "Stock disponible"}</span> : null}</span></button></article>;
 }
 
 function ProductPanel({ c, product, addLabel }: { c: BabyStorefrontController; product: StorefrontProduct; addLabel: string }) {
-  const remaining = c.remainingStock(product);
+  const remaining = c.remainingStock(product, c.selectedOptionIds);
   const outOfStock = remaining !== null && remaining <= 0;
-  return <div className={styles.shade} onMouseDown={(event) => { if (event.target === event.currentTarget) c.closeProduct(); }}><aside className={styles.panel} role="dialog" aria-modal="true" aria-label={`Agregar ${product.name}`}><div className={styles.panelInner}><button className={styles.close} type="button" onClick={c.closeProduct} aria-label="Cerrar"><X /></button><div className={styles.detailImage}>{c.activeImage ? <img src={c.activeImage} alt={product.name} /> : <span className={styles.imageFallback}><ImageIcon /></span>}</div>{product.imageUrls.length > 1 ? <div className={styles.thumbs}>{product.imageUrls.map((url, index) => <button key={`${url}-${index}`} className={index === c.activeImageIndex ? styles.active : undefined} type="button" onClick={() => c.setActiveImageIndex(index)}><img src={url} alt="" /></button>)}</div> : null}<div className={styles.detailMeta}><div><small>{product.category?.name || "Producto"}</small><h2>{product.name}</h2><p>{product.description}</p></div><Price product={product} /></div>{remaining !== null ? <p className={styles.detailStock}>{outOfStock ? "Sin stock" : `Quedan ${remaining} unidades disponibles`}</p> : null}<div className={styles.optionGroups}>{product.optionGroups.map((group) => <fieldset key={group.id} data-product-option-group data-option-group-id={group.id}><legend>{group.name} {group.isRequired ? <span>*</span> : null}</legend><div>{group.options.filter((option) => option.isAvailable).map((option) => <label key={option.id} className={c.selectedOptionIds.includes(option.id) ? styles.selected : undefined}><input type={group.selectionType === "SINGLE" ? "radio" : "checkbox"} name={group.id} checked={c.selectedOptionIds.includes(option.id)} onChange={() => c.toggleOption(group, option.id)} /><span>{option.name}</span>{option.priceDelta ? <b>+{formatMoney(option.priceDelta)}</b> : null}</label>)}</div></fieldset>)}</div>{c.error ? <p className={styles.error}>{c.error}</p> : null}<button className={styles.addCart} type="button" disabled={outOfStock} onClick={c.addActiveProduct}>{outOfStock ? "Sin stock" : `${addLabel} · ${formatMoney(unitPrice(product, c.selectedOptionIds))}`}</button></div></aside></div>;
+  const pageConfig = normalizePublicPageConfig(c.store.publicPageConfig);
+  const sizeGuide = pageConfig.info.sizeGuide;
+  const related = c.products.filter((item) => item.id !== product.id && item.category?.id === product.category?.id).slice(0, 3);
+  return (
+    <div className={styles.shade} onMouseDown={(event) => { if (event.target === event.currentTarget) c.closeProduct(); }}>
+      <aside className={styles.panel} role="dialog" aria-modal="true" aria-label={`Detalle de ${product.name}`}>
+        <div className={styles.panelInner}>
+          <div className={styles.detailActions}><span>Detalle del producto</span><div><button className={styles.close} type="button" onClick={() => c.shareProduct(product)} aria-label="Compartir producto"><Share2 /></button><button data-dialog-close className={styles.close} type="button" onClick={c.closeProduct} aria-label="Cerrar"><X /></button></div></div>
+          <div className={styles.detailImage}>{c.activeImage ? <img src={c.activeImage} alt={product.name} /> : <span className={styles.imageFallback}><ImageIcon /></span>}</div>
+          {product.imageUrls.length > 1 ? <div className={styles.thumbs}>{product.imageUrls.map((url, index) => <button key={`${url}-${index}`} className={index === c.activeImageIndex ? styles.active : undefined} type="button" onClick={() => c.setActiveImageIndex(index)}><img src={url} alt="" /></button>)}</div> : null}
+          <div className={styles.detailMeta}><div><small>{product.category?.name || "Producto"}</small><h2>{product.name}</h2><p>{product.description}</p></div><Price product={product} /></div>
+          {remaining !== null ? <p className={styles.detailStock}>{outOfStock ? "Sin stock por el momento" : `Quedan ${remaining} unidades disponibles`}</p> : null}
+          <div className={styles.optionGroups}>{product.optionGroups.map((group) => <fieldset key={group.id} data-product-option-group data-option-group-id={group.id}><legend>{group.name} {group.isRequired ? <span>*</span> : null}</legend><div>{group.options.filter((option) => option.isAvailable).map((option) => { const disabled = !c.isOptionSelectable(product, group, option.id); return <label key={option.id} className={clsx(c.selectedOptionIds.includes(option.id) && styles.selected, disabled && "cursor-not-allowed opacity-40")}><input type={group.selectionType === "SINGLE" ? "radio" : "checkbox"} name={group.id} checked={c.selectedOptionIds.includes(option.id)} disabled={disabled} onChange={() => c.toggleOption(group, option.id)} /><span>{option.name}</span>{option.priceDelta ? <b>+{formatMoney(option.priceDelta)}</b> : null}</label>; })}</div></fieldset>)}</div>
+          {sizeGuide ? <details className="my-5 border-y border-black/10 py-4"><summary className="cursor-pointer text-sm font-black">Guía de talles</summary><p className="mt-3 whitespace-pre-line text-sm leading-6 opacity-70">{sizeGuide}</p></details> : null}
+          {c.error ? <p className={styles.error}>{c.error}</p> : null}
+          <button className={styles.addCart} type="button" disabled={outOfStock} onClick={c.addActiveProduct}>{outOfStock ? "Sin stock" : `${addLabel} · ${formatMoney(calculateSelectedPrice(product, c.selectedOptionIds))}`}</button>
+          {related.length ? <section className="mt-7 border-t border-black/10 pt-5"><h3 className="text-sm font-black">También te puede gustar</h3><div className="mt-3 grid grid-cols-3 gap-2">{related.map((item) => <button className="min-w-0 text-left" key={item.id} type="button" onClick={() => c.quickAdd(item)}>{item.imageUrls[0] ? <img className="aspect-square w-full object-cover" src={item.imageUrls[0]} alt="" /> : null}<span className="mt-2 block truncate text-xs font-black">{item.name}</span></button>)}</div></section> : null}
+        </div>
+      </aside>
+    </div>
+  );
 }
 
 function CartPanel({ c, title }: { c: BabyStorefrontController; title: string }) {

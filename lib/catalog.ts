@@ -28,6 +28,24 @@ export const storeTemplateLabels: Record<StoreTemplate, string> = {
   "baby-abrazo": "Dulce Abrazo"
 };
 
+export const defaultCategoryTitles: Record<StoreTemplate, string> = {
+  ecommerce: "Categorías",
+  food: "Categorías",
+  "boutique-soft": "Encontrá eso que te encanta",
+  "premium-minimal": "Una edición para cada momento",
+  "beauty-pop": "Explorá tu estilo",
+  "baby-natural": "Todo para crecer",
+  "baby-atelier": "La selección Petit",
+  "baby-mini": "Explorá Mundo Mini",
+  "baby-cielito": "Elegí entre las nubes",
+  "baby-bosque": "Tres capítulos para explorar",
+  "baby-abrazo": "Armá su pequeño mundo"
+};
+
+export function getDefaultCategoryTitle(template: string | null | undefined) {
+  return defaultCategoryTitles[normalizeStoreTemplate(template)];
+}
+
 type StoreColors = { primary: string; accent: string };
 
 export const templateOriginalColors: Partial<Record<StoreTemplate, StoreColors>> = {

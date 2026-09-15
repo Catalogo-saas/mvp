@@ -93,6 +93,7 @@ export async function POST(request: Request) {
 
     const selectedIds = new Set(inputItem.selectedOptionIds);
     const selectedOptions = [];
+    const validatedSelectedOptionIds: string[] = [];
     let unitPrice = getEffectiveProductPrice(product);
 
     for (const group of product.optionGroups) {
@@ -112,6 +113,7 @@ export async function POST(request: Request) {
 
       for (const option of selectedInGroup) {
         unitPrice += option.priceDelta;
+        validatedSelectedOptionIds.push(option.id);
         selectedOptions.push({
           groupName: group.name,
           optionName: option.name,

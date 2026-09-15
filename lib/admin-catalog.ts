@@ -6,6 +6,7 @@ import { z } from "zod";
 import { SelectionType } from "@/lib/generated/prisma/enums";
 import { parsePriceToCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { buildProductSlug } from "@/lib/product-slug";
 import { slugify } from "@/lib/slug";
 import { deletePublicObject, getPublicObjectKeyFromUrl, uploadPublicObject } from "@/lib/storage";
 
@@ -48,6 +49,7 @@ export const productSchema = z.object({
   categoryId: z.string().optional().nullable(),
   categoryName: z.string().max(80).optional().nullable(),
   isVisible: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
   stockQuantity: nullableStockQuantity.default(null),
   optionGroups: z.array(optionGroupSchema).max(12).default([])
 });
@@ -159,17 +161,13 @@ export function normalizeImageUrls(input: Pick<ProductPayload, "imageUrl" | "ima
   return Array.from(new Set(urls)).slice(0, 6);
 }
 
-export async function makeUniqueProductSlug(storeId: string, name: string, exceptProductId?: string) {
-  const baseSlug = slugify(name) || "producto";
-  const conflicting = await prisma.product.findFirst({
-    where: {
-      storeId,
-      slug: baseSlug,
-      ...(exceptProductId ? { NOT: { id: exceptProductId } } : {})
-    }
-  });
-
-  return conflicting ? `${baseSlug}-${Date.now().toString(36)}` : baseSlug;
+export async function makeUniqueProductSlug(storeId: string, name: string) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const candidate = buildProductSlug(name);
+    const conflicting = await prisma.product.findUnique({ where: { storeId_slug: { storeId, slug: candidate } }, select: { id: true } });
+    if (!conflicting) return candidate;
+  }
+  throw new Error("No se pudo generar una URL única para el producto.");
 }
 
 export async function resolveCategoryId(storeId: string, input: Pick<ProductPayload, "categoryId" | "categoryName">) {

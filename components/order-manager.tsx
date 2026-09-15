@@ -8,8 +8,8 @@ import {
   Edit3,
   Eye,
   ListFilter,
-  MessageCircle,
   Minus,
+  MoreVertical,
   PackageOpen,
   PackageCheck,
   Plus,
@@ -21,7 +21,7 @@ import {
   X,
   type LucideIcon
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
@@ -459,12 +459,13 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   const searchParamsString = searchParams.toString();
   const urlFilters = useMemo(() => filtersFromSearchParams(new URLSearchParams(searchParamsString)), [searchParamsString]);
   const [orders, setOrders] = useState(initialOrders);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const statusFilter = urlFilters.statusFilter;
   const appliedFilters = urlFilters.advancedFilters;
   const [draftFilters, setDraftFilters] = useState<AdvancedFilters>(appliedFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null);
+  const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   const [actionOrder, setActionOrder] = useState<OrderListItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
@@ -474,6 +475,23 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   useLockBodyScroll(filtersOpen || Boolean(selectedOrder) || Boolean(actionOrder) || editOpen);
+
+  useEffect(() => {
+    if (!openActionMenuId) {
+      return;
+    }
+
+    function closeActionMenu(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-order-action-menu]")) {
+        return;
+      }
+      setOpenActionMenuId(null);
+    }
+
+    document.addEventListener("pointerdown", closeActionMenu);
+    return () => document.removeEventListener("pointerdown", closeActionMenu);
+  }, [openActionMenuId]);
 
   function replaceFilterParams(nextStatusFilter: StatusFilter, nextAdvancedFilters: AdvancedFilters) {
     const params = new URLSearchParams(searchParams.toString());
@@ -607,6 +625,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
 
   async function openOrderEditor(order: OrderListItem) {
     setError("");
+    setOpenActionMenuId(null);
     setActionOrder(null);
     setEditLoading(true);
     const response = await fetch("/api/admin/products");
@@ -752,6 +771,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   }
 
   async function deleteOrder(order: OrderListItem) {
+    setOpenActionMenuId(null);
     if (!window.confirm(`¿Eliminar el pedido #${order.code}? Esta acción no se puede deshacer.`)) {
       return;
     }
@@ -810,7 +830,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
         </article>
       </section>
 
-      <section className="panel overflow-hidden">
+      <section className="panel min-w-0 overflow-hidden">
         <div className="grid gap-3 border-b border-line p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><p className="text-sm font-black uppercase tracking-[0.16em] text-brand">Operación</p><h2 className="mt-1 text-xl font-black">Listado de pedidos</h2></div>
@@ -859,8 +879,8 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
           <p className="p-5 text-muted">No hay pedidos para mostrar.</p>
         ) : (
           <>
-            <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[1180px] table-fixed border-collapse">
+            <div className="hidden lg:block">
+              <table className="w-full table-fixed border-collapse">
                 <colgroup>
                   <col className="w-[16%]" />
                   <col className="w-[14%]" />
@@ -920,26 +940,60 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
                         </select>
                       </td>
                       <td className="px-3 py-4 align-top">
-                        <div className="flex items-center gap-1.5">
+                        <div className="relative flex justify-end" data-order-action-menu>
                           <button
-                            className="btn-secondary min-w-[68px] flex-1 !rounded-xl !px-2 !py-2 text-sm"
+                            className="grid h-10 w-10 place-items-center rounded-xl border border-line text-ink transition-colors hover:bg-surface"
                             type="button"
-                            aria-label={`Ver detalle del pedido ${order.code}`}
-                            onClick={() => setSelectedOrder(order)}
+                            aria-label={`Abrir acciones del pedido ${order.code}`}
+                            aria-expanded={openActionMenuId === order.id}
+                            aria-haspopup="menu"
+                            onClick={() => setOpenActionMenuId((current) => current === order.id ? null : order.id)}
                           >
-                            <Eye size={16} /> Ver
+                            <MoreVertical size={19} />
                           </button>
-                          {orderCustomerWhatsappHref(order) ? (
-                            <a className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-green-50 text-green-700" href={orderCustomerWhatsappHref(order) ?? "#"} target="_blank" rel="noreferrer" aria-label={`Abrir WhatsApp de ${order.customerName}`}>
-                              <MessageCircle size={16} />
-                            </a>
+                          {openActionMenuId === order.id ? (
+                            <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-50 grid w-52 gap-1 rounded-2xl border border-line bg-white p-2 shadow-xl" role="menu" aria-label={`Acciones del pedido ${order.code}`}>
+                              <button
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-ink hover:bg-surface"
+                                type="button"
+                                role="menuitem"
+                                onClick={() => { setSelectedOrder(order); setOpenActionMenuId(null); }}
+                              >
+                                <Eye size={17} /> Ver detalle
+                              </button>
+                              {orderCustomerWhatsappHref(order) ? (
+                                <a
+                                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-ink hover:bg-surface"
+                                  href={orderCustomerWhatsappHref(order) ?? "#"}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  role="menuitem"
+                                  onClick={() => setOpenActionMenuId(null)}
+                                >
+                                  <span className="grid h-5 w-5 place-items-center rounded-full bg-[#16803d]">
+                                    <img className="h-3 w-3" src="/whatsapp.svg" alt="" aria-hidden="true" />
+                                  </span>
+                                  WhatsApp
+                                </a>
+                              ) : null}
+                              <button
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-ink hover:bg-surface"
+                                type="button"
+                                role="menuitem"
+                                onClick={() => void openOrderEditor(order)}
+                              >
+                                <Edit3 size={17} /> Editar
+                              </button>
+                              <button
+                                className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-red-600 hover:bg-red-50"
+                                type="button"
+                                role="menuitem"
+                                onClick={() => void deleteOrder(order)}
+                              >
+                                <Trash2 size={17} /> Eliminar
+                              </button>
+                            </div>
                           ) : null}
-                          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-ink" type="button" onClick={() => void openOrderEditor(order)} aria-label={`Editar pedido ${order.code}`}>
-                            <Edit3 size={16} />
-                          </button>
-                          <button className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-line text-red-600" type="button" onClick={() => void deleteOrder(order)} aria-label={`Eliminar pedido ${order.code}`}>
-                            <Trash2 size={16} />
-                          </button>
                         </div>
                       </td>
                     </tr>

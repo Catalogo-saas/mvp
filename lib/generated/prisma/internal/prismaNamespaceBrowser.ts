@@ -61,7 +61,8 @@ export const ModelName = {
   OptionGroup: 'OptionGroup',
   ProductOption: 'ProductOption',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  StorefrontEvent: 'StorefrontEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -149,6 +150,7 @@ export const StoreScalarFieldEnum = {
   address: 'address',
   theme: 'theme',
   showCategories: 'showCategories',
+  showFeatured: 'showFeatured',
   freeShippingEnabled: 'freeShippingEnabled',
   freeShippingThreshold: 'freeShippingThreshold',
   acceptTransferPayments: 'acceptTransferPayments',
@@ -160,6 +162,7 @@ export const StoreScalarFieldEnum = {
   businessHoursText: 'businessHoursText',
   businessHours: 'businessHours',
   mobileProductColumns: 'mobileProductColumns',
+  publicPageConfig: 'publicPageConfig',
   isPublished: 'isPublished',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -194,6 +197,7 @@ export const ProductScalarFieldEnum = {
   imageUrls: 'imageUrls',
   isVisible: 'isVisible',
   stockQuantity: 'stockQuantity',
+  isFeatured: 'isFeatured',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -263,6 +267,18 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const StorefrontEventScalarFieldEnum = {
+  id: 'id',
+  storeId: 'storeId',
+  productId: 'productId',
+  type: 'type',
+  sessionId: 'sessionId',
+  createdAt: 'createdAt'
+} as const
+
+export type StorefrontEventScalarFieldEnum = (typeof StorefrontEventScalarFieldEnum)[keyof typeof StorefrontEventScalarFieldEnum]
 
 
 export const SortOrder = {

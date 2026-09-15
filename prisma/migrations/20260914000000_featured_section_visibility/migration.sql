@@ -1,0 +1,2 @@
+ALTER TABLE "Store"
+  ADD COLUMN "showFeatured" BOOLEAN NOT NULL DEFAULT true;

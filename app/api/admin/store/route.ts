@@ -4,8 +4,10 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { storeTemplates } from "@/lib/catalog";
 import { getMerchantStore } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
+import { publicPageConfigSchema } from "@/lib/public-page-config";
 import { reservedSlugs, slugify } from "@/lib/slug";
 import { deletePublicObject, getPublicObjectKeyFromUrl, uploadPublicObject } from "@/lib/storage";
 import {
@@ -27,7 +29,10 @@ const schema = z.object({
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   useTemplateColors: z.boolean().default(false),
+  template: z.enum(storeTemplates),
+  publicPageConfig: publicPageConfigSchema,
   showCategories: z.boolean().default(true),
+  showFeatured: z.boolean().default(true),
   freeShippingEnabled: z.boolean().default(false),
   freeShippingThreshold: z.coerce.number().int().min(0).max(999999999).default(35000),
   acceptTransferPayments: z.boolean().default(false),
@@ -112,7 +117,10 @@ async function parseSettingsPayload(request: Request) {
       primary: getFormString(formData, "primary"),
       accent: getFormString(formData, "accent"),
       useTemplateColors: getFormBoolean(formData, "useTemplateColors"),
+      template: getFormString(formData, "template"),
+      publicPageConfig: parseFormJson(formData, "publicPageConfig", null),
       showCategories: getFormBoolean(formData, "showCategories"),
+      showFeatured: getFormBoolean(formData, "showFeatured"),
       freeShippingEnabled: getFormBoolean(formData, "freeShippingEnabled"),
       freeShippingThreshold: getFormString(formData, "freeShippingThreshold"),
       acceptTransferPayments: getFormBoolean(formData, "acceptTransferPayments"),
@@ -276,7 +284,10 @@ export async function PATCH(request: Request) {
           heroImageUrls: nextHeroUrls,
           address: cleanOptionalText(result.data.address),
           theme: { primary: result.data.primary, accent: result.data.accent, font: "Inter", useTemplateColors: result.data.useTemplateColors },
+          template: result.data.template,
+          publicPageConfig: result.data.publicPageConfig,
           showCategories: result.data.showCategories,
+          showFeatured: result.data.showFeatured,
           freeShippingEnabled: result.data.freeShippingEnabled,
           freeShippingThreshold: result.data.freeShippingThreshold,
           acceptTransferPayments: result.data.acceptTransferPayments,
@@ -318,7 +329,11 @@ export async function PATCH(request: Request) {
       return previousImageUrl && previousImageUrl !== nextImageUrl ? getPublicObjectKeyFromUrl(previousImageUrl) : null;
     })
     .filter((key): key is string => Boolean(key?.startsWith(`categories/${store.id}/`)));
-  await Promise.all([...removedHeroKeys, ...removedCategoryKeys].map((key) => deletePublicObject(key).catch(() => null)));
+  const removedKeys = [
+    ...removedHeroKeys,
+    ...removedCategoryKeys
+  ];
+  await Promise.all(removedKeys.map((key) => deletePublicObject(key).catch(() => null)));
 
   const categories = await prisma.category.findMany({
     where: { storeId: store.id },

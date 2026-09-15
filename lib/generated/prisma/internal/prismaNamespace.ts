@@ -407,7 +407,8 @@ export const ModelName = {
   OptionGroup: 'OptionGroup',
   ProductOption: 'ProductOption',
   Order: 'Order',
-  OrderItem: 'OrderItem'
+  OrderItem: 'OrderItem',
+  StorefrontEvent: 'StorefrontEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -423,7 +424,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "account" | "session" | "verificationToken" | "store" | "category" | "product" | "optionGroup" | "productOption" | "order" | "orderItem"
+    modelProps: "user" | "account" | "session" | "verificationToken" | "store" | "category" | "product" | "optionGroup" | "productOption" | "order" | "orderItem" | "storefrontEvent"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1241,6 +1242,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    StorefrontEvent: {
+      payload: Prisma.$StorefrontEventPayload<ExtArgs>
+      fields: Prisma.StorefrontEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.StorefrontEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.StorefrontEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        findFirst: {
+          args: Prisma.StorefrontEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.StorefrontEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        findMany: {
+          args: Prisma.StorefrontEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>[]
+        }
+        create: {
+          args: Prisma.StorefrontEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        createMany: {
+          args: Prisma.StorefrontEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.StorefrontEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>[]
+        }
+        delete: {
+          args: Prisma.StorefrontEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        update: {
+          args: Prisma.StorefrontEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.StorefrontEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.StorefrontEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.StorefrontEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.StorefrontEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$StorefrontEventPayload>
+        }
+        aggregate: {
+          args: Prisma.StorefrontEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateStorefrontEvent>
+        }
+        groupBy: {
+          args: Prisma.StorefrontEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StorefrontEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.StorefrontEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.StorefrontEventCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -1349,6 +1424,7 @@ export const StoreScalarFieldEnum = {
   address: 'address',
   theme: 'theme',
   showCategories: 'showCategories',
+  showFeatured: 'showFeatured',
   freeShippingEnabled: 'freeShippingEnabled',
   freeShippingThreshold: 'freeShippingThreshold',
   acceptTransferPayments: 'acceptTransferPayments',
@@ -1360,6 +1436,7 @@ export const StoreScalarFieldEnum = {
   businessHoursText: 'businessHoursText',
   businessHours: 'businessHours',
   mobileProductColumns: 'mobileProductColumns',
+  publicPageConfig: 'publicPageConfig',
   isPublished: 'isPublished',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1394,6 +1471,7 @@ export const ProductScalarFieldEnum = {
   imageUrls: 'imageUrls',
   isVisible: 'isVisible',
   stockQuantity: 'stockQuantity',
+  isFeatured: 'isFeatured',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1463,6 +1541,18 @@ export const OrderItemScalarFieldEnum = {
 } as const
 
 export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
+
+
+export const StorefrontEventScalarFieldEnum = {
+  id: 'id',
+  storeId: 'storeId',
+  productId: 'productId',
+  type: 'type',
+  sessionId: 'sessionId',
+  createdAt: 'createdAt'
+} as const
+
+export type StorefrontEventScalarFieldEnum = (typeof StorefrontEventScalarFieldEnum)[keyof typeof StorefrontEventScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1833,6 +1923,7 @@ export type GlobalOmitConfig = {
   productOption?: Prisma.ProductOptionOmit
   order?: Prisma.OrderOmit
   orderItem?: Prisma.OrderItemOmit
+  storefrontEvent?: Prisma.StorefrontEventOmit
 }
 
 /* Types for Logging */

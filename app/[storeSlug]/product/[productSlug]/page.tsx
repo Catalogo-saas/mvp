@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { getDiscountPercent, getEffectiveProductPrice, isPanelStorefrontTemplate, normalizeStoreTemplate } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
+import { publicStoreCanonicalUrl, publicStoreHref } from "@/lib/public-store-url";
 
 type Params = Promise<{ storeSlug: string; productSlug: string }>;
 
@@ -42,7 +43,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       images: product.imageUrls[0] ? [product.imageUrls[0]] : []
     },
     alternates: {
-      canonical: `/${product.store.slug}/product/${product.slug}`
+      canonical: publicStoreCanonicalUrl(product.store, `/product/${product.slug}`)
     }
   };
 }
@@ -54,11 +55,12 @@ export default async function ProductPage({ params }: { params: Params }) {
     notFound();
   }
   const template = normalizeStoreTemplate(product.store.template);
+  const storeHref = publicStoreHref(product.store);
   if (template === "food") {
-    redirect(`/${product.store.slug}`);
+    redirect(storeHref);
   }
   if (isPanelStorefrontTemplate(template)) {
-    redirect(`/${product.store.slug}?product=${encodeURIComponent(product.slug)}`);
+    redirect(`${storeHref}?product=${encodeURIComponent(product.slug)}`);
   }
   const effectivePrice = getEffectiveProductPrice(product);
   const discount = getDiscountPercent(product);
@@ -80,7 +82,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   return (
     <main className="container-page py-8">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <Link href={`/${product.store.slug}`} className="font-bold text-brand">
+      <Link href={storeHref} className="font-bold text-brand">
         ← Volver a {product.store.name}
       </Link>
       <section className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
@@ -130,7 +132,7 @@ export default async function ProductPage({ params }: { params: Params }) {
               </div>
             ))}
           </div>
-          <Link href={`/${product.store.slug}?product=${encodeURIComponent(product.slug)}`} className="btn-primary mt-8">
+          <Link href={`${storeHref}?product=${encodeURIComponent(product.slug)}`} className="btn-primary mt-8">
             Armar pedido
           </Link>
         </div>

@@ -15,7 +15,7 @@ export default async function GestionProductsPage() {
       optionGroups: {
         include: { options: { orderBy: { sortOrder: "asc" } } },
         orderBy: { sortOrder: "asc" }
-      }
+      },
     },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }]
   });
@@ -30,9 +30,9 @@ export default async function GestionProductsPage() {
       <header className="panel hidden p-6 md:block">
         <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Productos</p>
         <h1 className="mt-2 text-3xl font-black">Productos y opciones</h1>
-        <p className="mt-2 text-muted">Gestioná productos, categorías, imágenes, promos, extras y variantes.</p>
+        <p className="mt-2 text-muted">Gestioná productos, categorías, imágenes, promociones, opciones y stock.</p>
       </header>
-      <ProductForm products={products} categories={categories} storeTemplate={store.template} />
+      <ProductForm products={products} categories={categories} storeTemplate={store.template} showFeatured={store.showFeatured} />
     </div>
   );
 }

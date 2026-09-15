@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, Banknote, ClipboardList, Package, Settings, ShoppingBag } from "lucide-react";
+import { AlertTriangle, ArrowRight, Banknote, ClipboardList, Eye, Package, Settings, ShoppingBag, Users } from "lucide-react";
 
 import { OrderStatus } from "@/lib/generated/prisma/enums";
+import { aggregateCustomers, validCustomerOrderStatuses } from "@/lib/customer-summary";
 import { formatBuenosAiresDate } from "@/lib/date-format";
 import { formatMoney } from "@/lib/money";
 import { getMerchantStore } from "@/lib/merchant";
@@ -21,7 +22,10 @@ export default async function GestionDashboardPage() {
     return null;
   }
 
-  const [orderCount, earned, latestOrders, lowStockProducts] = await Promise.all([
+  // Server request time defines the rolling analytics window.
+  // eslint-disable-next-line react-hooks/purity
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [orderCount, earned, latestOrders, lowStockProducts, storefrontEvents, customerOrders] = await Promise.all([
     prisma.order.count({ where: { storeId: store.id } }),
     prisma.order.aggregate({
       where: {
@@ -54,12 +58,27 @@ export default async function GestionDashboardPage() {
         stockQuantity: true
       },
       orderBy: [{ stockQuantity: "asc" }, { name: "asc" }]
+    }),
+    prisma.storefrontEvent.findMany({
+      where: { storeId: store.id, createdAt: { gte: since } },
+      select: { id: true, type: true, sessionId: true }
+    }),
+    prisma.order.findMany({
+      where: { storeId: store.id, status: { in: [...validCustomerOrderStatuses] } },
+      select: { code: true, customerName: true, customerPhone: true, total: true, createdAt: true }
     })
   ]);
+
+  const uniqueSessions = (type: string) => new Set(storefrontEvents.filter((event) => event.type === type).map((event) => event.sessionId || event.id)).size;
+  const visits = uniqueSessions("STOREFRONT_VIEW");
+  const checkoutStarts = uniqueSessions("CHECKOUT_STARTED");
+  const repeatCustomers = aggregateCustomers(customerOrders).filter((customer) => customer.orderCount > 1).length;
+  const lowStockItems = lowStockProducts;
 
   const shortcuts = [
     { href: "/gestion/pedidos", label: "Pedidos", description: "Revisá y actualizá estados", icon: ClipboardList },
     { href: "/gestion/productos", label: "Productos", description: "Administrá catálogo y stock", icon: Package },
+    { href: "/gestion/clientes", label: "Clientes", description: "Consultá compras y contactos", icon: Users },
     { href: "/gestion/configuracion", label: "Configuración", description: "Editá los datos de tu tienda", icon: Settings }
   ];
 
@@ -90,10 +109,19 @@ export default async function GestionDashboardPage() {
       </section>
 
       <section>
+        <div className="mb-3"><h2 className="text-xl font-black">Rendimiento de la tienda</h2><p className="mt-1 text-sm text-muted">Últimos 30 días</p></div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <article className="panel p-4"><Eye className="text-brand" size={19} /><p className="mt-3 text-2xl font-black">{visits}</p><p className="text-sm text-muted">Visitas</p></article>
+          <article className="panel p-4"><ShoppingBag className="text-brand" size={19} /><p className="mt-3 text-2xl font-black">{checkoutStarts}</p><p className="text-sm text-muted">Carritos iniciados</p></article>
+          <Link className="panel p-4 transition hover:border-brand" href="/gestion/clientes"><Users className="text-brand" size={19} /><p className="mt-3 text-2xl font-black">{repeatCustomers}</p><p className="text-sm text-muted">Clientes recurrentes</p></Link>
+        </div>
+      </section>
+
+      <section>
         <div className="mb-3 flex items-center justify-between gap-4">
           <h2 className="text-xl font-black">Atajos rápidos</h2>
         </div>
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {shortcuts.map((shortcut) => {
             const Icon = shortcut.icon;
             return (
@@ -144,10 +172,10 @@ export default async function GestionDashboardPage() {
               <h2 className="text-xl font-black">Bajo stock</h2>
               <p className="mt-1 text-sm text-muted">Productos con menos de 5 unidades.</p>
             </div>
-            <AlertTriangle className={lowStockProducts.length ? "text-orange-500" : "text-brand"} size={22} />
+            <AlertTriangle className={lowStockItems.length ? "text-orange-500" : "text-brand"} size={22} />
           </div>
           <div className="mt-5 divide-y divide-line">
-            {lowStockProducts.length ? lowStockProducts.map((product) => (
+            {lowStockItems.length ? lowStockItems.map((product) => (
               <div key={product.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
                 <p className="min-w-0 truncate font-bold">{product.name}</p>
                 <span className="shrink-0 font-black text-orange-600">{product.stockQuantity} u.</span>

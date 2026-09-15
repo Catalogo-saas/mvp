@@ -54,6 +54,11 @@ export function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
+export function formatArgentineInteger(value: string | number | null | undefined) {
+  const digits = digitsOnly(String(value ?? ""));
+  return digits ? Number(digits).toLocaleString("es-AR") : "";
+}
+
 export function getArgentineLocalPhone(value: string) {
   let digits = digitsOnly(value);
   if (digits.startsWith(ARGENTINA_COUNTRY_CODE)) {

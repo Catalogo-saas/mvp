@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { ClipboardList, LayoutDashboard, LogOut, Menu, Package, Settings, Store, X } from "lucide-react";
+import { ClipboardList, LayoutDashboard, LogOut, Menu, Package, Settings, Store, Users, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
@@ -31,6 +31,9 @@ function NavContent({ pathname, storeSlug, onNavigate }: { pathname: string; sto
         </Link>
         <Link className={linkClass(pathname, "/gestion/productos")} href="/gestion/productos" onClick={onNavigate}>
           <Package className="mr-2 inline" size={18} /> Productos
+        </Link>
+        <Link className={linkClass(pathname, "/gestion/clientes")} href="/gestion/clientes" onClick={onNavigate}>
+          <Users className="mr-2 inline" size={18} /> Clientes
         </Link>
         <Link className={linkClass(pathname, "/gestion/configuracion")} href="/gestion/configuracion" onClick={onNavigate}>
           <Settings className="mr-2 inline" size={18} /> Configuración
