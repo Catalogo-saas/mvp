@@ -15,17 +15,17 @@ export const storeTemplates = [
 export type StoreTemplate = (typeof storeTemplates)[number];
 
 export const storeTemplateLabels: Record<StoreTemplate, string> = {
-  ecommerce: "Ecommerce",
+  ecommerce: "Tienda online",
   food: "Comida",
-  "boutique-soft": "Boutique Soft",
-  "premium-minimal": "Premium Minimal",
-  "beauty-pop": "Beauty Pop",
-  "baby-natural": "Nido Natural",
-  "baby-atelier": "Petit Atelier",
-  "baby-mini": "Mundo Mini",
-  "baby-cielito": "Cielito",
-  "baby-bosque": "Bosque de Sueños",
-  "baby-abrazo": "Dulce Abrazo"
+  "boutique-soft": "Boutique",
+  "premium-minimal": "Minimalista",
+  "beauty-pop": "Colorida",
+  "baby-natural": "Natural",
+  "baby-atelier": "Delicada",
+  "baby-mini": "Divertida",
+  "baby-cielito": "Tierna",
+  "baby-bosque": "Bosque",
+  "baby-abrazo": "Cálida"
 };
 
 export const defaultCategoryTitles: Record<StoreTemplate, string> = {

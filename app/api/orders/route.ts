@@ -9,7 +9,7 @@ import { getStoreAvailability } from "@/lib/store-settings";
 const schema = z.object({
   storeSlug: z.string().min(2),
   customerName: z.string().min(2).max(100),
-  customerPhone: z.string().min(6).max(40),
+  customerPhone: z.string().trim().regex(/^\d{3} \d{3}-\d{4}$/, "Ingresá un teléfono válido."),
   fulfillment: z.enum(["pickup", "delivery"]),
   deliveryAddress: z.string().trim().min(5).max(220).optional(),
   notes: z.string().max(500).optional(),

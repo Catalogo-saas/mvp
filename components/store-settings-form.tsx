@@ -637,10 +637,10 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
           <div className="grid content-start gap-4">
             <label className="grid gap-2 text-sm font-bold">Estilo visual
               <select className="field" value={template} onChange={(event) => setTemplate(event.target.value as StoreTemplate)}>
-                <optgroup label="Versátil"><option value="ecommerce">Ecommerce</option></optgroup>
-                <optgroup label="Moda y belleza"><option value="premium-minimal">Minimal</option><option value="boutique-soft">Boutique</option><option value="beauty-pop">Colorida</option></optgroup>
+                <optgroup label="Versátil"><option value="ecommerce">{storeTemplateLabels.ecommerce}</option></optgroup>
+                <optgroup label="Moda y belleza"><option value="premium-minimal">{storeTemplateLabels["premium-minimal"]}</option><option value="boutique-soft">{storeTemplateLabels["boutique-soft"]}</option><option value="beauty-pop">{storeTemplateLabels["beauty-pop"]}</option></optgroup>
                 <optgroup label="Infantil">{storeTemplates.filter((value) => value.startsWith("baby-")).map((value) => <option key={value} value={value}>{storeTemplateLabels[value]}</option>)}</optgroup>
-                <optgroup label="Otros"><option value="food">Comida</option></optgroup>
+                <optgroup label="Otros"><option value="food">{storeTemplateLabels.food}</option></optgroup>
               </select>
             </label>
           </div>

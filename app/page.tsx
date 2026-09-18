@@ -116,7 +116,7 @@ const templateGroups = [
     description: "Una base versátil para mostrar categorías, promociones, variantes y stock con claridad.",
     templates: [
       {
-        name: "Ecommerce",
+        name: "Tienda online",
         description: "Una vidriera moderna y flexible, pensada para catálogos de cualquier rubro.",
         image: "/template-previews/ecommerce.jpg",
         href: "/mockups/template-ecommerce.html"
@@ -128,19 +128,19 @@ const templateGroups = [
     description: "Diseños con personalidad para marcas donde la estética y la fotografía son protagonistas.",
     templates: [
       {
-        name: "Boutique Soft",
+        name: "Boutique",
         description: "Cálida, cercana y delicada, con curvas y una paleta suave.",
         image: "/template-previews/boutique-soft.jpg",
         href: "/mockups/template-boutique-soft.html"
       },
       {
-        name: "Premium Minimal",
+        name: "Minimalista",
         description: "Fotografía dominante, aire editorial y una grilla limpia de producto.",
         image: "/template-previews/premium-minimal.jpg",
         href: "/mockups/template-premium-minimal.html"
       },
       {
-        name: "Beauty Pop",
+        name: "Colorida",
         description: "Joven, colorida y enérgica para marcas que buscan destacarse.",
         image: "/template-previews/beauty-pop.jpg",
         href: "/mockups/template-beauty-pop.html"
@@ -152,37 +152,37 @@ const templateGroups = [
     description: "Seis universos visuales creados para indumentaria, accesorios y productos para bebés.",
     templates: [
       {
-        name: "Nido Natural",
+        name: "Natural",
         description: "Serena y orgánica, con tonos tierra y formas suaves.",
         image: "/template-previews/baby-natural.jpg",
         href: "/mockups/template-baby-natural.html"
       },
       {
-        name: "Petit Atelier",
+        name: "Delicada",
         description: "Clásica y editorial, con una estética de boutique refinada.",
         image: "/template-previews/baby-atelier.jpg",
         href: "/mockups/template-baby-atelier.html"
       },
       {
-        name: "Mundo Mini",
+        name: "Divertida",
         description: "Lúdica y enérgica, con bloques de color y formas gráficas.",
         image: "/template-previews/baby-mini.jpg",
         href: "/mockups/template-baby-mini.html"
       },
       {
-        name: "Cielito",
+        name: "Tierna",
         description: "Pastel y soñadora, inspirada en nubes, estrellas y juegos.",
         image: "/template-previews/baby-cielito.jpg",
         href: "/mockups/template-baby-cielito.html"
       },
       {
-        name: "Bosque de Sueños",
+        name: "Bosque",
         description: "Un pequeño cuento ilustrado con naturaleza y tonos cálidos.",
         image: "/template-previews/baby-bosque.jpg",
         href: "/mockups/template-baby-bosque.html"
       },
       {
-        name: "Dulce Abrazo",
+        name: "Cálida",
         description: "Texturas, costuras y módulos suaves con espíritu artesanal.",
         image: "/template-previews/baby-abrazo.jpg",
         href: "/mockups/template-baby-abrazo.html"

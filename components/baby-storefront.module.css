@@ -221,8 +221,9 @@
 .optionGroups label.selected { border-color: var(--ink); background: var(--ink); color: #fff; }
 .optionGroups input { position: absolute; opacity: 0; pointer-events: none; }
 .error { color: #b42318; font-size: 12px; font-weight: 800; }
-.addCart, .whatsapp { position: sticky; bottom: 0; width: 100%; margin-top: 22px; padding: 15px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 900; }
+.addCart, .whatsapp { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 22px; padding: 15px; border: 0; border-radius: 999px; background: var(--ink); color: #fff; font-weight: 900; }
 .addCart:disabled, .whatsapp:disabled { cursor: not-allowed; opacity: .4; }
+.whatsapp img { width: 18px; height: 18px; flex-shrink: 0; }
 .cartTitle { margin: 62px 0 20px; }
 .cartLines article { display: grid; grid-template-columns: 72px 1fr auto; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
 .cartLines article > div { width: 72px; height: 88px; overflow: hidden; border-radius: 18%; background: var(--surface); }
@@ -243,7 +244,10 @@
 .twoChoices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .twoChoices label { display: flex; grid-template-columns: auto 1fr; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
 .twoChoices label.selected { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.pickupAddress { display: grid; gap: 4px; padding: 12px; background: var(--surface); color: var(--muted); font-size: 11px; }
+.pickupAddress strong { color: var(--ink); }
 .whatsapp { background: #218848; }
+.storefront .whatsapp { color: #fff; }
 .paymentDetails { display: grid; gap: 8px; margin: 0; }
 .paymentDetails div { position: relative; padding: 10px 12px; border-radius: 12px; background: var(--surface); }
 .paymentDetails dt { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
@@ -307,6 +311,7 @@
   .nav { min-height: 66px; }
   .tool:first-child { display: none; }
   .logo b { font-size: 23px; }
+  .checkoutForm input:not([type="radio"]), .checkoutForm textarea { font-size: 16px; }
   .hero { min-height: 0; margin-top: 12px; border-radius: 24px; }
   .heroCopy { min-height: 350px; padding: 28px 22px; }
   .hero h1 { font-size: 55px; }

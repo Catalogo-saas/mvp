@@ -121,8 +121,9 @@
 .optionGroups label.selected { border-color: var(--ink); background: var(--ink); color: #fff; }
 .optionGroups input { position: absolute; opacity: 0; pointer-events: none; }
 .error { color: #b42318; font-size: 11px; font-weight: 800; }
-.addCart, .whatsapp { position: sticky; bottom: 0; width: 100%; border: 0; border-radius: 999px; background: var(--ink); color: #fff; padding: 15px; margin-top: 22px; font-weight: 900; }
+.addCart, .whatsapp { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 999px; background: var(--ink); color: #fff; padding: 15px; margin-top: 22px; font-weight: 900; }
 .addCart:disabled, .whatsapp:disabled { opacity: .4; }
+.whatsapp img { width: 18px; height: 18px; flex-shrink: 0; }
 .storefront[data-template="boutique-soft"] .addCart,
 .storefront[data-template="premium-minimal"] .addCart { background: var(--template-primary); }
 .cartTitle { margin: 66px 0 18px; font-family: Georgia, serif; font-size: 48px; font-weight: 400; letter-spacing: -.04em; }
@@ -147,8 +148,10 @@
 .twoChoices label.choice { display: flex; grid-auto-flow: column; grid-template-columns: auto 1fr; align-items: center; border: 1px solid var(--line); border-radius: 15px; background: #fff; padding: 12px; }
 .twoChoices label.selected { border-color: var(--template-primary); background: color-mix(in srgb, var(--template-primary) 12%, #fff); }
 .twoChoices input { width: auto; }
-.checkoutForm fieldset > p { background: #fff; padding: 12px; color: var(--muted); font-size: 10px; }
+.pickupAddress { display: grid; gap: 4px; background: #fff; padding: 12px; color: var(--muted); font-size: 10px; }
+.pickupAddress strong { color: var(--ink); }
 .whatsapp { background: var(--green); }
+.storefront .whatsapp { color: #fff; }
 .paymentDetails { display: grid; gap: 8px; background: #fff; padding: 12px; font-size: 10px; }
 .paymentDetails div { position: relative; }
 .paymentDetails dt { color: var(--muted); }
@@ -283,6 +286,7 @@
   .logo b { font-size: 24px; }
   .tools > button:first-child { display: none; }
   .tools button { padding: 9px 12px; }
+  .checkoutForm input:not([type="radio"]), .checkoutForm textarea { font-size: 16px; }
   .hero { border-radius: 32px; }
   .heroCopy { min-height: 380px; padding: 30px 22px; }
   .hero h1 { font-size: 58px; }
