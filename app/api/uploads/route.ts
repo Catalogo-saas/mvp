@@ -38,7 +38,8 @@ export async function POST(request: Request) {
       expiresIn: 300,
       headers: { "Content-Type": result.data.contentType }
     });
-  } catch {
+  } catch (error) {
+    console.error("[image-upload] Failed to create presigned URL", error);
     return NextResponse.json({ error: "No se pudo preparar la subida" }, { status: 500 });
   }
 }

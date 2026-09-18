@@ -31,6 +31,17 @@ export const presignUploadSchema = z.object({
   size: z.number().int().positive()
 });
 
+export const uploadFailureReportSchema = z.object({
+  stage: z.literal("direct-upload"),
+  scope: z.enum(imageUploadScopes),
+  reason: z.enum(["network", "http"]),
+  status: z.number().int().min(400).max(599).optional(),
+  contentType: z.enum(imageMimeTypes),
+  size: z.number().int().positive().max(GIF_MAX_BYTES)
+});
+
+export type UploadFailureReport = z.infer<typeof uploadFailureReportSchema>;
+
 export function maxBytesForMimeType(contentType: ImageMimeType) {
   return contentType === "image/gif" ? GIF_MAX_BYTES : STATIC_IMAGE_MAX_OUTPUT_BYTES;
 }

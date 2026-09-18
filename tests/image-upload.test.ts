@@ -6,7 +6,8 @@ import {
   isPendingImageKeyForStore,
   maxBytesForMimeType,
   sniffImageMimeType,
-  STATIC_IMAGE_MAX_OUTPUT_BYTES
+  STATIC_IMAGE_MAX_OUTPUT_BYTES,
+  uploadFailureReportSchema
 } from "../lib/image-upload-contract";
 
 describe("image upload contract", () => {
@@ -27,6 +28,25 @@ describe("image upload contract", () => {
     expect(isPendingImageKeyForStore(key, "store-b", "products")).toBe(false);
     expect(isPendingImageKeyForStore(key, "store-a", "hero")).toBe(false);
     expect(isPendingImageKeyForStore(`${key}/nested`, "store-a", "products")).toBe(false);
+  });
+
+  it("keeps client failure reports limited to safe diagnostic fields", () => {
+    const result = uploadFailureReportSchema.safeParse({
+      stage: "direct-upload",
+      scope: "products",
+      reason: "http",
+      status: 403,
+      contentType: "image/webp",
+      size: 1024,
+      fileName: "private-name.webp",
+      uploadUrl: "https://secret.example/presigned"
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).not.toHaveProperty("fileName");
+      expect(result.data).not.toHaveProperty("uploadUrl");
+    }
   });
 });
 

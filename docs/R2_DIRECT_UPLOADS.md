@@ -4,13 +4,13 @@ Las imágenes se optimizan en el navegador, se suben directamente a R2 mediante 
 
 ## CORS del bucket
 
-En **R2 → landing-saas → Settings → CORS Policy**, configurar los orígenes reales desde los que se usa el panel. Reemplazar `https://tu-dominio.com` y agregar explícitamente cualquier dominio de preview que deba funcionar.
+En **R2 → landing-saas → Settings → CORS Policy**, configurar los orígenes exactos desde los que se usa el panel. No agregar aquí la URL pública `r2.dev`: es el destino de lectura del bucket, no el origen de la aplicación que realiza la carga.
 
 ```json
 [
   {
     "AllowedOrigins": [
-      "https://tu-dominio.com",
+      "https://catalogo-web-ar.vercel.app",
       "http://localhost:3000"
     ],
     "AllowedMethods": ["PUT"],
@@ -20,6 +20,8 @@ En **R2 → landing-saas → Settings → CORS Policy**, configurar los orígene
   }
 ]
 ```
+
+Los orígenes no deben terminar en `/`. Si el panel se publica en un dominio propio, agregar ese origen exacto en la misma lista. Evitar habilitar todos los previews de Vercel mediante un comodín; agregar únicamente los entornos que realmente deban subir archivos.
 
 No usar el dominio público `r2.dev` para la URL prefirmada. El backend la genera contra `S3_ENDPOINT`; `PUBLIC_FILE_BASE_URL` se utiliza solamente para las URLs públicas finales.
 
@@ -39,4 +41,3 @@ Esta regla solo afecta cargas que nunca fueron promovidas. Las imágenes definit
 2. Subir una fotografía JPG de más de 4,5 MB desde Productos y comprobar que termina publicada como WebP.
 3. Repetir con logo, hero y categoría.
 4. En DevTools, comprobar que el `PUT` va directamente a `r2.cloudflarestorage.com` y que las llamadas a `/api/admin/*` envían JSON sin archivos.
-

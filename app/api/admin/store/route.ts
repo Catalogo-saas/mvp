@@ -143,7 +143,8 @@ export async function PATCH(request: Request) {
     }
   } catch (error) {
     await deletePromotedImages(promotedImages);
-    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudieron validar las imágenes." }, { status: 400 });
+    console.error("[image-upload] Failed to promote store images", error);
+    return NextResponse.json({ error: "No pudimos procesar las imágenes. Intentá nuevamente." }, { status: 400 });
   }
 
   const paymentValues = result.data.acceptTransferPayments

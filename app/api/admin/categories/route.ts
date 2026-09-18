@@ -60,7 +60,8 @@ export async function POST(request: Request) {
       });
     }
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo validar la imagen." }, { status: 400 });
+    console.error("[image-upload] Failed to promote category image", error);
+    return NextResponse.json({ error: "No pudimos procesar la imagen. Intentá nuevamente." }, { status: 400 });
   }
   const imageUrl = resolvedImages.urls[0] ?? null;
 

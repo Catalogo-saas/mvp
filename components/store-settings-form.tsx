@@ -7,10 +7,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
+import { SaveOverlay } from "@/components/save-overlay";
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { getDefaultCategoryTitle, normalizeStoreTemplate, storeTemplateLabels, storeTemplates, templateOriginalColors, type StoreTemplate } from "@/lib/catalog";
-import { mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import { getImageUploadErrorMessage, mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference, ImageUploadScope } from "@/lib/image-upload-contract";
 import {
   normalizePublicPageConfig,
@@ -265,7 +266,6 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
   const [publicUrlCopied, setPublicUrlCopied] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
   const [formRevision, setFormRevision] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -468,9 +468,9 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError("");
-    setSaveStatus("Optimizando imágenes...");
 
     const uploadTasks: Array<{ id: string; scope: ImageUploadScope; file: File }> = [];
     if (selectedLogoFile) uploadTasks.push({ id: "logo", scope: "logos", file: selectedLogoFile });
@@ -482,101 +482,94 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
     });
 
     const uploadedReferences = new Map<string, ImageReference>();
-    let completedUploads = 0;
     try {
       const results = await mapWithConcurrency(uploadTasks, 3, async (task) => {
         const reference = await uploadImageDirect(task.scope, task.file);
-        completedUploads += 1;
-        setSaveStatus(`Subiendo imágenes ${completedUploads}/${uploadTasks.length}...`);
         return { id: task.id, reference };
       });
       results.forEach(({ id, reference }) => uploadedReferences.set(id, reference));
-    } catch (uploadError) {
+
+      const logo: ImageReference | null = selectedLogoFile
+        ? uploadedReferences.get("logo") ?? null
+        : logoUrl
+          ? { kind: "stored", url: logoUrl }
+          : null;
+      const heroImageReferences = heroImages.map((image) =>
+        image.file
+          ? uploadedReferences.get(`hero:${image.id}`)!
+          : ({ kind: "stored", url: image.url } as const)
+      );
+      const categoryImages = Object.keys(categoryFiles).map((categoryId) => ({
+        categoryId,
+        image: uploadedReferences.get(`category:${categoryId}`)!
+      }));
+
+      const payload = {
+        name: storeName,
+        description,
+        address,
+        whatsappPhone: whatsappLocal,
+        heroTitle,
+        heroSubtitle,
+        logo,
+        heroImages: heroImageReferences,
+        categoryImages,
+        primary,
+        accent,
+        useTemplateColors,
+        template,
+        publicPageConfig,
+        showCategories,
+        showFeatured,
+        freeShippingEnabled,
+        freeShippingThreshold: digitsOnly(freeShippingThreshold) || "0",
+        acceptTransferPayments,
+        paymentAccountHolder,
+        paymentProvider,
+        paymentAlias,
+        paymentCbu,
+        businessHoursText,
+        restrictBySchedule,
+        businessHours,
+        mobileProductColumns
+      };
+
+      const response = await fetch("/api/admin/store", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        setError(data?.error ?? "No pudimos guardar la configuración. Intentá nuevamente.");
+        return;
+      }
+
+      setLogoUrl(data.store.logoUrl ?? "");
+      heroImages.forEach((image) => {
+        if (image.file) URL.revokeObjectURL(image.url);
+      });
+      setHeroImages((data.store.heroImageUrls ?? []).map((url: string) => ({ id: url, url })));
+      if (Array.isArray(data.categories)) setCategories(data.categories);
+      Object.values(categoryPreviews).forEach((preview) => URL.revokeObjectURL(preview));
+      setCategoryFiles({});
+      setCategoryPreviews({});
+      if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+      setLogoPreviewUrl("");
+      setSelectedLogoFile(null);
+      setPublicPageConfig(normalizePublicPageConfig(data.store.publicPageConfig));
+      resetDirtyBaselineRef.current = true;
+      setFormRevision((current) => current + 1);
+      router.refresh();
+    } catch (saveError) {
+      setError(getImageUploadErrorMessage(saveError) ?? "No pudimos guardar la configuración. Revisá tu conexión e intentá nuevamente.");
+    } finally {
       setLoading(false);
-      setSaveStatus("");
-      setError(uploadError instanceof Error ? uploadError.message : "No se pudieron subir las imágenes.");
-      return;
     }
-
-    const logo: ImageReference | null = selectedLogoFile
-      ? uploadedReferences.get("logo") ?? null
-      : logoUrl
-        ? { kind: "stored", url: logoUrl }
-        : null;
-    const heroImageReferences = heroImages.map((image) =>
-      image.file
-        ? uploadedReferences.get(`hero:${image.id}`)!
-        : ({ kind: "stored", url: image.url } as const)
-    );
-    const categoryImages = Object.keys(categoryFiles).map((categoryId) => ({
-      categoryId,
-      image: uploadedReferences.get(`category:${categoryId}`)!
-    }));
-
-    setSaveStatus("Guardando configuración...");
-    const payload = {
-      name: storeName,
-      description,
-      address,
-      whatsappPhone: whatsappLocal,
-      heroTitle,
-      heroSubtitle,
-      logo,
-      heroImages: heroImageReferences,
-      categoryImages,
-      primary,
-      accent,
-      useTemplateColors,
-      template,
-      publicPageConfig,
-      showCategories,
-      showFeatured,
-      freeShippingEnabled,
-      freeShippingThreshold: digitsOnly(freeShippingThreshold) || "0",
-      acceptTransferPayments,
-      paymentAccountHolder,
-      paymentProvider,
-      paymentAlias,
-      paymentCbu,
-      businessHoursText,
-      restrictBySchedule,
-      businessHours,
-      mobileProductColumns
-    };
-
-    const response = await fetch("/api/admin/store", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => null);
-    setLoading(false);
-    setSaveStatus("");
-    if (!response.ok) {
-      setError(data?.error ?? "No se pudo guardar la tienda.");
-      return;
-    }
-
-    setLogoUrl(data.store.logoUrl ?? "");
-    heroImages.forEach((image) => {
-      if (image.file) URL.revokeObjectURL(image.url);
-    });
-    setHeroImages((data.store.heroImageUrls ?? []).map((url: string) => ({ id: url, url })));
-    if (Array.isArray(data.categories)) setCategories(data.categories);
-    Object.values(categoryPreviews).forEach((preview) => URL.revokeObjectURL(preview));
-    setCategoryFiles({});
-    setCategoryPreviews({});
-    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
-    setLogoPreviewUrl("");
-    setSelectedLogoFile(null);
-    setPublicPageConfig(normalizePublicPageConfig(data.store.publicPageConfig));
-    resetDirtyBaselineRef.current = true;
-    setFormRevision((current) => current + 1);
-    router.refresh();
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} onChange={() => setFormRevision((current) => current + 1)} className="grid gap-5 pb-28">
+    <form ref={formRef} onSubmit={onSubmit} onChange={() => setFormRevision((current) => current + 1)} aria-busy={loading} className="grid gap-5 pb-28">
       <nav className="panel sticky top-4 z-30 grid grid-cols-4 gap-1 p-1.5" aria-label="Secciones de configuración">
         {([
           ["brand", "Marca"],
@@ -763,7 +756,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
       {hoursModalOpen ? <div className="fixed inset-0 z-50 flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Editar horarios"><div className="panel grid h-[100dvh] min-h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-4 sm:h-auto sm:min-h-0 sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">Horario</p><h3 className="mt-1 text-2xl font-black">Editar atención</h3></div><button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={() => setHoursModalOpen(false)}><X size={18} /></button></div><div className="grid gap-3 overflow-y-auto pb-6 pr-1">{businessDayKeys.map((day) => <article key={day} className="grid gap-3 rounded-2xl border border-line bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-black">{businessDayLabels[day]}</p><div className="flex flex-wrap gap-2">{businessHours.days[day].length ? <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => copyRangesToAllDays(day)}><Copy size={15} /> Copiar</button> : null}<button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => addRange(day)}><Plus size={15} /> Rango</button></div></div>{businessHours.days[day].length ? businessHours.days[day].map((range, index) => <div key={`${day}-${index}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-end gap-2"><label className="grid gap-1 text-xs font-bold text-muted">Apertura<input className="field !px-2 !py-2 text-center" type="time" value={range.open} onChange={(event) => updateRange(day, index, { open: event.target.value })} /></label><label className="grid gap-1 text-xs font-bold text-muted">Cierre<input className="field !px-2 !py-2 text-center" type="time" value={range.close} onChange={(event) => updateRange(day, index, { close: event.target.value })} /></label><button className="grid h-11 w-11 place-items-center rounded-xl border border-line text-red-600" type="button" onClick={() => removeRange(day, index)}><Trash2 size={15} /></button></div>) : <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Cerrado</p>}</article>)}</div><div className="-mx-4 -mb-4 border-t border-line bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6"><button className="btn-primary w-full" type="button" onClick={() => setHoursModalOpen(false)}>Listo</button></div></div></div> : null}
 
-      <div className="fixed inset-x-4 bottom-4 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<button className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>{loading ? saveStatus || "Guardando..." : "Guardar configuración"}</button></div>
+      <div className="fixed inset-x-4 bottom-4 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<button className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>Guardar configuración</button></div>
+      {loading ? <SaveOverlay title="Guardando configuración…" /> : null}
     </form>
   );
 }

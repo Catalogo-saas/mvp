@@ -53,7 +53,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
       allowedStoredUrls: existingProduct.imageUrls
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudieron validar las imágenes." }, { status: 400 });
+    console.error("[image-upload] Failed to promote product images", error);
+    return NextResponse.json({ error: "No pudimos procesar las imágenes. Intentá nuevamente." }, { status: 400 });
   }
   const nextImageUrls = resolvedImages.urls;
   const removedImageUrls = existingProduct.imageUrls.filter((url) => !nextImageUrls.includes(url));

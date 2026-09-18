@@ -5,9 +5,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { SaveOverlay } from "@/components/save-overlay";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { normalizeStoreTemplate } from "@/lib/catalog";
-import { mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import { getImageUploadErrorMessage, mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference } from "@/lib/image-upload-contract";
 import { formatMoney } from "@/lib/money";
 
@@ -369,7 +370,6 @@ export function ProductForm({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -393,12 +393,16 @@ export function ProductForm({
   }, [categoryFilter, products, query]);
 
   async function refreshCategories() {
-    const response = await fetch("/api/admin/categories");
-    if (!response.ok) {
-      return;
+    try {
+      const response = await fetch("/api/admin/categories");
+      if (!response.ok) {
+        return;
+      }
+      const data = await response.json();
+      setCategories(data.categories);
+    } catch {
+      // The product was already saved; the next refresh will reconcile categories.
     }
-    const data = await response.json();
-    setCategories(data.categories);
   }
 
   function replaceDraft(nextDraft: ProductDraft) {
@@ -631,6 +635,7 @@ export function ProductForm({
 
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     if (draft.categoryId === "__new" && !draft.categoryName.trim()) {
       setError("Ingresá el nombre de la nueva categoría.");
       return;
@@ -646,49 +651,38 @@ export function ProductForm({
 
     setLoading(true);
     setError("");
-    setSaveStatus("Optimizando imágenes...");
 
-    let completedImages = 0;
-    let images: ImageReference[];
     try {
-      images = await mapWithConcurrency(draft.images, 3, async (image) => {
+      const images: ImageReference[] = await mapWithConcurrency(draft.images, 3, async (image) => {
         if (!image.file) return { kind: "stored", url: image.url } as const;
-        const reference = await uploadImageDirect("products", image.file);
-        completedImages += 1;
-        setSaveStatus(`Subiendo imágenes ${completedImages}/${draft.images.filter((item) => item.file).length}...`);
-        return reference;
+        return uploadImageDirect("products", image.file);
       });
-    } catch (uploadError) {
+
+      const payload = { ...draftToPayload(draft), images };
+      const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/admin/products", {
+        method: editingProductId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setError(data?.error ?? "No pudimos guardar el producto. Intentá nuevamente.");
+        return;
+      }
+
+      setProducts((current) =>
+        editingProductId ? current.map((product) => (product.id === editingProductId ? data.product : product)) : [data.product, ...current]
+      );
+      await refreshCategories();
+      resetDraft();
+      setProductModalOpen(false);
+      router.refresh();
+    } catch (saveError) {
+      setError(getImageUploadErrorMessage(saveError) ?? "No pudimos guardar el producto. Revisá tu conexión e intentá nuevamente.");
+    } finally {
       setLoading(false);
-      setSaveStatus("");
-      setError(uploadError instanceof Error ? uploadError.message : "No se pudieron subir las imágenes.");
-      return;
     }
-
-    setSaveStatus("Guardando producto...");
-    const payload = { ...draftToPayload(draft), images };
-
-    const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/admin/products", {
-      method: editingProductId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => null);
-    setLoading(false);
-    setSaveStatus("");
-
-    if (!response.ok) {
-      setError(data?.error ?? "No se pudo guardar el producto.");
-      return;
-    }
-
-    setProducts((current) =>
-      editingProductId ? current.map((product) => (product.id === editingProductId ? data.product : product)) : [data.product, ...current]
-    );
-    await refreshCategories();
-    resetDraft();
-    setProductModalOpen(false);
-    router.refresh();
   }
 
   async function toggleProductVisibility(product: ProductListItem) {
@@ -859,7 +853,7 @@ export function ProductForm({
 
       {isProductModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4">
-          <form onSubmit={saveProduct} className="panel grid h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-5 sm:h-auto sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6">
+          <form onSubmit={saveProduct} aria-busy={loading} className="panel grid h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-5 sm:h-auto sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">{editingProductId ? "Editar" : "Nuevo"}</p>
@@ -1053,7 +1047,7 @@ export function ProductForm({
             <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
               {error ? <p className="mb-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
               <button className="btn-primary w-full" disabled={loading}>
-                <Save size={18} /> {loading ? saveStatus || "Guardando..." : editingProductId ? "Guardar cambios" : "Crear producto"}
+                <Save size={18} /> {editingProductId ? "Guardar cambios" : "Crear producto"}
               </button>
             </div>
           </form>
@@ -1250,6 +1244,7 @@ export function ProductForm({
           </div>
         </div>
       ) : null}
+      {loading ? <SaveOverlay title="Guardando producto…" /> : null}
     </div>
   );
 }
