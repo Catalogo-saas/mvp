@@ -1,22 +1,11 @@
-import { Buffer } from "node:buffer";
-import { randomUUID } from "node:crypto";
-
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
+import { maxBytesForMimeType, presignUploadSchema } from "@/lib/image-upload-contract";
+import { createPendingImageKey } from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
-import { uploadPublicObject } from "@/lib/storage";
+import { createPresignedUploadUrl } from "@/lib/storage";
 
 export const runtime = "nodejs";
-
-const scopeSchema = z.enum(["logos", "products"]);
-
-const extensionsByType: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif"
-};
 
 export async function POST(request: Request) {
   const store = await getMerchantStore();
@@ -24,33 +13,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const formData = await request.formData().catch(() => null);
-  const file = formData?.get("file");
-  const scopeResult = scopeSchema.safeParse(formData?.get("scope"));
-
-  if (!(file instanceof File) || !scopeResult.success) {
-    return NextResponse.json({ error: "Archivo inválido" }, { status: 400 });
+  const result = presignUploadSchema.safeParse(await request.json().catch(() => null));
+  if (!result.success) {
+    return NextResponse.json({ error: "Solicitud de imagen inválida" }, { status: 400 });
   }
 
-  if (!file.type.startsWith("image/") || !extensionsByType[file.type]) {
-    return NextResponse.json({ error: "Formato de imagen no soportado" }, { status: 400 });
-  }
-
-  if (file.size > 6 * 1024 * 1024) {
-    return NextResponse.json({ error: "La imagen no puede superar 6 MB" }, { status: 400 });
+  const maximumSize = maxBytesForMimeType(result.data.contentType);
+  if (result.data.size > maximumSize) {
+    const label = result.data.contentType === "image/gif" ? "10 MB" : "2 MB";
+    return NextResponse.json({ error: `La imagen procesada no puede superar ${label}.` }, { status: 400 });
   }
 
   try {
-    const extension = extensionsByType[file.type];
-    const key = `${scopeResult.data}/${store.id}/${randomUUID()}.${extension}`;
-    const url = await uploadPublicObject({
-      key,
-      body: Buffer.from(await file.arrayBuffer()),
-      contentType: file.type
+    const pendingKey = createPendingImageKey(store.id, result.data.scope, result.data.contentType);
+    const uploadUrl = await createPresignedUploadUrl({
+      key: pendingKey,
+      contentType: result.data.contentType,
+      expiresIn: 300
     });
 
-    return NextResponse.json({ url });
+    return NextResponse.json({
+      uploadUrl,
+      pendingKey,
+      expiresIn: 300,
+      headers: { "Content-Type": result.data.contentType }
+    });
   } catch {
-    return NextResponse.json({ error: "No se pudo subir la imagen" }, { status: 500 });
+    return NextResponse.json({ error: "No se pudo preparar la subida" }, { status: 500 });
   }
 }

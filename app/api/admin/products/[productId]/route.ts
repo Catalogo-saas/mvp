@@ -3,19 +3,15 @@ import { NextResponse } from "next/server";
 import {
   buildOptionGroupCreates,
   deleteProductImagesForStore,
-  normalizeImageUrls,
   normalizePromoPrice,
-  parseProductRequest,
   productInclude,
   productSchema,
-  resolveCategoryId,
-  uploadProductImages,
-  validateProductImageFiles
+  resolveCategoryId
 } from "@/lib/admin-catalog";
+import { deletePromotedImages, deletePromotedTemporaries, resolveImageReferences } from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
 import { parsePriceToCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
-import { deletePublicObject } from "@/lib/storage";
 
 type Params = Promise<{ productId: string }>;
 
@@ -31,17 +27,9 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
   }
 
-  const { body, imageFiles } = await parseProductRequest(request).catch(() => ({ body: null, imageFiles: [] }));
-  const result = productSchema.safeParse(body);
+  const result = productSchema.safeParse(await request.json().catch(() => null));
   if (!result.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
-  }
-  const imageError = validateProductImageFiles(imageFiles);
-  if (imageError) {
-    return NextResponse.json({ error: imageError }, { status: 400 });
-  }
-  if (result.data.imageUrls.length + imageFiles.length > 6) {
-    return NextResponse.json({ error: "El máximo es 6 imágenes por producto." }, { status: 400 });
   }
 
   const basePrice = parsePriceToCents(String(result.data.basePrice));
@@ -56,11 +44,18 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   const nextName = result.data.name.trim();
-  const uploadedImages = imageFiles.length ? await uploadProductImages(store.id, imageFiles).catch(() => null) : [];
-  if (uploadedImages === null) {
-    return NextResponse.json({ error: "No se pudieron subir las imágenes." }, { status: 500 });
+  let resolvedImages;
+  try {
+    resolvedImages = await resolveImageReferences({
+      storeId: store.id,
+      scope: "products",
+      references: result.data.images,
+      allowedStoredUrls: existingProduct.imageUrls
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudieron validar las imágenes." }, { status: 400 });
   }
-  const nextImageUrls = normalizeImageUrls({ ...result.data, imageUrls: [...result.data.imageUrls, ...uploadedImages.map((image) => image.url)] });
+  const nextImageUrls = resolvedImages.urls;
   const removedImageUrls = existingProduct.imageUrls.filter((url) => !nextImageUrls.includes(url));
 
   let product;
@@ -87,10 +82,11 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
       });
     });
   } catch (error) {
-    await Promise.all(uploadedImages.map((image) => deletePublicObject(image.key).catch(() => null)));
+    await deletePromotedImages(resolvedImages.promoted);
     throw error;
   }
 
+  await deletePromotedTemporaries(resolvedImages.promoted);
   await deleteProductImagesForStore(store.id, removedImageUrls);
 
   return NextResponse.json({ product });

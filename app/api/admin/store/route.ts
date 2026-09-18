@@ -1,15 +1,19 @@
-import { Buffer } from "node:buffer";
-import { randomUUID } from "node:crypto";
-
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { storeTemplates } from "@/lib/catalog";
+import { imageReferenceSchema } from "@/lib/image-upload-contract";
+import {
+  deletePromotedImages,
+  deletePromotedTemporaries,
+  resolveImageReferences,
+  type PromotedImage
+} from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
 import { publicPageConfigSchema } from "@/lib/public-page-config";
 import { reservedSlugs, slugify } from "@/lib/slug";
-import { deletePublicObject, getPublicObjectKeyFromUrl, uploadPublicObject } from "@/lib/storage";
+import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
 import {
   emptyBusinessHours,
   isCompleteArgentineLocalPhone,
@@ -21,10 +25,13 @@ const schema = z.object({
   name: z.string().min(2).max(90),
   description: z.string().max(500).optional().nullable(),
   whatsappPhone: z.string().refine(isCompleteArgentineLocalPhone),
-  logoUrl: z.string().url().optional().or(z.literal("")),
+  logo: imageReferenceSchema.nullable(),
   heroTitle: z.string().max(120).optional().nullable(),
   heroSubtitle: z.string().max(220).optional().nullable(),
-  heroImageUrls: z.array(z.string().url()).max(3).default([]),
+  heroImages: z.array(imageReferenceSchema).max(3).default([]),
+  categoryImages: z
+    .array(z.object({ categoryId: z.string().min(1), image: imageReferenceSchema.nullable() }))
+    .default([]),
   address: z.string().max(180).optional().nullable(),
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -46,109 +53,6 @@ const schema = z.object({
   mobileProductColumns: z.coerce.number().int().refine((value) => value === 1 || value === 2)
 });
 
-const imageExtensionsByType: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif"
-};
-
-type CategoryImageUpload = {
-  categoryId: string;
-  file: File;
-};
-
-function getFormString(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : undefined;
-}
-
-function getFormBoolean(formData: FormData, key: string) {
-  return getFormString(formData, key) === "true";
-}
-
-function parseFormJson(formData: FormData, key: string, fallback: unknown) {
-  const value = getFormString(formData, key);
-  if (!value) {
-    return fallback;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
-
-async function parseSettingsPayload(request: Request) {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.includes("multipart/form-data")) {
-    return {
-      body: await request.json().catch(() => null),
-      logoFile: null as File | null,
-      heroFiles: [] as File[],
-      categoryFiles: [] as CategoryImageUpload[]
-    };
-  }
-
-  const formData = await request.formData().catch(() => null);
-  if (!formData) {
-    return { body: null, logoFile: null as File | null, heroFiles: [] as File[], categoryFiles: [] as CategoryImageUpload[] };
-  }
-
-  const logoFile = formData.get("logoFile");
-  const heroFiles = formData.getAll("heroFiles").filter((file): file is File => file instanceof File && file.size > 0);
-  const categoryFileIds = parseFormJson(formData, "categoryFileIds", []);
-  const categoryFileIdList = Array.isArray(categoryFileIds) ? categoryFileIds : [];
-  const categoryFiles = formData
-    .getAll("categoryFiles")
-    .filter((file): file is File => file instanceof File && file.size > 0)
-    .map((file, index) => ({ categoryId: typeof categoryFileIdList[index] === "string" ? categoryFileIdList[index] : "", file }));
-  return {
-    body: {
-      name: getFormString(formData, "name"),
-      description: getFormString(formData, "description"),
-      whatsappPhone: getFormString(formData, "whatsappPhone"),
-      logoUrl: getFormString(formData, "logoUrl") ?? "",
-      heroTitle: getFormString(formData, "heroTitle"),
-      heroSubtitle: getFormString(formData, "heroSubtitle"),
-      heroImageUrls: parseFormJson(formData, "heroImageUrls", []),
-      address: getFormString(formData, "address"),
-      primary: getFormString(formData, "primary"),
-      accent: getFormString(formData, "accent"),
-      useTemplateColors: getFormBoolean(formData, "useTemplateColors"),
-      template: getFormString(formData, "template"),
-      publicPageConfig: parseFormJson(formData, "publicPageConfig", null),
-      showCategories: getFormBoolean(formData, "showCategories"),
-      showFeatured: getFormBoolean(formData, "showFeatured"),
-      freeShippingEnabled: getFormBoolean(formData, "freeShippingEnabled"),
-      freeShippingThreshold: getFormString(formData, "freeShippingThreshold"),
-      acceptTransferPayments: getFormBoolean(formData, "acceptTransferPayments"),
-      paymentAccountHolder: getFormString(formData, "paymentAccountHolder"),
-      paymentProvider: getFormString(formData, "paymentProvider"),
-      paymentAlias: getFormString(formData, "paymentAlias"),
-      paymentCbu: getFormString(formData, "paymentCbu"),
-      businessHoursText: getFormString(formData, "businessHoursText"),
-      restrictBySchedule: getFormBoolean(formData, "restrictBySchedule"),
-      businessHours: parseFormJson(formData, "businessHours", emptyBusinessHours()),
-      mobileProductColumns: getFormString(formData, "mobileProductColumns")
-    },
-    logoFile: logoFile instanceof File && logoFile.size > 0 ? logoFile : null,
-    heroFiles,
-    categoryFiles
-  };
-}
-
-function validateImageFile(file: File, label: string) {
-  if (!file.type.startsWith("image/") || !imageExtensionsByType[file.type]) {
-    return `Formato de ${label} no soportado.`;
-  }
-  if (file.size > 6 * 1024 * 1024) {
-    return `Cada archivo de ${label} no puede superar 6 MB.`;
-  }
-  return null;
-}
-
 function cleanOptionalText(value: string | null | undefined) {
   const trimmed = value?.trim() ?? "";
   return trimmed || null;
@@ -160,33 +64,12 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { body, logoFile, heroFiles, categoryFiles } = await parseSettingsPayload(request);
-  const result = schema.safeParse(body);
+  const result = schema.safeParse(await request.json().catch(() => null));
   if (!result.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
   }
 
-  const logoError = logoFile ? validateImageFile(logoFile, "logo") : null;
-  if (logoError) {
-    return NextResponse.json({ error: logoError }, { status: 400 });
-  }
-  for (const file of heroFiles) {
-    const heroError = validateImageFile(file, "hero");
-    if (heroError) {
-      return NextResponse.json({ error: heroError }, { status: 400 });
-    }
-  }
-  for (const { file } of categoryFiles) {
-    const categoryError = validateImageFile(file, "categoría");
-    if (categoryError) {
-      return NextResponse.json({ error: categoryError }, { status: 400 });
-    }
-  }
-  if (result.data.heroImageUrls.length + heroFiles.length > 3) {
-    return NextResponse.json({ error: "El máximo es 3 imágenes para el hero." }, { status: 400 });
-  }
-
-  const categoryIds = categoryFiles.map(({ categoryId }) => categoryId);
+  const categoryIds = result.data.categoryImages.map(({ categoryId }) => categoryId);
   if (categoryIds.some((categoryId) => !categoryId) || new Set(categoryIds).size !== categoryIds.length) {
     return NextResponse.json({ error: "No se pudieron identificar las categorías." }, { status: 400 });
   }
@@ -218,40 +101,49 @@ export async function PATCH(request: Request) {
   const previousHeroUrls = store.heroImageUrls;
   const previousCategoryImages = new Map(categoriesForUpdate.map((category) => [category.id, category.imageUrl]));
   const nextCategoryImages = new Map(previousCategoryImages);
-  let nextLogoUrl = result.data.logoUrl || null;
-  let nextHeroUrls = result.data.heroImageUrls;
-  const uploadedKeys: string[] = [];
+  let nextLogoUrl: string | null = null;
+  let nextHeroUrls: string[] = [];
+  const promotedImages: PromotedImage[] = [];
 
   try {
-    if (logoFile) {
-      const extension = imageExtensionsByType[logoFile.type];
-      const key = `logos/${store.id}/${randomUUID()}.${extension}`;
-      nextLogoUrl = await uploadPublicObject({
-        key,
-        body: Buffer.from(await logoFile.arrayBuffer()),
-        contentType: logoFile.type
+    if (result.data.logo) {
+      const resolvedLogo = await resolveImageReferences({
+        storeId: store.id,
+        scope: "logos",
+        references: [result.data.logo],
+        allowedStoredUrls: previousLogoUrl ? [previousLogoUrl] : []
       });
-      uploadedKeys.push(key);
+      nextLogoUrl = resolvedLogo.urls[0] ?? null;
+      promotedImages.push(...resolvedLogo.promoted);
     }
 
-    for (const file of heroFiles) {
-      const extension = imageExtensionsByType[file.type];
-      const key = `hero/${store.id}/${randomUUID()}.${extension}`;
-      const url = await uploadPublicObject({ key, body: Buffer.from(await file.arrayBuffer()), contentType: file.type });
-      uploadedKeys.push(key);
-      nextHeroUrls = [...nextHeroUrls, url].slice(0, 3);
-    }
+    const resolvedHero = await resolveImageReferences({
+      storeId: store.id,
+      scope: "hero",
+      references: result.data.heroImages,
+      allowedStoredUrls: previousHeroUrls
+    });
+    nextHeroUrls = resolvedHero.urls;
+    promotedImages.push(...resolvedHero.promoted);
 
-    for (const { categoryId, file } of categoryFiles) {
-      const extension = imageExtensionsByType[file.type];
-      const key = `categories/${store.id}/${randomUUID()}.${extension}`;
-      const url = await uploadPublicObject({ key, body: Buffer.from(await file.arrayBuffer()), contentType: file.type });
-      uploadedKeys.push(key);
-      nextCategoryImages.set(categoryId, url);
+    for (const { categoryId, image } of result.data.categoryImages) {
+      if (!image) {
+        nextCategoryImages.set(categoryId, null);
+        continue;
+      }
+      const previousImage = previousCategoryImages.get(categoryId);
+      const resolvedCategory = await resolveImageReferences({
+        storeId: store.id,
+        scope: "categories",
+        references: [image],
+        allowedStoredUrls: previousImage ? [previousImage] : []
+      });
+      nextCategoryImages.set(categoryId, resolvedCategory.urls[0] ?? null);
+      promotedImages.push(...resolvedCategory.promoted);
     }
-  } catch {
-    await Promise.all(uploadedKeys.map((key) => deletePublicObject(key).catch(() => null)));
-    return NextResponse.json({ error: "No se pudieron subir las imágenes." }, { status: 500 });
+  } catch (error) {
+    await deletePromotedImages(promotedImages);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudieron validar las imágenes." }, { status: 400 });
   }
 
   const paymentValues = result.data.acceptTransferPayments
@@ -309,9 +201,11 @@ export async function PATCH(request: Request) {
       return updatedStore;
     });
   } catch (error) {
-    await Promise.all(uploadedKeys.map((key) => deletePublicObject(key).catch(() => null)));
+    await deletePromotedImages(promotedImages);
     throw error;
   }
+
+  await deletePromotedTemporaries(promotedImages);
 
   const previousLogoKey = previousLogoUrl && nextLogoUrl !== previousLogoUrl ? getPublicObjectKeyFromUrl(previousLogoUrl) : null;
   if (previousLogoKey?.startsWith(`logos/${store.id}/`)) {

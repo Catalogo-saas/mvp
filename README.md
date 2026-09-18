@@ -2,6 +2,8 @@
 
 MVP de SaaS multi-tienda para catálogos mobile-first con pedidos por WhatsApp.
 
+La configuración necesaria para las cargas directas de imágenes está documentada en [`docs/R2_DIRECT_UPLOADS.md`](docs/R2_DIRECT_UPLOADS.md).
+
 ## Stack
 
 - Next.js + TypeScript

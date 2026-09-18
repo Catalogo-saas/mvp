@@ -1,54 +1,19 @@
-import { Buffer } from "node:buffer";
-import { randomUUID } from "node:crypto";
-
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { imageReferenceSchema } from "@/lib/image-upload-contract";
+import { deletePromotedImages, deletePromotedTemporaries, resolveImageReferences } from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
-import { deletePublicObject, getPublicObjectKeyFromUrl, uploadPublicObject } from "@/lib/storage";
+import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
 
 const categorySchema = z.object({
   name: z.string().min(2).max(80),
-  imageUrl: z.string().url().optional().or(z.literal(""))
+  image: imageReferenceSchema.nullable().optional()
 });
 
-const imageExtensionsByType: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif"
-};
-
 type Params = Promise<{ categoryId: string }>;
-
-async function parseCategoryPayload(request: Request) {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.includes("multipart/form-data")) {
-    return { body: await request.json().catch(() => null), imageFile: null as File | null };
-  }
-
-  const formData = await request.formData().catch(() => null);
-  if (!formData) {
-    return { body: null, imageFile: null as File | null };
-  }
-  const imageFile = formData.get("imageFile");
-  return {
-    body: { name: formData.get("name"), imageUrl: formData.get("imageUrl") },
-    imageFile: imageFile instanceof File && imageFile.size > 0 ? imageFile : null
-  };
-}
-
-function validateImage(file: File) {
-  if (!file.type.startsWith("image/") || !imageExtensionsByType[file.type]) {
-    return "Formato de imagen no soportado.";
-  }
-  if (file.size > 6 * 1024 * 1024) {
-    return "La imagen no puede superar 6 MB.";
-  }
-  return null;
-}
 
 async function deleteCategoryImage(storeId: string, imageUrl: string | null) {
   const key = imageUrl ? getPublicObjectKeyFromUrl(imageUrl) : null;
@@ -69,16 +34,9 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
   }
 
-  const { body, imageFile } = await parseCategoryPayload(request);
-  const result = categorySchema.safeParse(body);
+  const result = categorySchema.safeParse(await request.json().catch(() => null));
   if (!result.success) {
     return NextResponse.json({ error: "Datos inválidos" }, { status: 400 });
-  }
-  if (imageFile) {
-    const imageError = validateImage(imageFile);
-    if (imageError) {
-      return NextResponse.json({ error: imageError }, { status: 400 });
-    }
   }
 
   const name = result.data.name.trim();
@@ -95,15 +53,24 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   const previousImageUrl = category.imageUrl;
-  let imageUrl = result.data.imageUrl === undefined ? category.imageUrl : result.data.imageUrl || null;
-  let uploadedKey: string | null = null;
-  if (imageFile) {
-    const extension = imageExtensionsByType[imageFile.type];
-    uploadedKey = `categories/${store.id}/${randomUUID()}.${extension}`;
-    imageUrl = await uploadPublicObject({ key: uploadedKey, body: Buffer.from(await imageFile.arrayBuffer()), contentType: imageFile.type }).catch(() => null);
-    if (!imageUrl) {
-      return NextResponse.json({ error: "No se pudo subir la imagen." }, { status: 500 });
+  let imageUrl = category.imageUrl;
+  let resolvedImages = { urls: [] as string[], promoted: [] as Awaited<ReturnType<typeof resolveImageReferences>>["promoted"] };
+  try {
+    if (result.data.image !== undefined) {
+      if (result.data.image === null) {
+        imageUrl = null;
+      } else {
+        resolvedImages = await resolveImageReferences({
+          storeId: store.id,
+          scope: "categories",
+          references: [result.data.image],
+          allowedStoredUrls: category.imageUrl ? [category.imageUrl] : []
+        });
+        imageUrl = resolvedImages.urls[0] ?? null;
+      }
     }
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "No se pudo validar la imagen." }, { status: 400 });
   }
 
   try {
@@ -115,11 +82,10 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     if (previousImageUrl !== imageUrl) {
       await deleteCategoryImage(store.id, previousImageUrl);
     }
+    await deletePromotedTemporaries(resolvedImages.promoted);
     return NextResponse.json({ category: updated });
   } catch (error) {
-    if (uploadedKey) {
-      await deletePublicObject(uploadedKey).catch(() => null);
-    }
+    await deletePromotedImages(resolvedImages.promoted);
     throw error;
   }
 }

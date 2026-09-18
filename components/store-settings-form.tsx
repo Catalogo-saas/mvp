@@ -10,6 +10,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { getDefaultCategoryTitle, normalizeStoreTemplate, storeTemplateLabels, storeTemplates, templateOriginalColors, type StoreTemplate } from "@/lib/catalog";
+import { mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import type { ImageReference, ImageUploadScope } from "@/lib/image-upload-contract";
 import {
   normalizePublicPageConfig,
   publicSectionLabels,
@@ -263,6 +265,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
   const [publicUrlCopied, setPublicUrlCopied] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
   const [formRevision, setFormRevision] = useState(0);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -386,6 +389,11 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
   function replaceHeroImage(index: number, file: File | undefined) {
     if (!file) return;
+    const validationError = validateSelectedImage(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setHeroImages((current) => {
       const next = [...current];
       const previous = next[index];
@@ -462,43 +470,88 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
     event.preventDefault();
     setLoading(true);
     setError("");
-    const formData = new FormData();
-    formData.set("name", storeName);
-    formData.set("description", description);
-    formData.set("address", address);
-    formData.set("whatsappPhone", whatsappLocal);
-    formData.set("heroTitle", heroTitle);
-    formData.set("heroSubtitle", heroSubtitle);
-    formData.set("logoUrl", logoUrl);
-    formData.set("heroImageUrls", JSON.stringify(heroImages.filter((image) => !image.file).map((image) => image.url)));
-    formData.set("primary", primary);
-    formData.set("accent", accent);
-    formData.set("useTemplateColors", String(useTemplateColors));
-    formData.set("template", template);
-    formData.set("publicPageConfig", JSON.stringify(publicPageConfig));
-    formData.set("showCategories", String(showCategories));
-    formData.set("showFeatured", String(showFeatured));
-    formData.set("freeShippingEnabled", String(freeShippingEnabled));
-    formData.set("freeShippingThreshold", digitsOnly(freeShippingThreshold) || "0");
-    formData.set("acceptTransferPayments", String(acceptTransferPayments));
-    formData.set("paymentAccountHolder", paymentAccountHolder);
-    formData.set("paymentProvider", paymentProvider);
-    formData.set("paymentAlias", paymentAlias);
-    formData.set("paymentCbu", paymentCbu);
-    formData.set("businessHoursText", businessHoursText);
-    formData.set("restrictBySchedule", String(restrictBySchedule));
-    formData.set("businessHours", JSON.stringify(businessHours));
-    formData.set("mobileProductColumns", String(mobileProductColumns));
-    formData.set("categoryFileIds", JSON.stringify(Object.keys(categoryFiles)));
-    if (selectedLogoFile) formData.set("logoFile", selectedLogoFile);
-    heroImages.forEach((image) => {
-      if (image.file) formData.append("heroFiles", image.file);
-    });
-    Object.values(categoryFiles).forEach((file) => formData.append("categoryFiles", file));
+    setSaveStatus("Optimizando imágenes...");
 
-    const response = await fetch("/api/admin/store", { method: "PATCH", body: formData });
+    const uploadTasks: Array<{ id: string; scope: ImageUploadScope; file: File }> = [];
+    if (selectedLogoFile) uploadTasks.push({ id: "logo", scope: "logos", file: selectedLogoFile });
+    heroImages.forEach((image) => {
+      if (image.file) uploadTasks.push({ id: `hero:${image.id}`, scope: "hero", file: image.file });
+    });
+    Object.entries(categoryFiles).forEach(([categoryId, file]) => {
+      uploadTasks.push({ id: `category:${categoryId}`, scope: "categories", file });
+    });
+
+    const uploadedReferences = new Map<string, ImageReference>();
+    let completedUploads = 0;
+    try {
+      const results = await mapWithConcurrency(uploadTasks, 3, async (task) => {
+        const reference = await uploadImageDirect(task.scope, task.file);
+        completedUploads += 1;
+        setSaveStatus(`Subiendo imágenes ${completedUploads}/${uploadTasks.length}...`);
+        return { id: task.id, reference };
+      });
+      results.forEach(({ id, reference }) => uploadedReferences.set(id, reference));
+    } catch (uploadError) {
+      setLoading(false);
+      setSaveStatus("");
+      setError(uploadError instanceof Error ? uploadError.message : "No se pudieron subir las imágenes.");
+      return;
+    }
+
+    const logo: ImageReference | null = selectedLogoFile
+      ? uploadedReferences.get("logo") ?? null
+      : logoUrl
+        ? { kind: "stored", url: logoUrl }
+        : null;
+    const heroImageReferences = heroImages.map((image) =>
+      image.file
+        ? uploadedReferences.get(`hero:${image.id}`)!
+        : ({ kind: "stored", url: image.url } as const)
+    );
+    const categoryImages = Object.keys(categoryFiles).map((categoryId) => ({
+      categoryId,
+      image: uploadedReferences.get(`category:${categoryId}`)!
+    }));
+
+    setSaveStatus("Guardando configuración...");
+    const payload = {
+      name: storeName,
+      description,
+      address,
+      whatsappPhone: whatsappLocal,
+      heroTitle,
+      heroSubtitle,
+      logo,
+      heroImages: heroImageReferences,
+      categoryImages,
+      primary,
+      accent,
+      useTemplateColors,
+      template,
+      publicPageConfig,
+      showCategories,
+      showFeatured,
+      freeShippingEnabled,
+      freeShippingThreshold: digitsOnly(freeShippingThreshold) || "0",
+      acceptTransferPayments,
+      paymentAccountHolder,
+      paymentProvider,
+      paymentAlias,
+      paymentCbu,
+      businessHoursText,
+      restrictBySchedule,
+      businessHours,
+      mobileProductColumns
+    };
+
+    const response = await fetch("/api/admin/store", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     const data = await response.json().catch(() => null);
     setLoading(false);
+    setSaveStatus("");
     if (!response.ok) {
       setError(data?.error ?? "No se pudo guardar la tienda.");
       return;
@@ -545,8 +598,13 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
             <LogoPreview logoUrl={visibleLogoUrl} storeName={storeName} pending={Boolean(selectedLogoFile)} />
             <label className="btn-secondary h-12 w-full !py-0">
               <ImagePlus size={17} /> {visibleLogoUrl ? "Cambiar logo" : "Subir logo"}
-              <input className="sr-only" type="file" accept="image/*" onChange={(event) => {
+              <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => {
                 const file = event.currentTarget.files?.[0];
+                const validationError = file ? validateSelectedImage(file) : null;
+                if (validationError) {
+                  setError(validationError);
+                  return;
+                }
                 if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
                 if (file) {
                   setLogoPreviewUrl(URL.createObjectURL(file));
@@ -612,7 +670,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
                   </div>
                   <label className="btn-secondary w-full !px-3">
                     <ImagePlus size={17} /> {image ? "Cambiar" : "Agregar"}
-                    <input className="sr-only" type="file" accept="image/*" onChange={(event) => replaceHeroImage(index, event.currentTarget.files?.[0])} />
+                    <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => replaceHeroImage(index, event.currentTarget.files?.[0])} />
                   </label>
                 </div>
               );
@@ -627,7 +685,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
             <div><p className="font-black">Imágenes de categorías</p><p className="mt-1 text-sm font-semibold text-muted">Personalizá las tarjetas de categorías de tu ecommerce.</p></div>
             {categories.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">{categories.map((category) => {
               const preview = categoryPreviews[category.id] || category.imageUrl;
-              return <article key={category.id} className="grid min-w-0 gap-3 rounded-2xl border border-line p-3 sm:grid-cols-[90px_1fr] sm:items-center"><div className="aspect-square min-w-0 overflow-hidden rounded-xl bg-surface">{preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-xs font-bold text-muted">Sin imagen</div>}</div><div className="min-w-0"><p className="truncate font-black">{category.name}</p><p className="truncate text-sm text-muted">{category._count.products} producto(s)</p><label className="btn-secondary mt-2 w-full !px-2 !py-2 text-sm"><ImagePlus size={15} /> Agregar<input className="sr-only" type="file" accept="image/*" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) return; if (categoryPreviews[category.id]) URL.revokeObjectURL(categoryPreviews[category.id]); setCategoryFiles((current) => ({ ...current, [category.id]: file })); setCategoryPreviews((current) => ({ ...current, [category.id]: URL.createObjectURL(file) })); }} /></label></div></article>;
+              return <article key={category.id} className="grid min-w-0 gap-3 rounded-2xl border border-line p-3 sm:grid-cols-[90px_1fr] sm:items-center"><div className="aspect-square min-w-0 overflow-hidden rounded-xl bg-surface">{preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-xs font-bold text-muted">Sin imagen</div>}</div><div className="min-w-0"><p className="truncate font-black">{category.name}</p><p className="truncate text-sm text-muted">{category._count.products} producto(s)</p><label className="btn-secondary mt-2 w-full !px-2 !py-2 text-sm"><ImagePlus size={15} /> Agregar<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) return; const validationError = validateSelectedImage(file); if (validationError) { setError(validationError); return; } if (categoryPreviews[category.id]) URL.revokeObjectURL(categoryPreviews[category.id]); setCategoryFiles((current) => ({ ...current, [category.id]: file })); setCategoryPreviews((current) => ({ ...current, [category.id]: URL.createObjectURL(file) })); setError(""); }} /></label></div></article>;
             })}</div> : <p className="rounded-2xl bg-surface p-4 text-sm font-bold text-muted">Creá categorías desde Productos para poder personalizarlas.</p>}
           </div>
         </> : null}
@@ -705,7 +763,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
       {hoursModalOpen ? <div className="fixed inset-0 z-50 flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Editar horarios"><div className="panel grid h-[100dvh] min-h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-4 sm:h-auto sm:min-h-0 sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">Horario</p><h3 className="mt-1 text-2xl font-black">Editar atención</h3></div><button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={() => setHoursModalOpen(false)}><X size={18} /></button></div><div className="grid gap-3 overflow-y-auto pb-6 pr-1">{businessDayKeys.map((day) => <article key={day} className="grid gap-3 rounded-2xl border border-line bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-black">{businessDayLabels[day]}</p><div className="flex flex-wrap gap-2">{businessHours.days[day].length ? <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => copyRangesToAllDays(day)}><Copy size={15} /> Copiar</button> : null}<button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => addRange(day)}><Plus size={15} /> Rango</button></div></div>{businessHours.days[day].length ? businessHours.days[day].map((range, index) => <div key={`${day}-${index}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-end gap-2"><label className="grid gap-1 text-xs font-bold text-muted">Apertura<input className="field !px-2 !py-2 text-center" type="time" value={range.open} onChange={(event) => updateRange(day, index, { open: event.target.value })} /></label><label className="grid gap-1 text-xs font-bold text-muted">Cierre<input className="field !px-2 !py-2 text-center" type="time" value={range.close} onChange={(event) => updateRange(day, index, { close: event.target.value })} /></label><button className="grid h-11 w-11 place-items-center rounded-xl border border-line text-red-600" type="button" onClick={() => removeRange(day, index)}><Trash2 size={15} /></button></div>) : <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Cerrado</p>}</article>)}</div><div className="-mx-4 -mb-4 border-t border-line bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6"><button className="btn-primary w-full" type="button" onClick={() => setHoursModalOpen(false)}>Listo</button></div></div></div> : null}
 
-      <div className="fixed inset-x-4 bottom-4 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<button className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>{loading ? "Guardando..." : "Guardar configuración"}</button></div>
+      <div className="fixed inset-x-4 bottom-4 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<button className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>{loading ? saveStatus || "Guardando..." : "Guardar configuración"}</button></div>
     </form>
   );
 }

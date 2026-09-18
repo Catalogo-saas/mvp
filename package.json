@@ -28,11 +28,13 @@
     }
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.864.0",
+    "@aws-sdk/client-s3": "^3.1135.0",
+    "@aws-sdk/s3-request-presigner": "^3.1135.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "bcryptjs": "^2.4.3",
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "exceljs": "^4.4.0",
     "lucide-react": "^0.468.0",

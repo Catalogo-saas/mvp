@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { normalizeStoreTemplate } from "@/lib/catalog";
+import { mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import type { ImageReference } from "@/lib/image-upload-contract";
 import { formatMoney } from "@/lib/money";
 
 type CategoryListItem = {
@@ -239,7 +241,7 @@ function draftToPayload(draft: ProductDraft) {
     promoPrice: draft.promoPrice ? unformatInteger(draft.promoPrice) : null,
     categoryId: draft.categoryId === "__new" ? null : draft.categoryId || null,
     categoryName: draft.categoryId === "__new" ? draft.categoryName : undefined,
-    imageUrls: draft.images.filter((image) => !image.file).map((image) => image.url),
+    images: draft.images.filter((image) => !image.file).map((image) => ({ kind: "stored", url: image.url } satisfies ImageReference)),
     isVisible: draft.isVisible,
     isFeatured: draft.isFeatured,
     stockQuantity: draft.stockLimited ? unformatInteger(draft.stockQuantity) || "0" : null,
@@ -367,6 +369,7 @@ export function ProductForm({
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
@@ -513,8 +516,14 @@ export function ProductForm({
       return;
     }
 
-    const nextImages = Array.from(files)
-      .slice(0, availableSlots)
+    const selectedFiles = Array.from(files).slice(0, availableSlots);
+    const invalidFile = selectedFiles.find((file) => validateSelectedImage(file));
+    if (invalidFile) {
+      setError(validateSelectedImage(invalidFile) ?? "Imagen inválida.");
+      return;
+    }
+
+    const nextImages = selectedFiles
       .map((file) => ({
         id: uniqueId(),
         url: URL.createObjectURL(file),
@@ -637,21 +646,36 @@ export function ProductForm({
 
     setLoading(true);
     setError("");
-    const payload = draftToPayload(draft);
-    const formData = new FormData();
-    formData.append("payload", JSON.stringify(payload));
-    draft.images.forEach((image) => {
-      if (image.file) {
-        formData.append("images", image.file);
-      }
-    });
+    setSaveStatus("Optimizando imágenes...");
+
+    let completedImages = 0;
+    let images: ImageReference[];
+    try {
+      images = await mapWithConcurrency(draft.images, 3, async (image) => {
+        if (!image.file) return { kind: "stored", url: image.url } as const;
+        const reference = await uploadImageDirect("products", image.file);
+        completedImages += 1;
+        setSaveStatus(`Subiendo imágenes ${completedImages}/${draft.images.filter((item) => item.file).length}...`);
+        return reference;
+      });
+    } catch (uploadError) {
+      setLoading(false);
+      setSaveStatus("");
+      setError(uploadError instanceof Error ? uploadError.message : "No se pudieron subir las imágenes.");
+      return;
+    }
+
+    setSaveStatus("Guardando producto...");
+    const payload = { ...draftToPayload(draft), images };
 
     const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/admin/products", {
       method: editingProductId ? "PATCH" : "POST",
-      body: formData
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
     });
     const data = await response.json().catch(() => null);
     setLoading(false);
+    setSaveStatus("");
 
     if (!response.ok) {
       setError(data?.error ?? "No se pudo guardar el producto.");
@@ -923,7 +947,7 @@ export function ProductForm({
                   </div>
                   <label className="btn-secondary !px-3">
                     <ImagePlus size={17} /> Agregar
-                    <input className="sr-only" type="file" accept="image/*" multiple onChange={(event) => addImageFiles(event.currentTarget.files)} />
+                    <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => addImageFiles(event.currentTarget.files)} />
                   </label>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -1029,7 +1053,7 @@ export function ProductForm({
             <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
               {error ? <p className="mb-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
               <button className="btn-primary w-full" disabled={loading}>
-                <Save size={18} /> {loading ? "Guardando..." : editingProductId ? "Guardar cambios" : "Crear producto"}
+                <Save size={18} /> {loading ? saveStatus || "Guardando..." : editingProductId ? "Guardar cambios" : "Crear producto"}
               </button>
             </div>
           </form>
