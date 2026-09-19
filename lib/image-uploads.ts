@@ -40,7 +40,10 @@ export async function promotePendingImage(input: {
     throw new Error("La imagen temporal no pertenece a esta tienda.");
   }
 
-  const object = await inspectObject(input.pendingKey);
+  const [object, bytes] = await Promise.all([
+    inspectObject(input.pendingKey),
+    readObjectPrefix(input.pendingKey)
+  ]);
   const contentType = object.contentType as ImageMimeType;
   if (!(contentType in imageExtensions)) {
     throw new Error("Formato de imagen no soportado.");
@@ -49,7 +52,6 @@ export async function promotePendingImage(input: {
     throw new Error(contentType === "image/gif" ? "El GIF no puede superar 10 MB." : "La imagen optimizada no puede superar 2 MB.");
   }
 
-  const bytes = await readObjectPrefix(input.pendingKey);
   if (sniffImageMimeType(bytes) !== contentType) {
     throw new Error("El contenido del archivo no coincide con su formato.");
   }
@@ -72,33 +74,40 @@ export async function resolveImageReferences(input: {
   allowedStoredUrls: Iterable<string>;
 }) {
   const allowedStoredUrls = new Set(input.allowedStoredUrls);
-  const promoted: PromotedImage[] = [];
-  const urls: string[] = [];
+  for (const reference of input.references) {
+    if (reference.kind === "stored" && !allowedStoredUrls.has(reference.url)) {
+      throw new Error("Una imagen existente no pertenece a este registro.");
+    }
+  }
 
-  try {
-    for (const reference of input.references) {
+  const results = await Promise.allSettled(
+    input.references.map(async (reference) => {
       if (reference.kind === "stored") {
-        if (!allowedStoredUrls.has(reference.url)) {
-          throw new Error("Una imagen existente no pertenece a este registro.");
-        }
-        urls.push(reference.url);
-        continue;
+        return { url: reference.url, promoted: null };
       }
 
-      const image = await promotePendingImage({
+      const promoted = await promotePendingImage({
         storeId: input.storeId,
         scope: input.scope,
         pendingKey: reference.key
       });
-      promoted.push(image);
-      urls.push(image.url);
-    }
-  } catch (error) {
+      return { url: promoted.url, promoted };
+    })
+  );
+  const promoted = results.flatMap((result) =>
+    result.status === "fulfilled" && result.value.promoted ? [result.value.promoted] : []
+  );
+  const failed = results.find((result): result is PromiseRejectedResult => result.status === "rejected");
+
+  if (failed) {
     await deletePromotedImages(promoted);
-    throw error;
+    throw failed.reason;
   }
 
-  return { urls, promoted };
+  return {
+    urls: results.map((result) => (result as PromiseFulfilledResult<{ url: string }>).value.url),
+    promoted
+  };
 }
 
 export async function deletePromotedImages(images: PromotedImage[]) {

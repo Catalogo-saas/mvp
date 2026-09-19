@@ -7,7 +7,9 @@ vi.mock("browser-image-compression", () => ({
 import {
   getImageUploadErrorMessage,
   mapWithConcurrency,
-  uploadImageDirect
+  prepareImageUploads,
+  uploadImageDirect,
+  uploadImagesDirect
 } from "../lib/image-upload-client";
 
 function jsonResponse(data: unknown, status = 200) {
@@ -31,7 +33,7 @@ describe("direct image uploads", () => {
   it("returns a pending reference after a successful direct upload", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ uploadUrl: "https://uploads.example/signed", pendingKey: "pending/store/products/id.gif" }))
+      .mockResolvedValueOnce(jsonResponse({ uploads: [{ uploadUrl: "https://uploads.example/signed", pendingKey: "pending/store/products/id.gif" }] }))
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
     const file = new File(["GIF89a"], "product.gif", { type: "image/gif" });
@@ -45,9 +47,9 @@ describe("direct image uploads", () => {
   it("shows a safe message and reports only safe metadata after network retries fail", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ uploadUrl: "https://uploads.example/first", pendingKey: "pending/store/products/first.gif" }))
+      .mockResolvedValueOnce(jsonResponse({ uploads: [{ uploadUrl: "https://uploads.example/first", pendingKey: "pending/store/products/first.gif" }] }))
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
-      .mockResolvedValueOnce(jsonResponse({ uploadUrl: "https://uploads.example/second", pendingKey: "pending/store/products/second.gif" }))
+      .mockResolvedValueOnce(jsonResponse({ uploads: [{ uploadUrl: "https://uploads.example/second", pendingKey: "pending/store/products/second.gif" }] }))
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
@@ -74,7 +76,7 @@ describe("direct image uploads", () => {
   it("reports an HTTP failure without exposing the storage response", async () => {
     const fetchMock = vi.mocked(fetch);
     fetchMock
-      .mockResolvedValueOnce(jsonResponse({ uploadUrl: "https://uploads.example/signed", pendingKey: "pending/store/hero/id.gif" }))
+      .mockResolvedValueOnce(jsonResponse({ uploads: [{ uploadUrl: "https://uploads.example/signed", pendingKey: "pending/store/hero/id.gif" }] }))
       .mockResolvedValueOnce(new Response("private storage error", { status: 500 }))
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
@@ -92,6 +94,54 @@ describe("direct image uploads", () => {
       size: file.size
     });
     expect(JSON.stringify(report)).not.toContain("private storage error");
+  });
+
+  it("prepares several uploads with a single API request", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        uploads: [
+          { uploadUrl: "https://uploads.example/first", pendingKey: "pending/store/products/first.gif" },
+          { uploadUrl: "https://uploads.example/second", pendingKey: "pending/store/products/second.gif" }
+        ]
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+
+    const files = [
+      new File(["GIF89a"], "first.gif", { type: "image/gif" }),
+      new File(["GIF89a"], "second.gif", { type: "image/gif" })
+    ];
+
+    await expect(uploadImagesDirect(files.map((file) => ({ scope: "products", file })))).resolves.toEqual([
+      { kind: "pending", key: "pending/store/products/first.gif" },
+      { kind: "pending", key: "pending/store/products/second.gif" }
+    ]);
+
+    expect(fetchMock.mock.calls.filter(([url]) => url === "/api/uploads")).toHaveLength(1);
+    const request = JSON.parse(String(fetchMock.mock.calls[0][1]?.body));
+    expect(request.uploads).toHaveLength(2);
+  });
+
+  it("reuses uploads started while the user is still editing", async () => {
+    const fetchMock = vi.mocked(fetch);
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({
+        uploads: [
+          { uploadUrl: "https://uploads.example/early", pendingKey: "pending/store/products/early.gif" }
+        ]
+      }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 }));
+    const file = new File(["GIF89a"], "early.gif", { type: "image/gif" });
+    const tasks = [{ scope: "products" as const, file }];
+
+    prepareImageUploads(tasks);
+    await expect(uploadImagesDirect(tasks)).resolves.toEqual([
+      { kind: "pending", key: "pending/store/products/early.gif" }
+    ]);
+
+    expect(fetchMock.mock.calls.filter(([url]) => url === "/api/uploads")).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([url]) => url === "https://uploads.example/early")).toHaveLength(1);
   });
 });
 

@@ -1,6 +1,6 @@
 # Cargas directas de imágenes a Cloudflare R2
 
-Las imágenes se optimizan en el navegador, se suben directamente a R2 mediante una URL `PUT` prefirmada y se guardan inicialmente bajo `pending/`. Al guardar el producto o la configuración, la API valida el objeto y lo copia al prefijo definitivo.
+Al seleccionar imágenes, el navegador empieza a optimizarlas y subirlas directamente a R2 mediante URLs `PUT` prefirmadas agrupadas. Se guardan inicialmente bajo `pending/` y el guardado reutiliza ese trabajo ya iniciado. Luego, la API valida los objetos en paralelo y los copia al prefijo definitivo.
 
 ## CORS del bucket
 

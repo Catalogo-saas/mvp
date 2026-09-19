@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import {
   buildOptionGroupCreates,
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       include: productInclude()
     });
 
-    await deletePromotedTemporaries(resolvedImages.promoted);
+    after(() => deletePromotedTemporaries(resolvedImages.promoted));
     return NextResponse.json({ product });
   } catch (error) {
     await deletePromotedImages(resolvedImages.promoted);

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import {
   buildOptionGroupCreates,
@@ -87,8 +87,10 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     throw error;
   }
 
-  await deletePromotedTemporaries(resolvedImages.promoted);
-  await deleteProductImagesForStore(store.id, removedImageUrls);
+  after(() => Promise.all([
+    deletePromotedTemporaries(resolvedImages.promoted),
+    deleteProductImagesForStore(store.id, removedImageUrls)
+  ]));
 
   return NextResponse.json({ product });
 }

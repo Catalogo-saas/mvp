@@ -39,6 +39,35 @@ describe("pending image promotion", () => {
     expect(storage.copyPublicObject).toHaveBeenCalledWith(expect.objectContaining({ sourceEtag: '"etag"' }));
   });
 
+  it("promotes multiple pending images concurrently", async () => {
+    let releaseFirstInspection!: () => void;
+    const firstInspection = new Promise<void>((resolve) => {
+      releaseFirstInspection = resolve;
+    });
+    storage.inspectObject
+      .mockImplementationOnce(async () => {
+        await firstInspection;
+        return { contentLength: 1024, contentType: "image/webp", etag: '"etag-1"' };
+      })
+      .mockResolvedValueOnce({ contentLength: 1024, contentType: "image/webp", etag: '"etag-2"' });
+
+    const operation = resolveImageReferences({
+      storeId: "store-a",
+      scope: "products",
+      references: [
+        { kind: "pending", key: "pending/store-a/products/first.webp" },
+        { kind: "pending", key: "pending/store-a/products/second.webp" }
+      ],
+      allowedStoredUrls: []
+    });
+
+    await Promise.resolve();
+    expect(storage.inspectObject).toHaveBeenCalledTimes(2);
+
+    releaseFirstInspection();
+    await expect(operation).resolves.toMatchObject({ urls: [expect.any(String), expect.any(String)] });
+  });
+
   it("rejects stored URLs that are not attached to the edited entity", async () => {
     await expect(
       resolveImageReferences({

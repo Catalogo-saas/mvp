@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { maxBytesForMimeType, presignUploadSchema } from "@/lib/image-upload-contract";
+import { maxBytesForMimeType, presignUploadSchema, presignUploadsSchema } from "@/lib/image-upload-contract";
 import { createPendingImageKey } from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
 import { createPresignedUploadUrl } from "@/lib/storage";
@@ -13,30 +13,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const result = presignUploadSchema.safeParse(await request.json().catch(() => null));
-  if (!result.success) {
+  const body = await request.json().catch(() => null);
+  const batchResult = presignUploadsSchema.safeParse(body);
+  const legacyResult = presignUploadSchema.safeParse(body);
+  if (!batchResult.success && !legacyResult.success) {
     return NextResponse.json({ error: "Solicitud de imagen inválida" }, { status: 400 });
   }
+  const requestedUploads = batchResult.success
+    ? batchResult.data.uploads
+    : legacyResult.success
+      ? [legacyResult.data]
+      : [];
 
-  const maximumSize = maxBytesForMimeType(result.data.contentType);
-  if (result.data.size > maximumSize) {
-    const label = result.data.contentType === "image/gif" ? "10 MB" : "2 MB";
-    return NextResponse.json({ error: `La imagen procesada no puede superar ${label}.` }, { status: 400 });
+  for (const upload of requestedUploads) {
+    const maximumSize = maxBytesForMimeType(upload.contentType);
+    if (upload.size > maximumSize) {
+      const label = upload.contentType === "image/gif" ? "10 MB" : "2 MB";
+      return NextResponse.json({ error: `La imagen procesada no puede superar ${label}.` }, { status: 400 });
+    }
   }
 
   try {
-    const pendingKey = createPendingImageKey(store.id, result.data.scope, result.data.contentType);
-    const uploadUrl = await createPresignedUploadUrl({
-      key: pendingKey,
-      contentType: result.data.contentType,
-      expiresIn: 300
-    });
+    const uploads = await Promise.all(
+      requestedUploads.map(async (upload) => {
+        const pendingKey = createPendingImageKey(store.id, upload.scope, upload.contentType);
+        const uploadUrl = await createPresignedUploadUrl({
+          key: pendingKey,
+          contentType: upload.contentType,
+          expiresIn: 300
+        });
+
+        return {
+          uploadUrl,
+          pendingKey,
+          headers: { "Content-Type": upload.contentType }
+        };
+      })
+    );
+
+    if (!batchResult.success) {
+      return NextResponse.json({ ...uploads[0], expiresIn: 300 });
+    }
 
     return NextResponse.json({
-      uploadUrl,
-      pendingKey,
-      expiresIn: 300,
-      headers: { "Content-Type": result.data.contentType }
+      uploads,
+      expiresIn: 300
     });
   } catch (error) {
     console.error("[image-upload] Failed to create presigned URL", error);

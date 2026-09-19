@@ -11,7 +11,7 @@ import { SaveOverlay } from "@/components/save-overlay";
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { getDefaultCategoryTitle, normalizeStoreTemplate, storeTemplateLabels, storeTemplates, templateOriginalColors, type StoreTemplate } from "@/lib/catalog";
-import { getImageUploadErrorMessage, mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import { getImageUploadErrorMessage, prepareImageUpload, uploadImagesDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference, ImageUploadScope } from "@/lib/image-upload-contract";
 import {
   normalizePublicPageConfig,
@@ -394,6 +394,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
       setError(validationError);
       return;
     }
+    prepareImageUpload("hero", file);
     setHeroImages((current) => {
       const next = [...current];
       const previous = next[index];
@@ -483,11 +484,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
     const uploadedReferences = new Map<string, ImageReference>();
     try {
-      const results = await mapWithConcurrency(uploadTasks, 3, async (task) => {
-        const reference = await uploadImageDirect(task.scope, task.file);
-        return { id: task.id, reference };
-      });
-      results.forEach(({ id, reference }) => uploadedReferences.set(id, reference));
+      const references = await uploadImagesDirect(uploadTasks);
+      references.forEach((reference, index) => uploadedReferences.set(uploadTasks[index].id, reference));
 
       const logo: ImageReference | null = selectedLogoFile
         ? uploadedReferences.get("logo") ?? null
@@ -600,6 +598,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
                 }
                 if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
                 if (file) {
+                  prepareImageUpload("logos", file);
                   setLogoPreviewUrl(URL.createObjectURL(file));
                   setSelectedLogoFile(file);
                 }
@@ -678,7 +677,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
             <div><p className="font-black">Imágenes de categorías</p><p className="mt-1 text-sm font-semibold text-muted">Personalizá las tarjetas de categorías de tu ecommerce.</p></div>
             {categories.length ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">{categories.map((category) => {
               const preview = categoryPreviews[category.id] || category.imageUrl;
-              return <article key={category.id} className="grid min-w-0 gap-3 rounded-2xl border border-line p-3 sm:grid-cols-[90px_1fr] sm:items-center"><div className="aspect-square min-w-0 overflow-hidden rounded-xl bg-surface">{preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-xs font-bold text-muted">Sin imagen</div>}</div><div className="min-w-0"><p className="truncate font-black">{category.name}</p><p className="truncate text-sm text-muted">{category._count.products} producto(s)</p><label className="btn-secondary mt-2 w-full !px-2 !py-2 text-sm"><ImagePlus size={15} /> Agregar<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) return; const validationError = validateSelectedImage(file); if (validationError) { setError(validationError); return; } if (categoryPreviews[category.id]) URL.revokeObjectURL(categoryPreviews[category.id]); setCategoryFiles((current) => ({ ...current, [category.id]: file })); setCategoryPreviews((current) => ({ ...current, [category.id]: URL.createObjectURL(file) })); setError(""); }} /></label></div></article>;
+              return <article key={category.id} className="grid min-w-0 gap-3 rounded-2xl border border-line p-3 sm:grid-cols-[90px_1fr] sm:items-center"><div className="aspect-square min-w-0 overflow-hidden rounded-xl bg-surface">{preview ? <img src={preview} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-center text-xs font-bold text-muted">Sin imagen</div>}</div><div className="min-w-0"><p className="truncate font-black">{category.name}</p><p className="truncate text-sm text-muted">{category._count.products} producto(s)</p><label className="btn-secondary mt-2 w-full !px-2 !py-2 text-sm"><ImagePlus size={15} /> Agregar<input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => { const file = event.currentTarget.files?.[0]; if (!file) return; const validationError = validateSelectedImage(file); if (validationError) { setError(validationError); return; } prepareImageUpload("categories", file); if (categoryPreviews[category.id]) URL.revokeObjectURL(categoryPreviews[category.id]); setCategoryFiles((current) => ({ ...current, [category.id]: file })); setCategoryPreviews((current) => ({ ...current, [category.id]: URL.createObjectURL(file) })); setError(""); }} /></label></div></article>;
             })}</div> : <p className="rounded-2xl bg-surface p-4 text-sm font-bold text-muted">Creá categorías desde Productos para poder personalizarlas.</p>}
           </div>
         </> : null}

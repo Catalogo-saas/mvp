@@ -31,6 +31,10 @@ export const presignUploadSchema = z.object({
   size: z.number().int().positive()
 });
 
+export const presignUploadsSchema = z.object({
+  uploads: z.array(presignUploadSchema).min(1).max(6)
+});
+
 export const uploadFailureReportSchema = z.object({
   stage: z.literal("direct-upload"),
   scope: z.enum(imageUploadScopes),

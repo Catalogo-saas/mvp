@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { SaveOverlay } from "@/components/save-overlay";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 import { normalizeStoreTemplate } from "@/lib/catalog";
-import { getImageUploadErrorMessage, mapWithConcurrency, uploadImageDirect, validateSelectedImage } from "@/lib/image-upload-client";
+import { getImageUploadErrorMessage, prepareImageUploads, uploadImagesDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference } from "@/lib/image-upload-contract";
 import { formatMoney } from "@/lib/money";
 
@@ -527,6 +527,8 @@ export function ProductForm({
       return;
     }
 
+    prepareImageUploads(selectedFiles.map((file) => ({ scope: "products", file })));
+
     const nextImages = selectedFiles
       .map((file) => ({
         id: uniqueId(),
@@ -653,10 +655,16 @@ export function ProductForm({
     setError("");
 
     try {
-      const images: ImageReference[] = await mapWithConcurrency(draft.images, 3, async (image) => {
-        if (!image.file) return { kind: "stored", url: image.url } as const;
-        return uploadImageDirect("products", image.file);
-      });
+      const pendingImages = draft.images.filter((image): image is ImageDraft & { file: File } => Boolean(image.file));
+      const uploadedImages = await uploadImagesDirect(
+        pendingImages.map((image) => ({ scope: "products", file: image.file }))
+      );
+      let uploadedIndex = 0;
+      const images: ImageReference[] = draft.images.map((image) =>
+        image.file
+          ? uploadedImages[uploadedIndex++]
+          : { kind: "stored", url: image.url }
+      );
 
       const payload = { ...draftToPayload(draft), images };
       const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/admin/products", {
@@ -674,7 +682,7 @@ export function ProductForm({
       setProducts((current) =>
         editingProductId ? current.map((product) => (product.id === editingProductId ? data.product : product)) : [data.product, ...current]
       );
-      await refreshCategories();
+      void refreshCategories();
       resetDraft();
       setProductModalOpen(false);
       router.refresh();
