@@ -1,8 +1,13 @@
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin-nav";
-import { getCurrentUserId, getMerchantStore } from "@/lib/merchant";
+import { getMerchantContext, getCurrentUserId } from "@/lib/merchant";
 import { UnsavedChangesProvider } from "@/components/unsaved-changes-provider";
+import "./admin.css";
+import "./commerce.css";
+import { prisma } from "@/lib/prisma";
+import { OrderReadProvider } from "@/components/order-read-provider";
+import { InternalToaster } from "@/components/internal-toaster";
 
 export default async function GestionLayout({ children }: { children: React.ReactNode }) {
   const userId = await getCurrentUserId();
@@ -10,17 +15,22 @@ export default async function GestionLayout({ children }: { children: React.Reac
     redirect("/login");
   }
 
-  const store = await getMerchantStore();
-  if (!store) {
+  const context = await getMerchantContext();
+  if (!context) {
     redirect("/onboarding");
   }
+  const { store, role } = context;
 
+  const unreadCount = await prisma.order.count({ where: { storeId: store.id, readAt: null } });
   return (
     <UnsavedChangesProvider>
-      <main className="gestion-shell container-page grid min-w-0 gap-6 py-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <AdminNav storeSlug={store.slug} />
-        <section className="min-w-0">{children}</section>
-      </main>
+      <InternalToaster />
+      <OrderReadProvider initialCount={unreadCount}>
+      <div className="gestion-shell">
+        <AdminNav storeSlug={store.slug} storeName={store.name} role={role} />
+        <main className="admin-content">{children}</main>
+      </div>
+      </OrderReadProvider>
     </UnsavedChangesProvider>
   );
 }

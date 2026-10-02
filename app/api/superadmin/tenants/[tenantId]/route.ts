@@ -7,7 +7,8 @@ import { reservedSlugs, slugify } from "@/lib/slug";
 import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
 import { normalizeArgentineWhatsAppPhone } from "@/lib/store-settings";
 import { getTenantSummary, updateTenantSchema } from "@/lib/tenant-admin";
-import { isBabyTemplate, templateOriginalColors } from "@/lib/catalog";
+import { templateOriginalColors } from "@/lib/catalog";
+import { normalizePaymentMethods } from "@/lib/commerce-settings";
 
 type Params = Promise<{ tenantId: string }>;
 
@@ -33,6 +34,9 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (!slug || reservedSlugs.has(slug)) {
     return NextResponse.json({ error: "La URL elegida no está disponible." }, { status: 400 });
   }
+  if (result.data.isPublished && !existing.whatsappOrdersEnabled && !normalizePaymentMethods(existing).some(method => method.enabled)) {
+    return NextResponse.json({ error: "El vendedor debe activar al menos un método de pago antes de publicar." }, { status: 400 });
+  }
 
   try {
     const passwordHash = result.data.password ? await bcrypt.hash(result.data.password, 10) : null;
@@ -40,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     const currentTheme = existing.theme && typeof existing.theme === "object" && !Array.isArray(existing.theme)
       ? existing.theme as Record<string, unknown>
       : {};
-    const originalColors = isBabyTemplate(result.data.template) ? templateOriginalColors[result.data.template] : null;
+    const originalColors = templateOriginalColors[result.data.template];
     await prisma.$transaction([
       prisma.user.update({
         where: { id: existing.ownerId },
@@ -48,6 +52,7 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
           name: result.data.ownerName,
           email: result.data.email.toLowerCase(),
           status: result.data.status,
+          ...((passwordHash || result.data.status === "SUSPENDED" || existing.owner.email !== result.data.email.toLowerCase()) ? { authVersion: { increment: 1 } } : {}),
           ...(passwordHash ? { passwordHash } : {})
         }
       }),

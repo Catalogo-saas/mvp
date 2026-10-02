@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { imageReferenceSchema } from "@/lib/image-upload-contract";
-import { deletePromotedImages, deletePromotedTemporaries, resolveImageReferences } from "@/lib/image-uploads";
 import { getMerchantStore } from "@/lib/merchant";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
+import { categoryDescendantIds } from "@/lib/category-tree";
 
 const categorySchema = z.object({
   name: z.string().min(2).max(80),
-  image: imageReferenceSchema.nullable().optional()
-});
+  parentId: z.string().nullable().optional()
+}).strict();
 
 type Params = Promise<{ categoryId: string }>;
 
@@ -40,7 +39,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   }
 
   const name = result.data.name.trim();
-  const slug = slugify(name);
+  const parentId = result.data.parentId === undefined ? category.parentId : result.data.parentId;
+  const parent = parentId ? await prisma.category.findFirst({ where: { id: parentId, storeId: store.id }, include: { parent: true } }) : null;
+  if (parentId && (!parent || parent.id === category.id || parent.parentId === category.id || parent.parent?.parentId || await prisma.category.count({ where: { parentId: category.id } }))) {
+    return NextResponse.json({ error: "La categoría no puede superar tres niveles ni formar ciclos." }, { status: 400 });
+  }
+  const slug = parent ? `${parent.slug}-${slugify(name)}` : slugify(name);
   if (!slug) {
     return NextResponse.json({ error: "Nombre inválido" }, { status: 400 });
   }
@@ -51,44 +55,12 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
   if (collision) {
     return NextResponse.json({ error: "Ya existe una categoría con ese nombre" }, { status: 409 });
   }
-
-  const previousImageUrl = category.imageUrl;
-  let imageUrl = category.imageUrl;
-  let resolvedImages = { urls: [] as string[], promoted: [] as Awaited<ReturnType<typeof resolveImageReferences>>["promoted"] };
-  try {
-    if (result.data.image !== undefined) {
-      if (result.data.image === null) {
-        imageUrl = null;
-      } else {
-        resolvedImages = await resolveImageReferences({
-          storeId: store.id,
-          scope: "categories",
-          references: [result.data.image],
-          allowedStoredUrls: category.imageUrl ? [category.imageUrl] : []
-        });
-        imageUrl = resolvedImages.urls[0] ?? null;
-      }
-    }
-  } catch (error) {
-    console.error("[image-upload] Failed to promote category image", error);
-    return NextResponse.json({ error: "No pudimos procesar la imagen. Intentá nuevamente." }, { status: 400 });
-  }
-
-  try {
     const updated = await prisma.category.update({
       where: { id: category.id },
-      data: { name, slug, imageUrl },
+      data: { name, slug, ...(result.data.parentId !== undefined ? { parentId: result.data.parentId } : {}) },
       include: { _count: { select: { products: true } } }
     });
-    if (previousImageUrl !== imageUrl) {
-      await deleteCategoryImage(store.id, previousImageUrl);
-    }
-    await deletePromotedTemporaries(resolvedImages.promoted);
     return NextResponse.json({ category: updated });
-  } catch (error) {
-    await deletePromotedImages(resolvedImages.promoted);
-    throw error;
-  }
 }
 
 export async function DELETE(_request: Request, { params }: { params: Params }) {
@@ -103,7 +75,10 @@ export async function DELETE(_request: Request, { params }: { params: Params }) 
     return NextResponse.json({ error: "Categoría no encontrada" }, { status: 404 });
   }
 
-  await prisma.category.delete({ where: { id: category.id } });
-  await deleteCategoryImage(store.id, category.imageUrl);
+  const categories = await prisma.category.findMany({ where: { storeId: store.id }, select: { id: true, parentId: true, imageUrl: true } });
+  const ids = [...categoryDescendantIds(category.id, categories)];
+  const images = categories.filter(item => ids.includes(item.id)).map(item => item.imageUrl);
+  await prisma.category.deleteMany({ where: { storeId: store.id, id: { in: ids } } });
+  await Promise.all(images.map(imageUrl => deleteCategoryImage(store.id, imageUrl)));
   return NextResponse.json({ ok: true });
 }

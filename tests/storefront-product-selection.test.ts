@@ -20,8 +20,8 @@ const product = {
 };
 
 describe("storefront product selection", () => {
-  it("adds selected option deltas to the product price", () => {
-    expect(calculateSelectedPrice(product, ["blue", "m"])).toBe(1150);
+  it("uses the product price rather than obsolete option surcharges", () => {
+    expect(calculateSelectedPrice(product, ["blue", "m"])).toBe(1000);
   });
 
   it("honors availability on each option", () => {

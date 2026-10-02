@@ -83,6 +83,29 @@ select {
   box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
 }
 
+/* The three storefront families keep the same commerce behavior but have distinct visual languages. */
+[data-store-theme="roma"] { background: #f7f4ed; color: #242624; }
+[data-store-theme="roma"] h1,
+[data-store-theme="roma"] h2,
+[data-store-theme="roma"] h3 { font-family: Georgia, "Times New Roman", serif; }
+[data-store-theme="roma"] main article img { filter: saturate(.85); }
+
+[data-store-theme="dana"] { background: #edf3f5; color: #243743; }
+[data-store-theme="dana"] h1,
+[data-store-theme="dana"] h2,
+[data-store-theme="dana"] h3 { font-family: Arial, Helvetica, sans-serif; letter-spacing: -.035em; }
+[data-store-theme="dana"] main article { border-radius: 20px; overflow: hidden; background: #fff; }
+[data-store-theme="dana"] main article > button > div:last-child { padding: 16px; }
+[data-store-theme="dana"] main article img { border-radius: 14px; }
+
+[data-store-theme="vene"] { background: #fff2e9; color: #502b40; }
+[data-store-theme="vene"] h1,
+[data-store-theme="vene"] h2,
+[data-store-theme="vene"] h3 { font-family: Arial, Helvetica, sans-serif; font-weight: 900; letter-spacing: -.04em; }
+[data-store-theme="vene"] main article { border-radius: 24px; overflow: hidden; background: #fff; box-shadow: 0 10px 26px #9e3f6e18; }
+[data-store-theme="vene"] main article > button > div:last-child { padding: 16px; }
+[data-store-theme="vene"] main article img { border-radius: 20px; }
+
 @media (max-width: 767px) {
   .gestion-shell input,
   .gestion-shell textarea,
@@ -90,3 +113,14 @@ select {
     font-size: 16px;
   }
 }
+[data-store-font="serif"] { font-family: Georgia, "Times New Roman", serif; }
+[data-store-font="sans"] { font-family: Arial, Helvetica, sans-serif; }
+[data-store-font="rounded"] { font-family: "Trebuchet MS", Arial, sans-serif; }
+[data-store-font="serif"] h1, [data-store-font="serif"] h2, [data-store-font="serif"] h3 { font-family: Georgia, "Times New Roman", serif; }
+[data-store-font="sans"] h1, [data-store-font="sans"] h2, [data-store-font="sans"] h3 { font-family: Arial, Helvetica, sans-serif; }
+[data-store-font="rounded"] h1, [data-store-font="rounded"] h2, [data-store-font="rounded"] h3 { font-family: "Trebuchet MS", Arial, sans-serif; }
+[data-store-font="sans"] .font-serif, [data-store-font="rounded"] .font-serif { font-family: inherit; }
+[data-icon-style="thin"] svg.lucide { stroke-width: 1.25; }
+[data-icon-style="regular"] svg.lucide { stroke-width: 2; }
+[data-icon-style="bold"] svg.lucide { stroke-width: 2.75; }
+[data-image-fit="contain"] .commerce-product-card img { object-fit: contain; }

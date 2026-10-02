@@ -46,6 +46,26 @@ export const OrderSource = {
 export type OrderSource = (typeof OrderSource)[keyof typeof OrderSource]
 
 
+export const PaymentStatus = {
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
+
+
+export const FulfillmentStatus = {
+  PENDING: 'PENDING',
+  PACKED: 'PACKED',
+  SHIPPED: 'SHIPPED',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type FulfillmentStatus = (typeof FulfillmentStatus)[keyof typeof FulfillmentStatus]
+
+
 export const UserRole = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   MERCHANT: 'MERCHANT'
@@ -60,3 +80,11 @@ export const UserStatus = {
 } as const
 
 export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus]
+
+
+export const StoreMemberRole = {
+  ADMIN: 'ADMIN',
+  OPERATOR: 'OPERATOR'
+} as const
+
+export type StoreMemberRole = (typeof StoreMemberRole)[keyof typeof StoreMemberRole]

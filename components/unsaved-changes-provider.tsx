@@ -1,45 +1,67 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { AdminDialog } from "@/components/admin-ui";
 
-const SETTINGS_PATH = "/gestion/configuracion";
 const UNSAVED_CHANGES_MESSAGE = "Tenés cambios sin guardar. ¿Querés salir sin guardar los cambios?";
 
+export type ConfirmationOptions = {
+  message: string;
+  title?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  destructive?: boolean;
+};
+
 type UnsavedChangesContextValue = {
-  confirmNavigation: () => boolean;
+  confirm: (options: ConfirmationOptions) => Promise<boolean>;
+  confirmNavigation: () => Promise<boolean>;
   setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void;
 };
 
 const UnsavedChangesContext = createContext<UnsavedChangesContextValue | null>(null);
 
 export function UnsavedChangesProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const router = useRouter();
+  const [hasUnsavedChanges, setDirty] = useState(false);
+  const [confirmation, setConfirmation] = useState<ConfirmationOptions | null>(null);
   const hasUnsavedChangesRef = useRef(false);
+  const confirmationResolver = useRef<((confirmed: boolean) => void) | null>(null);
+  const setHasUnsavedChanges = useCallback((value: boolean) => { hasUnsavedChangesRef.current = value; setDirty(value); }, []);
 
   useEffect(() => {
     hasUnsavedChangesRef.current = hasUnsavedChanges;
   }, [hasUnsavedChanges]);
 
-  useEffect(() => {
-    if (pathname !== SETTINGS_PATH) {
-      hasUnsavedChangesRef.current = false;
+  const confirm = useCallback((options: ConfirmationOptions) => new Promise<boolean>((resolve) => {
+    if (confirmationResolver.current) {
+      resolve(false);
+      return;
     }
-  }, [pathname]);
+    confirmationResolver.current = resolve;
+    setConfirmation(options);
+  }), []);
 
-  const confirmNavigation = useCallback(() => {
+  const settleConfirmation = useCallback((confirmed: boolean) => {
+    const resolve = confirmationResolver.current;
+    confirmationResolver.current = null;
+    setConfirmation(null);
+    resolve?.(confirmed);
+  }, []);
+
+  const confirmNavigation = useCallback(async () => {
     if (!hasUnsavedChangesRef.current) {
       return true;
     }
 
-    const shouldLeave = window.confirm(UNSAVED_CHANGES_MESSAGE);
+    const shouldLeave = await confirm({ title: "Cambios sin guardar", message: UNSAVED_CHANGES_MESSAGE, confirmLabel: "Salir sin guardar" });
     if (shouldLeave) {
       hasUnsavedChangesRef.current = false;
       setHasUnsavedChanges(false);
     }
     return shouldLeave;
-  }, []);
+  }, [confirm, setHasUnsavedChanges]);
 
   useEffect(() => {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -82,10 +104,11 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
         return;
       }
 
-      if (!confirmNavigation()) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      void confirmNavigation().then((shouldLeave) => {
+        if (shouldLeave) router.push(destination.pathname + destination.search + destination.hash);
+      });
     }
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -94,11 +117,23 @@ export function UnsavedChangesProvider({ children }: { children: React.ReactNode
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleDocumentClick, true);
     };
-  }, [confirmNavigation]);
+  }, [confirmNavigation, router]);
 
   return (
-    <UnsavedChangesContext.Provider value={{ confirmNavigation, setHasUnsavedChanges }}>
+    <UnsavedChangesContext.Provider value={{ confirm, confirmNavigation, setHasUnsavedChanges }}>
       {children}
+      {confirmation && <AdminDialog
+        open
+        centeredMobile
+        title={confirmation.title ?? "Confirmar acción"}
+        onClose={() => settleConfirmation(false)}
+        footer={<>
+          <button type="button" className="btn-secondary" onClick={() => settleConfirmation(false)}>{confirmation.cancelLabel ?? "Cancelar"}</button>
+          <button type="button" className={confirmation.destructive ? "btn-primary admin-confirm-danger" : "btn-primary admin-confirm-primary"} onClick={() => settleConfirmation(true)}>{confirmation.confirmLabel ?? "Confirmar"}</button>
+        </>}
+      >
+        <p>{confirmation.message}</p>
+      </AdminDialog>}
     </UnsavedChangesContext.Provider>
   );
 }

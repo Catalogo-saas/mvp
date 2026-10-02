@@ -1,0 +1,28 @@
+.design-editor .design-template-card{display:block;width:100%;text-align:left;border:1px solid #e5deee;border-radius:10px;overflow:hidden;background:white;transition:border-color .2s}
+.design-editor .design-template-card.selected{border:2px solid #8065b5;background:#faf8fe}
+.design-template-caption{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 14px 6px;font-size:12px}
+.design-template-caption>span{color:#8065b5;font-size:10px;white-space:nowrap}
+.design-template-card>small{display:block;padding:0 14px 16px;color:#9586a0;font-size:10px;line-height:1.7}
+.design-template-mini{display:block;padding:0 12px 12px;background:#fff;pointer-events:none}
+.mini-announcement{display:block;height:8px;background:#d99195;margin:0 -12px}
+.mini-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 0;font-size:11px;color:#3a3333}
+.mini-header i{width:30%;height:3px;background:linear-gradient(to right,#ddd 30%,transparent 30% 35%,#ddd 35% 65%,transparent 65% 70%,#ddd 70%)}
+.mini-header strong{font-weight:500;letter-spacing:1px}
+.mini-navigation{display:none}
+.mini-hero{position:relative;display:grid;place-items:end center;isolation:isolate;padding:40px 12px 20px;background:#f1e5df;overflow:hidden;min-height:115px;color:#5e4a43}
+.mini-hero>img{position:absolute;inset:0;z-index:-1;width:100%;height:100%;object-fit:cover;opacity:.45}
+.mini-hero>span{font-size:16px;line-height:1.5;font-weight:550;text-align:center}
+.mini-hero small{display:table;margin:7px auto 0;font-size:6px;font-weight:400;border:1px solid currentColor;padding:3px 10px}
+.mini-products{display:flex;gap:6px;padding-top:16px}
+.mini-products i{flex:1;height:50px;background:#eeedeb}
+.design-template-mini[data-template=dana]{font-family:Georgia,serif}
+.design-template-mini[data-template=dana] .mini-announcement{background:#176877}
+.design-template-mini[data-template=dana] .mini-navigation{display:block;width:50%;height:3px;background:#ddd;margin:0 auto 12px}
+.design-template-mini[data-template=dana] .mini-hero{margin-inline:-12px;background:#e8e9d7;place-items:end start}
+.design-template-mini[data-template=dana] .mini-hero>span{text-align:left;font-weight:400}
+.design-template-mini[data-template=dana] .mini-hero small{margin-left:0;border-radius:20px}
+.design-template-mini[data-template=vene] .mini-announcement{background:#ee7947}
+.design-template-mini[data-template=vene] .mini-header strong{order:-1;font-weight:800}
+.design-template-mini[data-template=vene] .mini-header i:last-child{width:15%}
+.design-template-mini[data-template=vene] .mini-hero{margin-inline:-12px;background:#292e2d;color:white;place-items:start center;padding-top:18px}
+.design-template-mini[data-template=vene] .mini-hero>span{font-weight:700}

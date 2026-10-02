@@ -1,5 +1,7 @@
 # Plan de acción — SaaS de catálogos con pedidos por WhatsApp
 
+> Documento histórico del MVP. Para el comercio mobile-first implementado posteriormente, ver `COMERCIO_MOBILE_ROLLOUT.md`.
+
 ## Objetivo
 
 Crear un SaaS multi-tienda donde cada comercio tenga una página pública mobile-first para mostrar productos, armar carrito y confirmar pedidos por WhatsApp, sin pagos online ni logística integrada.

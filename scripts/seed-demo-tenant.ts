@@ -3,7 +3,11 @@ import "../prisma.config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
+import { defaultCheckoutSettings, defaultDeliveryMethods, defaultMenuConfig } from "../lib/commerce-settings";
+import { defaultDesignConfig } from "../lib/design-config";
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { variantCombinations } from "../lib/product-variants";
+import { defaultPublicPageConfig } from "../lib/public-page-config";
 
 const email = (process.env.DEMO_TENANT_EMAIL || "demo-ecommerce@landing.test").trim().toLowerCase();
 const password = process.env.DEMO_TENANT_PASSWORD || "";
@@ -128,6 +132,9 @@ async function main() {
   if (existingUser?.store && existingUser.store.slug !== slug) {
     throw new Error("El email del demo ya pertenece a otra tienda.");
   }
+  if (existingUser && (existingUser.role !== "MERCHANT" || existingUser.status !== "ACTIVE")) {
+    throw new Error("La cuenta demo existente debe ser un comerciante activo.");
+  }
   if (existingStore && existingStore.owner.email !== email) {
     throw new Error("La URL del demo ya pertenece a otro tenant.");
   }
@@ -136,7 +143,7 @@ async function main() {
   const result = await prisma.$transaction(async (transaction) => {
     const user = await transaction.user.upsert({
       where: { email },
-      update: { name: "Norte Demo", passwordHash, role: "MERCHANT", status: "ACTIVE" },
+      update: {},
       create: { email, name: "Norte Demo", passwordHash, role: "MERCHANT", status: "ACTIVE" }
     });
 
@@ -146,24 +153,30 @@ async function main() {
       description: "Esenciales urbanos de líneas simples y materiales nobles.",
       whatsappPhone: "541112345678",
       businessType: "RETAIL" as const,
-      template: "ecommerce",
+      template: "dana",
       heroTitle: "Vestir el ahora.",
-      heroSubtitle: "Una colección versátil para acompañarte todos los días. Elegí tus productos y confirmá por WhatsApp.",
+      heroSubtitle: "Una colección versátil para acompañarte todos los días. Elegí tus productos y seguí el estado de tu pedido.",
       heroImageUrls: [
         "https://images.unsplash.com/photo-1543163521-1bf539c55dd2?auto=format&fit=crop&w=1600&q=88",
         "https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=88",
         "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&q=88"
       ],
       address: "Av. Córdoba 1850, CABA",
-      theme: { primary: "#1e4f43", accent: "#e6ff54", font: "Inter" },
+      theme: { primary: "#1e4f43", accent: "#e6ff54", useTemplateColors: false, font: "Inter" },
+      designConfig: { ...defaultDesignConfig, font: "sans", cardRadius: 12 },
+      publicPageConfig: defaultPublicPageConfig,
+      menuConfig: defaultMenuConfig,
+      checkoutSettings: {
+        ...defaultCheckoutSettings,
+        cashInstructions: "Coordiná el pago en efectivo con la tienda."
+      },
+      deliveryMethods: [{ ...defaultDeliveryMethods[0], name: "Entrega personalizada" }],
       showCategories: true,
-      freeShippingEnabled: true,
-      freeShippingThreshold: 80000,
-      acceptTransferPayments: true,
-      paymentAccountHolder: "Norte Tienda SRL",
-      paymentProvider: "Mercado Pago",
-      paymentAlias: "NORTE.TIENDA",
-      paymentCbu: "0000003100012345678901",
+      showFeatured: true,
+      freeShippingEnabled: false,
+      acceptCashPayments: true,
+      acceptTransferPayments: false,
+      whatsappOrdersEnabled: false,
       restrictBySchedule: false,
       businessHoursText: "Lunes a sábados de 10 a 20 h",
       mobileProductColumns: 2,
@@ -172,7 +185,7 @@ async function main() {
 
     const store = await transaction.store.upsert({
       where: { slug },
-      update: storeData,
+      update: {},
       create: { ...storeData, slug }
     });
 
@@ -180,52 +193,70 @@ async function main() {
     for (const [index, category] of categoryDefinitions.entries()) {
       const record = await transaction.category.upsert({
         where: { storeId_slug: { storeId: store.id, slug: category.slug } },
-        update: { name: category.name, imageUrl: category.imageUrl, sortOrder: index },
-        create: { storeId: store.id, name: category.name, slug: category.slug, imageUrl: category.imageUrl, sortOrder: index }
+        update: {},
+        create: { storeId: store.id, name: category.name, slug: category.slug, sortOrder: index }
       });
       categoryIds.set(category.slug, record.id);
     }
+    const homeSections = structuredClone(defaultPublicPageConfig.homeSections);
+    homeSections[0].title = "Vestir el ahora";
+    homeSections[0].images = [...storeData.heroImageUrls];
+    homeSections[2].categoryIds = [...categoryIds.values()];
+    homeSections[2].categoryImages = Object.fromEntries(categoryDefinitions.map(category => [categoryIds.get(category.slug)!, category.imageUrl]));
+    await transaction.store.update({ where: { id: store.id }, data: { publicPageConfig: { ...defaultPublicPageConfig, homeSections } } });
 
     for (const [index, definition] of productDefinitions.entries()) {
+      const categoryId = categoryIds.get(definition.categorySlug);
+      if (!categoryId) throw new Error(`Falta la categoría ${definition.categorySlug}.`);
+      const groups = definition.groups.map((group) => ({
+        name: group.name,
+        selectionType: group.selectionType,
+        isRequired: group.isRequired,
+        options: group.options.map((name) => ({ name }))
+      }));
+      const variants = variantCombinations(groups).map(({ key }) => ({ key, stockQuantity: definition.stockQuantity, basePrice: definition.basePrice, promoPrice: definition.promoPrice }));
       const productData = {
-        categoryId: categoryIds.get(definition.categorySlug),
+        categoryId,
         name: definition.name,
         description: definition.description,
         basePrice: definition.basePrice,
         promoPrice: definition.promoPrice,
         imageUrls: [...definition.imageUrls],
         isVisible: true,
-        stockQuantity: definition.stockQuantity,
+        isFeatured: index < 3,
+        stockQuantity: null,
+        variants,
+        sku: `NORTE-${definition.slug.toUpperCase()}`,
         sortOrder: index
       };
-      const product = await transaction.product.upsert({
+      await transaction.product.upsert({
         where: { storeId_slug: { storeId: store.id, slug: definition.slug } },
-        update: productData,
-        create: { ...productData, storeId: store.id, slug: definition.slug }
-      });
-
-      await transaction.optionGroup.deleteMany({ where: { productId: product.id } });
-      for (const [groupIndex, group] of definition.groups.entries()) {
-        await transaction.optionGroup.create({
-          data: {
-            productId: product.id,
-            name: group.name,
-            selectionType: group.selectionType,
-            isRequired: group.isRequired,
-            minSelections: group.isRequired ? 1 : 0,
-            maxSelections: group.maxSelections,
-            sortOrder: groupIndex,
-            options: {
-              create: group.options.map((name, optionIndex) => ({
-                name,
-                priceDelta: 0,
-                isAvailable: true,
-                sortOrder: optionIndex
-              }))
-            }
+        update: {},
+        create: {
+          ...productData,
+          storeId: store.id,
+          slug: definition.slug,
+          assignedCategories: { connect: { id: categoryId } },
+          optionGroups: {
+            create: definition.groups.map((group, groupIndex) => ({
+              name: group.name,
+              selectionType: group.selectionType,
+              isRequired: group.isRequired,
+              minSelections: group.isRequired ? 1 : 0,
+              maxSelections: group.maxSelections,
+              sortOrder: groupIndex,
+              options: {
+                create: group.options.map((name, optionIndex) => ({
+                  name,
+                  priceDelta: 0,
+                  isAvailable: true,
+                  sortOrder: optionIndex
+                }))
+              }
+            }))
           }
-        });
-      }
+        }
+      });
     }
 
     return { user, store, productsCount: productDefinitions.length };

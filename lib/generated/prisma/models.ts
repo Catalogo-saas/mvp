@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User.ts'
+export type * from './models/StoreMember.ts'
 export type * from './models/Account.ts'
 export type * from './models/Session.ts'
 export type * from './models/VerificationToken.ts'
@@ -18,6 +19,9 @@ export type * from './models/Product.ts'
 export type * from './models/OptionGroup.ts'
 export type * from './models/ProductOption.ts'
 export type * from './models/Order.ts'
+export type * from './models/OrderEvent.ts'
+export type * from './models/Customer.ts'
+export type * from './models/CustomerSession.ts'
 export type * from './models/OrderItem.ts'
 export type * from './models/StorefrontEvent.ts'
 export type * from './commonInputTypes.ts'

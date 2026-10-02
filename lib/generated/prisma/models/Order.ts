@@ -39,6 +39,19 @@ export type OrderMinAggregateOutputType = {
   storeId: string | null
   code: string | null
   status: $Enums.OrderStatus | null
+  paymentStatus: $Enums.PaymentStatus | null
+  fulfillmentStatus: $Enums.FulfillmentStatus | null
+  trackingTokenHash: string | null
+  clientRequestId: string | null
+  requestFingerprint: string | null
+  stockReserved: boolean | null
+  archivedAt: Date | null
+  readAt: Date | null
+  receiptKey: string | null
+  receiptName: string | null
+  receiptMimeType: string | null
+  receiptUploadedAt: Date | null
+  customerEmail: string | null
   source: $Enums.OrderSource | null
   customerName: string | null
   customerPhone: string | null
@@ -54,6 +67,19 @@ export type OrderMaxAggregateOutputType = {
   storeId: string | null
   code: string | null
   status: $Enums.OrderStatus | null
+  paymentStatus: $Enums.PaymentStatus | null
+  fulfillmentStatus: $Enums.FulfillmentStatus | null
+  trackingTokenHash: string | null
+  clientRequestId: string | null
+  requestFingerprint: string | null
+  stockReserved: boolean | null
+  archivedAt: Date | null
+  readAt: Date | null
+  receiptKey: string | null
+  receiptName: string | null
+  receiptMimeType: string | null
+  receiptUploadedAt: Date | null
+  customerEmail: string | null
   source: $Enums.OrderSource | null
   customerName: string | null
   customerPhone: string | null
@@ -69,6 +95,19 @@ export type OrderCountAggregateOutputType = {
   storeId: number
   code: number
   status: number
+  paymentStatus: number
+  fulfillmentStatus: number
+  trackingTokenHash: number
+  clientRequestId: number
+  requestFingerprint: number
+  stockReserved: number
+  archivedAt: number
+  readAt: number
+  receiptKey: number
+  receiptName: number
+  receiptMimeType: number
+  receiptUploadedAt: number
+  customerEmail: number
   source: number
   customerName: number
   customerPhone: number
@@ -95,6 +134,19 @@ export type OrderMinAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  paymentStatus?: true
+  fulfillmentStatus?: true
+  trackingTokenHash?: true
+  clientRequestId?: true
+  requestFingerprint?: true
+  stockReserved?: true
+  archivedAt?: true
+  readAt?: true
+  receiptKey?: true
+  receiptName?: true
+  receiptMimeType?: true
+  receiptUploadedAt?: true
+  customerEmail?: true
   source?: true
   customerName?: true
   customerPhone?: true
@@ -110,6 +162,19 @@ export type OrderMaxAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  paymentStatus?: true
+  fulfillmentStatus?: true
+  trackingTokenHash?: true
+  clientRequestId?: true
+  requestFingerprint?: true
+  stockReserved?: true
+  archivedAt?: true
+  readAt?: true
+  receiptKey?: true
+  receiptName?: true
+  receiptMimeType?: true
+  receiptUploadedAt?: true
+  customerEmail?: true
   source?: true
   customerName?: true
   customerPhone?: true
@@ -125,6 +190,19 @@ export type OrderCountAggregateInputType = {
   storeId?: true
   code?: true
   status?: true
+  paymentStatus?: true
+  fulfillmentStatus?: true
+  trackingTokenHash?: true
+  clientRequestId?: true
+  requestFingerprint?: true
+  stockReserved?: true
+  archivedAt?: true
+  readAt?: true
+  receiptKey?: true
+  receiptName?: true
+  receiptMimeType?: true
+  receiptUploadedAt?: true
+  customerEmail?: true
   source?: true
   customerName?: true
   customerPhone?: true
@@ -228,6 +306,19 @@ export type OrderGroupByOutputType = {
   storeId: string
   code: string
   status: $Enums.OrderStatus
+  paymentStatus: $Enums.PaymentStatus
+  fulfillmentStatus: $Enums.FulfillmentStatus
+  trackingTokenHash: string | null
+  clientRequestId: string | null
+  requestFingerprint: string | null
+  stockReserved: boolean
+  archivedAt: Date | null
+  readAt: Date | null
+  receiptKey: string | null
+  receiptName: string | null
+  receiptMimeType: string | null
+  receiptUploadedAt: Date | null
+  customerEmail: string | null
   source: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -267,6 +358,19 @@ export type OrderWhereInput = {
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFilter<"Order"> | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFilter<"Order"> | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.StringNullableFilter<"Order"> | string | null
+  clientRequestId?: Prisma.StringNullableFilter<"Order"> | string | null
+  requestFingerprint?: Prisma.StringNullableFilter<"Order"> | string | null
+  stockReserved?: Prisma.BoolFilter<"Order"> | boolean
+  archivedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  readAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  receiptKey?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptName?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptMimeType?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptUploadedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  customerEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
@@ -278,6 +382,7 @@ export type OrderWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   store?: Prisma.XOR<Prisma.StoreScalarRelationFilter, Prisma.StoreWhereInput>
   items?: Prisma.OrderItemListRelationFilter
+  events?: Prisma.OrderEventListRelationFilter
 }
 
 export type OrderOrderByWithRelationInput = {
@@ -285,6 +390,19 @@ export type OrderOrderByWithRelationInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  paymentStatus?: Prisma.SortOrder
+  fulfillmentStatus?: Prisma.SortOrder
+  trackingTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  clientRequestId?: Prisma.SortOrderInput | Prisma.SortOrder
+  requestFingerprint?: Prisma.SortOrderInput | Prisma.SortOrder
+  stockReserved?: Prisma.SortOrder
+  archivedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  readAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptName?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptMimeType?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptUploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
@@ -296,17 +414,32 @@ export type OrderOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   store?: Prisma.StoreOrderByWithRelationInput
   items?: Prisma.OrderItemOrderByRelationAggregateInput
+  events?: Prisma.OrderEventOrderByRelationAggregateInput
 }
 
 export type OrderWhereUniqueInput = Prisma.AtLeast<{
   id?: string
+  trackingTokenHash?: string
   storeId_code?: Prisma.OrderStoreIdCodeCompoundUniqueInput
+  storeId_clientRequestId?: Prisma.OrderStoreIdClientRequestIdCompoundUniqueInput
   AND?: Prisma.OrderWhereInput | Prisma.OrderWhereInput[]
   OR?: Prisma.OrderWhereInput[]
   NOT?: Prisma.OrderWhereInput | Prisma.OrderWhereInput[]
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFilter<"Order"> | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFilter<"Order"> | $Enums.FulfillmentStatus
+  clientRequestId?: Prisma.StringNullableFilter<"Order"> | string | null
+  requestFingerprint?: Prisma.StringNullableFilter<"Order"> | string | null
+  stockReserved?: Prisma.BoolFilter<"Order"> | boolean
+  archivedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  readAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  receiptKey?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptName?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptMimeType?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptUploadedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  customerEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
@@ -318,13 +451,27 @@ export type OrderWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
   store?: Prisma.XOR<Prisma.StoreScalarRelationFilter, Prisma.StoreWhereInput>
   items?: Prisma.OrderItemListRelationFilter
-}, "id" | "storeId_code">
+  events?: Prisma.OrderEventListRelationFilter
+}, "id" | "trackingTokenHash" | "storeId_code" | "storeId_clientRequestId">
 
 export type OrderOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  paymentStatus?: Prisma.SortOrder
+  fulfillmentStatus?: Prisma.SortOrder
+  trackingTokenHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  clientRequestId?: Prisma.SortOrderInput | Prisma.SortOrder
+  requestFingerprint?: Prisma.SortOrderInput | Prisma.SortOrder
+  stockReserved?: Prisma.SortOrder
+  archivedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  readAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptKey?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptName?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptMimeType?: Prisma.SortOrderInput | Prisma.SortOrder
+  receiptUploadedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  customerEmail?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
@@ -349,6 +496,19 @@ export type OrderScalarWhereWithAggregatesInput = {
   storeId?: Prisma.StringWithAggregatesFilter<"Order"> | string
   code?: Prisma.StringWithAggregatesFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusWithAggregatesFilter<"Order"> | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusWithAggregatesFilter<"Order"> | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  clientRequestId?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  requestFingerprint?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  stockReserved?: Prisma.BoolWithAggregatesFilter<"Order"> | boolean
+  archivedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  readAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  receiptKey?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  receiptName?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  receiptMimeType?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
+  receiptUploadedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+  customerEmail?: Prisma.StringNullableWithAggregatesFilter<"Order"> | string | null
   source?: Prisma.EnumOrderSourceWithAggregatesFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringWithAggregatesFilter<"Order"> | string
   customerPhone?: Prisma.StringWithAggregatesFilter<"Order"> | string
@@ -364,6 +524,19 @@ export type OrderCreateInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -375,6 +548,7 @@ export type OrderCreateInput = {
   updatedAt?: Date | string
   store: Prisma.StoreCreateNestedOneWithoutOrdersInput
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  events?: Prisma.OrderEventCreateNestedManyWithoutOrderInput
 }
 
 export type OrderUncheckedCreateInput = {
@@ -382,6 +556,19 @@ export type OrderUncheckedCreateInput = {
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -392,12 +579,26 @@ export type OrderUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  events?: Prisma.OrderEventUncheckedCreateNestedManyWithoutOrderInput
 }
 
 export type OrderUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -409,6 +610,7 @@ export type OrderUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   store?: Prisma.StoreUpdateOneRequiredWithoutOrdersNestedInput
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  events?: Prisma.OrderEventUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateInput = {
@@ -416,6 +618,19 @@ export type OrderUncheckedUpdateInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -426,6 +641,7 @@ export type OrderUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  events?: Prisma.OrderEventUncheckedUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderCreateManyInput = {
@@ -433,6 +649,19 @@ export type OrderCreateManyInput = {
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -448,6 +677,19 @@ export type OrderUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -464,6 +706,19 @@ export type OrderUncheckedUpdateManyInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -490,11 +745,29 @@ export type OrderStoreIdCodeCompoundUniqueInput = {
   code: string
 }
 
+export type OrderStoreIdClientRequestIdCompoundUniqueInput = {
+  storeId: string
+  clientRequestId: string
+}
+
 export type OrderCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  paymentStatus?: Prisma.SortOrder
+  fulfillmentStatus?: Prisma.SortOrder
+  trackingTokenHash?: Prisma.SortOrder
+  clientRequestId?: Prisma.SortOrder
+  requestFingerprint?: Prisma.SortOrder
+  stockReserved?: Prisma.SortOrder
+  archivedAt?: Prisma.SortOrder
+  readAt?: Prisma.SortOrder
+  receiptKey?: Prisma.SortOrder
+  receiptName?: Prisma.SortOrder
+  receiptMimeType?: Prisma.SortOrder
+  receiptUploadedAt?: Prisma.SortOrder
+  customerEmail?: Prisma.SortOrder
   source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
@@ -515,6 +788,19 @@ export type OrderMaxOrderByAggregateInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  paymentStatus?: Prisma.SortOrder
+  fulfillmentStatus?: Prisma.SortOrder
+  trackingTokenHash?: Prisma.SortOrder
+  clientRequestId?: Prisma.SortOrder
+  requestFingerprint?: Prisma.SortOrder
+  stockReserved?: Prisma.SortOrder
+  archivedAt?: Prisma.SortOrder
+  readAt?: Prisma.SortOrder
+  receiptKey?: Prisma.SortOrder
+  receiptName?: Prisma.SortOrder
+  receiptMimeType?: Prisma.SortOrder
+  receiptUploadedAt?: Prisma.SortOrder
+  customerEmail?: Prisma.SortOrder
   source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
@@ -530,6 +816,19 @@ export type OrderMinOrderByAggregateInput = {
   storeId?: Prisma.SortOrder
   code?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  paymentStatus?: Prisma.SortOrder
+  fulfillmentStatus?: Prisma.SortOrder
+  trackingTokenHash?: Prisma.SortOrder
+  clientRequestId?: Prisma.SortOrder
+  requestFingerprint?: Prisma.SortOrder
+  stockReserved?: Prisma.SortOrder
+  archivedAt?: Prisma.SortOrder
+  readAt?: Prisma.SortOrder
+  receiptKey?: Prisma.SortOrder
+  receiptName?: Prisma.SortOrder
+  receiptMimeType?: Prisma.SortOrder
+  receiptUploadedAt?: Prisma.SortOrder
+  customerEmail?: Prisma.SortOrder
   source?: Prisma.SortOrder
   customerName?: Prisma.SortOrder
   customerPhone?: Prisma.SortOrder
@@ -595,8 +894,30 @@ export type EnumOrderStatusFieldUpdateOperationsInput = {
   set?: $Enums.OrderStatus
 }
 
+export type EnumPaymentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.PaymentStatus
+}
+
+export type EnumFulfillmentStatusFieldUpdateOperationsInput = {
+  set?: $Enums.FulfillmentStatus
+}
+
 export type EnumOrderSourceFieldUpdateOperationsInput = {
   set?: $Enums.OrderSource
+}
+
+export type OrderCreateNestedOneWithoutEventsInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutEventsInput, Prisma.OrderUncheckedCreateWithoutEventsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutEventsInput
+  connect?: Prisma.OrderWhereUniqueInput
+}
+
+export type OrderUpdateOneRequiredWithoutEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.OrderCreateWithoutEventsInput, Prisma.OrderUncheckedCreateWithoutEventsInput>
+  connectOrCreate?: Prisma.OrderCreateOrConnectWithoutEventsInput
+  upsert?: Prisma.OrderUpsertWithoutEventsInput
+  connect?: Prisma.OrderWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.OrderUpdateToOneWithWhereWithoutEventsInput, Prisma.OrderUpdateWithoutEventsInput>, Prisma.OrderUncheckedUpdateWithoutEventsInput>
 }
 
 export type OrderCreateNestedOneWithoutItemsInput = {
@@ -617,6 +938,19 @@ export type OrderCreateWithoutStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -627,12 +961,26 @@ export type OrderCreateWithoutStoreInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
+  events?: Prisma.OrderEventCreateNestedManyWithoutOrderInput
 }
 
 export type OrderUncheckedCreateWithoutStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -643,6 +991,7 @@ export type OrderUncheckedCreateWithoutStoreInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+  events?: Prisma.OrderEventUncheckedCreateNestedManyWithoutOrderInput
 }
 
 export type OrderCreateOrConnectWithoutStoreInput = {
@@ -679,6 +1028,19 @@ export type OrderScalarWhereInput = {
   storeId?: Prisma.StringFilter<"Order"> | string
   code?: Prisma.StringFilter<"Order"> | string
   status?: Prisma.EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFilter<"Order"> | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFilter<"Order"> | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.StringNullableFilter<"Order"> | string | null
+  clientRequestId?: Prisma.StringNullableFilter<"Order"> | string | null
+  requestFingerprint?: Prisma.StringNullableFilter<"Order"> | string | null
+  stockReserved?: Prisma.BoolFilter<"Order"> | boolean
+  archivedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  readAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  receiptKey?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptName?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptMimeType?: Prisma.StringNullableFilter<"Order"> | string | null
+  receiptUploadedAt?: Prisma.DateTimeNullableFilter<"Order"> | Date | string | null
+  customerEmail?: Prisma.StringNullableFilter<"Order"> | string | null
   source?: Prisma.EnumOrderSourceFilter<"Order"> | $Enums.OrderSource
   customerName?: Prisma.StringFilter<"Order"> | string
   customerPhone?: Prisma.StringFilter<"Order"> | string
@@ -690,10 +1052,23 @@ export type OrderScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Order"> | Date | string
 }
 
-export type OrderCreateWithoutItemsInput = {
+export type OrderCreateWithoutEventsInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -704,13 +1079,27 @@ export type OrderCreateWithoutItemsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   store: Prisma.StoreCreateNestedOneWithoutOrdersInput
+  items?: Prisma.OrderItemCreateNestedManyWithoutOrderInput
 }
 
-export type OrderUncheckedCreateWithoutItemsInput = {
+export type OrderUncheckedCreateWithoutEventsInput = {
   id?: string
   storeId: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -720,6 +1109,143 @@ export type OrderUncheckedCreateWithoutItemsInput = {
   checkout: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Date | string
   updatedAt?: Date | string
+  items?: Prisma.OrderItemUncheckedCreateNestedManyWithoutOrderInput
+}
+
+export type OrderCreateOrConnectWithoutEventsInput = {
+  where: Prisma.OrderWhereUniqueInput
+  create: Prisma.XOR<Prisma.OrderCreateWithoutEventsInput, Prisma.OrderUncheckedCreateWithoutEventsInput>
+}
+
+export type OrderUpsertWithoutEventsInput = {
+  update: Prisma.XOR<Prisma.OrderUpdateWithoutEventsInput, Prisma.OrderUncheckedUpdateWithoutEventsInput>
+  create: Prisma.XOR<Prisma.OrderCreateWithoutEventsInput, Prisma.OrderUncheckedCreateWithoutEventsInput>
+  where?: Prisma.OrderWhereInput
+}
+
+export type OrderUpdateToOneWithWhereWithoutEventsInput = {
+  where?: Prisma.OrderWhereInput
+  data: Prisma.XOR<Prisma.OrderUpdateWithoutEventsInput, Prisma.OrderUncheckedUpdateWithoutEventsInput>
+}
+
+export type OrderUpdateWithoutEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
+  customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.IntFieldUpdateOperationsInput | number
+  checkout?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  store?: Prisma.StoreUpdateOneRequiredWithoutOrdersNestedInput
+  items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+}
+
+export type OrderUncheckedUpdateWithoutEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  storeId?: Prisma.StringFieldUpdateOperationsInput | string
+  code?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
+  customerName?: Prisma.StringFieldUpdateOperationsInput | string
+  customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  fulfillment?: Prisma.StringFieldUpdateOperationsInput | string
+  notes?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  total?: Prisma.IntFieldUpdateOperationsInput | number
+  checkout?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+}
+
+export type OrderCreateWithoutItemsInput = {
+  id?: string
+  code: string
+  status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
+  source?: $Enums.OrderSource
+  customerName: string
+  customerPhone: string
+  fulfillment: string
+  notes?: string | null
+  total: number
+  checkout: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  store: Prisma.StoreCreateNestedOneWithoutOrdersInput
+  events?: Prisma.OrderEventCreateNestedManyWithoutOrderInput
+}
+
+export type OrderUncheckedCreateWithoutItemsInput = {
+  id?: string
+  storeId: string
+  code: string
+  status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
+  source?: $Enums.OrderSource
+  customerName: string
+  customerPhone: string
+  fulfillment: string
+  notes?: string | null
+  total: number
+  checkout: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  events?: Prisma.OrderEventUncheckedCreateNestedManyWithoutOrderInput
 }
 
 export type OrderCreateOrConnectWithoutItemsInput = {
@@ -742,6 +1268,19 @@ export type OrderUpdateWithoutItemsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -752,6 +1291,7 @@ export type OrderUpdateWithoutItemsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   store?: Prisma.StoreUpdateOneRequiredWithoutOrdersNestedInput
+  events?: Prisma.OrderEventUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutItemsInput = {
@@ -759,6 +1299,19 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   storeId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -768,12 +1321,26 @@ export type OrderUncheckedUpdateWithoutItemsInput = {
   checkout?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  events?: Prisma.OrderEventUncheckedUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderCreateManyStoreInput = {
   id?: string
   code: string
   status?: $Enums.OrderStatus
+  paymentStatus?: $Enums.PaymentStatus
+  fulfillmentStatus?: $Enums.FulfillmentStatus
+  trackingTokenHash?: string | null
+  clientRequestId?: string | null
+  requestFingerprint?: string | null
+  stockReserved?: boolean
+  archivedAt?: Date | string | null
+  readAt?: Date | string | null
+  receiptKey?: string | null
+  receiptName?: string | null
+  receiptMimeType?: string | null
+  receiptUploadedAt?: Date | string | null
+  customerEmail?: string | null
   source?: $Enums.OrderSource
   customerName: string
   customerPhone: string
@@ -789,6 +1356,19 @@ export type OrderUpdateWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -799,12 +1379,26 @@ export type OrderUpdateWithoutStoreInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUpdateManyWithoutOrderNestedInput
+  events?: Prisma.OrderEventUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -815,12 +1409,26 @@ export type OrderUncheckedUpdateWithoutStoreInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   items?: Prisma.OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+  events?: Prisma.OrderEventUncheckedUpdateManyWithoutOrderNestedInput
 }
 
 export type OrderUncheckedUpdateManyWithoutStoreInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
   status?: Prisma.EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+  paymentStatus?: Prisma.EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+  fulfillmentStatus?: Prisma.EnumFulfillmentStatusFieldUpdateOperationsInput | $Enums.FulfillmentStatus
+  trackingTokenHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clientRequestId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  requestFingerprint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  stockReserved?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  archivedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  readAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  receiptKey?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptMimeType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  receiptUploadedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  customerEmail?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.EnumOrderSourceFieldUpdateOperationsInput | $Enums.OrderSource
   customerName?: Prisma.StringFieldUpdateOperationsInput | string
   customerPhone?: Prisma.StringFieldUpdateOperationsInput | string
@@ -839,10 +1447,12 @@ export type OrderUncheckedUpdateManyWithoutStoreInput = {
 
 export type OrderCountOutputType = {
   items: number
+  events: number
 }
 
 export type OrderCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   items?: boolean | OrderCountOutputTypeCountItemsArgs
+  events?: boolean | OrderCountOutputTypeCountEventsArgs
 }
 
 /**
@@ -862,12 +1472,32 @@ export type OrderCountOutputTypeCountItemsArgs<ExtArgs extends runtime.Types.Ext
   where?: Prisma.OrderItemWhereInput
 }
 
+/**
+ * OrderCountOutputType without action
+ */
+export type OrderCountOutputTypeCountEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.OrderEventWhereInput
+}
+
 
 export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   storeId?: boolean
   code?: boolean
   status?: boolean
+  paymentStatus?: boolean
+  fulfillmentStatus?: boolean
+  trackingTokenHash?: boolean
+  clientRequestId?: boolean
+  requestFingerprint?: boolean
+  stockReserved?: boolean
+  archivedAt?: boolean
+  readAt?: boolean
+  receiptKey?: boolean
+  receiptName?: boolean
+  receiptMimeType?: boolean
+  receiptUploadedAt?: boolean
+  customerEmail?: boolean
   source?: boolean
   customerName?: boolean
   customerPhone?: boolean
@@ -879,6 +1509,7 @@ export type OrderSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   updatedAt?: boolean
   store?: boolean | Prisma.StoreDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
+  events?: boolean | Prisma.Order$eventsArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["order"]>
 
@@ -887,6 +1518,19 @@ export type OrderSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   storeId?: boolean
   code?: boolean
   status?: boolean
+  paymentStatus?: boolean
+  fulfillmentStatus?: boolean
+  trackingTokenHash?: boolean
+  clientRequestId?: boolean
+  requestFingerprint?: boolean
+  stockReserved?: boolean
+  archivedAt?: boolean
+  readAt?: boolean
+  receiptKey?: boolean
+  receiptName?: boolean
+  receiptMimeType?: boolean
+  receiptUploadedAt?: boolean
+  customerEmail?: boolean
   source?: boolean
   customerName?: boolean
   customerPhone?: boolean
@@ -904,6 +1548,19 @@ export type OrderSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   storeId?: boolean
   code?: boolean
   status?: boolean
+  paymentStatus?: boolean
+  fulfillmentStatus?: boolean
+  trackingTokenHash?: boolean
+  clientRequestId?: boolean
+  requestFingerprint?: boolean
+  stockReserved?: boolean
+  archivedAt?: boolean
+  readAt?: boolean
+  receiptKey?: boolean
+  receiptName?: boolean
+  receiptMimeType?: boolean
+  receiptUploadedAt?: boolean
+  customerEmail?: boolean
   source?: boolean
   customerName?: boolean
   customerPhone?: boolean
@@ -921,6 +1578,19 @@ export type OrderSelectScalar = {
   storeId?: boolean
   code?: boolean
   status?: boolean
+  paymentStatus?: boolean
+  fulfillmentStatus?: boolean
+  trackingTokenHash?: boolean
+  clientRequestId?: boolean
+  requestFingerprint?: boolean
+  stockReserved?: boolean
+  archivedAt?: boolean
+  readAt?: boolean
+  receiptKey?: boolean
+  receiptName?: boolean
+  receiptMimeType?: boolean
+  receiptUploadedAt?: boolean
+  customerEmail?: boolean
   source?: boolean
   customerName?: boolean
   customerPhone?: boolean
@@ -932,10 +1602,11 @@ export type OrderSelectScalar = {
   updatedAt?: boolean
 }
 
-export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "code" | "status" | "source" | "customerName" | "customerPhone" | "fulfillment" | "notes" | "total" | "checkout" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
+export type OrderOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "storeId" | "code" | "status" | "paymentStatus" | "fulfillmentStatus" | "trackingTokenHash" | "clientRequestId" | "requestFingerprint" | "stockReserved" | "archivedAt" | "readAt" | "receiptKey" | "receiptName" | "receiptMimeType" | "receiptUploadedAt" | "customerEmail" | "source" | "customerName" | "customerPhone" | "fulfillment" | "notes" | "total" | "checkout" | "createdAt" | "updatedAt", ExtArgs["result"]["order"]>
 export type OrderInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   store?: boolean | Prisma.StoreDefaultArgs<ExtArgs>
   items?: boolean | Prisma.Order$itemsArgs<ExtArgs>
+  events?: boolean | Prisma.Order$eventsArgs<ExtArgs>
   _count?: boolean | Prisma.OrderCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type OrderIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -950,12 +1621,26 @@ export type $OrderPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     store: Prisma.$StorePayload<ExtArgs>
     items: Prisma.$OrderItemPayload<ExtArgs>[]
+    events: Prisma.$OrderEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     storeId: string
     code: string
     status: $Enums.OrderStatus
+    paymentStatus: $Enums.PaymentStatus
+    fulfillmentStatus: $Enums.FulfillmentStatus
+    trackingTokenHash: string | null
+    clientRequestId: string | null
+    requestFingerprint: string | null
+    stockReserved: boolean
+    archivedAt: Date | null
+    readAt: Date | null
+    receiptKey: string | null
+    receiptName: string | null
+    receiptMimeType: string | null
+    receiptUploadedAt: Date | null
+    customerEmail: string | null
     source: $Enums.OrderSource
     customerName: string
     customerPhone: string
@@ -1361,6 +2046,7 @@ export interface Prisma__OrderClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   store<T extends Prisma.StoreDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StoreDefaultArgs<ExtArgs>>): Prisma.Prisma__StoreClient<runtime.Types.Result.GetResult<Prisma.$StorePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   items<T extends Prisma.Order$itemsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  events<T extends Prisma.Order$eventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Order$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1394,6 +2080,19 @@ export interface OrderFieldRefs {
   readonly storeId: Prisma.FieldRef<"Order", 'String'>
   readonly code: Prisma.FieldRef<"Order", 'String'>
   readonly status: Prisma.FieldRef<"Order", 'OrderStatus'>
+  readonly paymentStatus: Prisma.FieldRef<"Order", 'PaymentStatus'>
+  readonly fulfillmentStatus: Prisma.FieldRef<"Order", 'FulfillmentStatus'>
+  readonly trackingTokenHash: Prisma.FieldRef<"Order", 'String'>
+  readonly clientRequestId: Prisma.FieldRef<"Order", 'String'>
+  readonly requestFingerprint: Prisma.FieldRef<"Order", 'String'>
+  readonly stockReserved: Prisma.FieldRef<"Order", 'Boolean'>
+  readonly archivedAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly readAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly receiptKey: Prisma.FieldRef<"Order", 'String'>
+  readonly receiptName: Prisma.FieldRef<"Order", 'String'>
+  readonly receiptMimeType: Prisma.FieldRef<"Order", 'String'>
+  readonly receiptUploadedAt: Prisma.FieldRef<"Order", 'DateTime'>
+  readonly customerEmail: Prisma.FieldRef<"Order", 'String'>
   readonly source: Prisma.FieldRef<"Order", 'OrderSource'>
   readonly customerName: Prisma.FieldRef<"Order", 'String'>
   readonly customerPhone: Prisma.FieldRef<"Order", 'String'>
@@ -1825,6 +2524,30 @@ export type Order$itemsArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   distinct?: Prisma.OrderItemScalarFieldEnum | Prisma.OrderItemScalarFieldEnum[]
+}
+
+/**
+ * Order.events
+ */
+export type Order$eventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the OrderEvent
+   */
+  select?: Prisma.OrderEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the OrderEvent
+   */
+  omit?: Prisma.OrderEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.OrderEventInclude<ExtArgs> | null
+  where?: Prisma.OrderEventWhereInput
+  orderBy?: Prisma.OrderEventOrderByWithRelationInput | Prisma.OrderEventOrderByWithRelationInput[]
+  cursor?: Prisma.OrderEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.OrderEventScalarFieldEnum | Prisma.OrderEventScalarFieldEnum[]
 }
 
 /**

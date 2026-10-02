@@ -17,13 +17,13 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  const existing = await prisma.user.findUnique({ where: { email }, include: { store: true } });
-  if (existing?.store) {
-    throw new Error("Ese email ya pertenece a un tenant y no puede convertirse en superadmin.");
+  const existing = await prisma.user.findUnique({ where: { email }, include: { store: true, membership: true } });
+  if (existing?.store || existing?.membership) {
+    throw new Error("Ese email ya pertenece a una tienda y no puede convertirse en superadmin.");
   }
   const passwordHash = await bcrypt.hash(password, 12);
   const user = existing
-    ? await prisma.user.update({ where: { id: existing.id }, data: { name, passwordHash, role: "SUPER_ADMIN", status: "ACTIVE" } })
+    ? await prisma.user.update({ where: { id: existing.id }, data: { name, passwordHash, role: "SUPER_ADMIN", status: "ACTIVE", authVersion: { increment: 1 } } })
     : await prisma.user.create({ data: { name, email, passwordHash, role: "SUPER_ADMIN", status: "ACTIVE" } });
   console.log(`Superadmin listo: ${user.email}`);
 }

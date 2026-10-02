@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 
 import { maxBytesForMimeType, presignUploadSchema, presignUploadsSchema } from "@/lib/image-upload-contract";
 import { createPendingImageKey } from "@/lib/image-uploads";
-import { getMerchantStore } from "@/lib/merchant";
+import { getMerchantApiAccess } from "@/lib/merchant-authorization";
+import { hasStorePermission } from "@/lib/store-permissions";
 import { createPresignedUploadUrl } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const store = await getMerchantStore();
-  if (!store) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await getMerchantApiAccess("operate");
+  if (access.error) return access.error;
+  const { store, role } = access.context;
 
   const body = await request.json().catch(() => null);
   const batchResult = presignUploadsSchema.safeParse(body);
@@ -26,6 +26,9 @@ export async function POST(request: Request) {
       : [];
 
   for (const upload of requestedUploads) {
+    if ((upload.scope === "logos" || upload.scope === "hero") && !hasStorePermission(role, "settings")) {
+      return NextResponse.json({ error: "No tenés permisos para subir imágenes del diseño." }, { status: 403 });
+    }
     const maximumSize = maxBytesForMimeType(upload.contentType);
     if (upload.size > maximumSize) {
       const label = upload.contentType === "image/gif" ? "10 MB" : "2 MB";

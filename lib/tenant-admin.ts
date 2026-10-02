@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { normalizeStoreTemplate, storeTemplates } from "@/lib/catalog";
+import { normalizeStoreTemplate, publicStoreTemplates } from "@/lib/catalog";
 import { prisma } from "@/lib/prisma";
 import { isCompleteArgentineLocalPhone } from "@/lib/store-settings";
 
@@ -14,9 +14,9 @@ const baseTenantSchema = z.object({
   slug: z.string().trim().min(2).max(64),
   whatsappPhone: z.string().refine(isCompleteArgentineLocalPhone),
   businessType: z.enum(businessTypes),
-  template: z.enum(storeTemplates),
+  template: z.enum(publicStoreTemplates),
   status: z.enum(userStatuses).default("ACTIVE"),
-  isPublished: z.boolean().default(true)
+  isPublished: z.boolean().default(false)
 });
 
 export const createTenantSchema = baseTenantSchema.extend({

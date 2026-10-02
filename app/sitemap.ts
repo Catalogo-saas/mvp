@@ -19,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...stores.flatMap((store) => [
         { url: `${baseUrl}/${store.slug}`, lastModified: store.updatedAt },
         ...store.products.map((product) => ({
-          url: `${baseUrl}/${store.slug}/product/${product.slug}`,
+          url: `${baseUrl}/${store.slug}/producto/${product.slug}`,
           lastModified: product.updatedAt
         }))
       ])

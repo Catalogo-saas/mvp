@@ -47,6 +47,11 @@ export { Prisma }
  */
 export type User = Prisma.UserModel
 /**
+ * Model StoreMember
+ * 
+ */
+export type StoreMember = Prisma.StoreMemberModel
+/**
  * Model Account
  * 
  */
@@ -91,6 +96,21 @@ export type ProductOption = Prisma.ProductOptionModel
  * 
  */
 export type Order = Prisma.OrderModel
+/**
+ * Model OrderEvent
+ * 
+ */
+export type OrderEvent = Prisma.OrderEventModel
+/**
+ * Model Customer
+ * 
+ */
+export type Customer = Prisma.CustomerModel
+/**
+ * Model CustomerSession
+ * 
+ */
+export type CustomerSession = Prisma.CustomerSessionModel
 /**
  * Model OrderItem
  * 

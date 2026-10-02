@@ -1,17 +1,12 @@
 import { z } from "zod";
 
-import { SelectionType } from "@/lib/generated/prisma/enums";
 import { imageReferenceSchema } from "@/lib/image-upload-contract";
 import { parsePriceToCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { buildProductSlug } from "@/lib/product-slug";
-import { slugify } from "@/lib/slug";
 import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
-
-const nullableNumber = z.preprocess(
-  (value) => (value === "" || value === null || value === undefined ? null : Number(value)),
-  z.number().int().min(1).max(30).nullable()
-);
+import { variantCombinationSchema, variantCombinations } from "@/lib/product-variants";
+import type { VariantCombination } from "@/lib/product-variants";
 
 const nullableStockQuantity = z.preprocess((value) => {
   if (value === "" || value === null || value === undefined) {
@@ -23,14 +18,14 @@ const nullableStockQuantity = z.preprocess((value) => {
 
 const optionGroupSchema = z.object({
   name: z.string().min(1).max(60),
-  selectionType: z.nativeEnum(SelectionType),
-  isRequired: z.boolean().default(false),
-  maxSelections: nullableNumber.default(null),
+  selectionType: z.literal("SINGLE"),
+  isRequired: z.literal(true),
+  maxSelections: z.literal(1),
   options: z
     .array(
       z.object({
         name: z.string().min(1).max(60),
-        priceDelta: z.union([z.number(), z.string()]).default(0),
+        priceDelta: z.union([z.literal(0), z.literal("0")]).default(0),
         isAvailable: z.boolean().default(true)
       })
     )
@@ -44,14 +39,37 @@ export const productSchema = z.object({
   promoPrice: z.union([z.number(), z.string()]).optional().nullable(),
   images: z.array(imageReferenceSchema).max(6).default([]),
   categoryId: z.string().optional().nullable(),
+  categoryIds: z.array(z.string()).max(30).default([]),
   categoryName: z.string().max(80).optional().nullable(),
   isVisible: z.boolean().default(true),
   isFeatured: z.boolean().default(false),
   stockQuantity: nullableStockQuantity.default(null),
-  optionGroups: z.array(optionGroupSchema).max(12).default([])
+  sku: z.string().trim().max(80).optional().nullable(),
+  freeShipping: z.boolean().default(false),
+  optionGroups: z.array(optionGroupSchema).max(12).default([]),
+  variants: z.array(variantCombinationSchema).max(100).default([])
 });
 
 export type ProductPayload = z.infer<typeof productSchema>;
+
+export function validateProductVariants(payload: ProductPayload, basePrice: number) {
+  const allowed = new Set(variantCombinations(payload.optionGroups).map((item) => item.key));
+  if (payload.variants.some((variant) => !allowed.has(variant.key)) || new Set(payload.variants.map((variant) => variant.key)).size !== payload.variants.length) {
+    throw new Error("Las combinaciones no coinciden con las propiedades del producto.");
+  }
+  for (const variant of payload.variants) {
+    if (variant.promoPrice !== null && variant.promoPrice >= (variant.basePrice ?? basePrice)) throw new Error("La oferta de una combinación debe ser menor que su precio.");
+  }
+}
+
+export function resolveVariantImages(variants: VariantCombination[], imageUrls: string[]) {
+  return variants.map(({ imageIndex, ...variant }) => {
+    const imageUrl = imageIndex === undefined ? variant.imageUrl : imageUrls[imageIndex];
+    if (imageUrl && !imageUrls.includes(imageUrl)) throw new Error("La foto de una variante debe pertenecer a la galería del producto.");
+    if (imageIndex !== undefined && !imageUrl) throw new Error("La foto elegida para una variante ya no existe.");
+    return { ...variant, imageUrl: imageUrl ?? null };
+  });
+}
 
 export async function deleteProductImagesForStore(storeId: string, imageUrls: string[]) {
   await Promise.all(
@@ -105,32 +123,21 @@ export async function resolveCategoryId(storeId: string, input: Pick<ProductPayl
     return null;
   }
 
-  const categorySlug = slugify(categoryName) || "destacados";
-  const category = await prisma.category.upsert({
-    where: { storeId_slug: { storeId, slug: categorySlug } },
-    update: { name: categoryName },
-    create: {
-      storeId,
-      name: categoryName,
-      slug: categorySlug
-    }
-  });
-
-  return category.id;
+  throw new Error("Creá la categoría desde la sección Categorías y luego vinculala al producto.");
 }
 
 export function buildOptionGroupCreates(optionGroups: ProductPayload["optionGroups"]) {
   return optionGroups.map((group, groupIndex) => ({
     name: group.name.trim(),
-    selectionType: group.selectionType,
-    isRequired: group.isRequired,
-    minSelections: group.isRequired ? 1 : 0,
-    maxSelections: group.selectionType === "MULTIPLE" ? group.maxSelections : 1,
+    selectionType: "SINGLE" as const,
+    isRequired: true,
+    minSelections: 1,
+    maxSelections: 1,
     sortOrder: groupIndex,
     options: {
       create: group.options.map((option, optionIndex) => ({
         name: option.name.trim(),
-        priceDelta: parsePriceToCents(String(option.priceDelta)),
+        priceDelta: 0,
         isAvailable: option.isAvailable,
         sortOrder: optionIndex
       }))
@@ -141,6 +148,7 @@ export function buildOptionGroupCreates(optionGroups: ProductPayload["optionGrou
 export function productInclude() {
   return {
     category: true,
+    assignedCategories: true,
     optionGroups: {
       include: { options: { orderBy: { sortOrder: "asc" as const } } },
       orderBy: { sortOrder: "asc" as const }

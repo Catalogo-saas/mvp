@@ -28,11 +28,13 @@ export type AggregateStore = {
 
 export type StoreAvgAggregateOutputType = {
   freeShippingThreshold: number | null
+  taxRatePercent: number | null
   mobileProductColumns: number | null
 }
 
 export type StoreSumAggregateOutputType = {
   freeShippingThreshold: number | null
+  taxRatePercent: number | null
   mobileProductColumns: number | null
 }
 
@@ -46,6 +48,7 @@ export type StoreMinAggregateOutputType = {
   businessType: $Enums.BusinessType | null
   template: string | null
   logoUrl: string | null
+  faviconUrl: string | null
   heroTitle: string | null
   heroSubtitle: string | null
   address: string | null
@@ -54,6 +57,10 @@ export type StoreMinAggregateOutputType = {
   freeShippingEnabled: boolean | null
   freeShippingThreshold: number | null
   acceptTransferPayments: boolean | null
+  acceptCashPayments: boolean | null
+  whatsappOrdersEnabled: boolean | null
+  taxRatePercent: number | null
+  showPricesWithoutTax: boolean | null
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
@@ -76,6 +83,7 @@ export type StoreMaxAggregateOutputType = {
   businessType: $Enums.BusinessType | null
   template: string | null
   logoUrl: string | null
+  faviconUrl: string | null
   heroTitle: string | null
   heroSubtitle: string | null
   address: string | null
@@ -84,6 +92,10 @@ export type StoreMaxAggregateOutputType = {
   freeShippingEnabled: boolean | null
   freeShippingThreshold: number | null
   acceptTransferPayments: boolean | null
+  acceptCashPayments: boolean | null
+  whatsappOrdersEnabled: boolean | null
+  taxRatePercent: number | null
+  showPricesWithoutTax: boolean | null
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
@@ -106,6 +118,8 @@ export type StoreCountAggregateOutputType = {
   businessType: number
   template: number
   logoUrl: number
+  faviconUrl: number
+  designConfig: number
   heroTitle: number
   heroSubtitle: number
   heroImageUrls: number
@@ -116,6 +130,14 @@ export type StoreCountAggregateOutputType = {
   freeShippingEnabled: number
   freeShippingThreshold: number
   acceptTransferPayments: number
+  acceptCashPayments: number
+  whatsappOrdersEnabled: number
+  checkoutSettings: number
+  deliveryMethods: number
+  designDraft: number
+  menuConfig: number
+  taxRatePercent: number
+  showPricesWithoutTax: number
   paymentAccountHolder: number
   paymentProvider: number
   paymentAlias: number
@@ -134,11 +156,13 @@ export type StoreCountAggregateOutputType = {
 
 export type StoreAvgAggregateInputType = {
   freeShippingThreshold?: true
+  taxRatePercent?: true
   mobileProductColumns?: true
 }
 
 export type StoreSumAggregateInputType = {
   freeShippingThreshold?: true
+  taxRatePercent?: true
   mobileProductColumns?: true
 }
 
@@ -152,6 +176,7 @@ export type StoreMinAggregateInputType = {
   businessType?: true
   template?: true
   logoUrl?: true
+  faviconUrl?: true
   heroTitle?: true
   heroSubtitle?: true
   address?: true
@@ -160,6 +185,10 @@ export type StoreMinAggregateInputType = {
   freeShippingEnabled?: true
   freeShippingThreshold?: true
   acceptTransferPayments?: true
+  acceptCashPayments?: true
+  whatsappOrdersEnabled?: true
+  taxRatePercent?: true
+  showPricesWithoutTax?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
@@ -182,6 +211,7 @@ export type StoreMaxAggregateInputType = {
   businessType?: true
   template?: true
   logoUrl?: true
+  faviconUrl?: true
   heroTitle?: true
   heroSubtitle?: true
   address?: true
@@ -190,6 +220,10 @@ export type StoreMaxAggregateInputType = {
   freeShippingEnabled?: true
   freeShippingThreshold?: true
   acceptTransferPayments?: true
+  acceptCashPayments?: true
+  whatsappOrdersEnabled?: true
+  taxRatePercent?: true
+  showPricesWithoutTax?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
@@ -212,6 +246,8 @@ export type StoreCountAggregateInputType = {
   businessType?: true
   template?: true
   logoUrl?: true
+  faviconUrl?: true
+  designConfig?: true
   heroTitle?: true
   heroSubtitle?: true
   heroImageUrls?: true
@@ -222,6 +258,14 @@ export type StoreCountAggregateInputType = {
   freeShippingEnabled?: true
   freeShippingThreshold?: true
   acceptTransferPayments?: true
+  acceptCashPayments?: true
+  whatsappOrdersEnabled?: true
+  checkoutSettings?: true
+  deliveryMethods?: true
+  designDraft?: true
+  menuConfig?: true
+  taxRatePercent?: true
+  showPricesWithoutTax?: true
   paymentAccountHolder?: true
   paymentProvider?: true
   paymentAlias?: true
@@ -333,6 +377,8 @@ export type StoreGroupByOutputType = {
   businessType: $Enums.BusinessType
   template: string
   logoUrl: string | null
+  faviconUrl: string | null
+  designConfig: runtime.JsonValue
   heroTitle: string | null
   heroSubtitle: string | null
   heroImageUrls: string[]
@@ -343,6 +389,14 @@ export type StoreGroupByOutputType = {
   freeShippingEnabled: boolean
   freeShippingThreshold: number
   acceptTransferPayments: boolean
+  acceptCashPayments: boolean
+  whatsappOrdersEnabled: boolean
+  checkoutSettings: runtime.JsonValue
+  deliveryMethods: runtime.JsonValue
+  designDraft: runtime.JsonValue | null
+  menuConfig: runtime.JsonValue
+  taxRatePercent: number
+  showPricesWithoutTax: boolean
   paymentAccountHolder: string | null
   paymentProvider: string | null
   paymentAlias: string | null
@@ -390,6 +444,8 @@ export type StoreWhereInput = {
   businessType?: Prisma.EnumBusinessTypeFilter<"Store"> | $Enums.BusinessType
   template?: Prisma.StringFilter<"Store"> | string
   logoUrl?: Prisma.StringNullableFilter<"Store"> | string | null
+  faviconUrl?: Prisma.StringNullableFilter<"Store"> | string | null
+  designConfig?: Prisma.JsonFilter<"Store">
   heroTitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroImageUrls?: Prisma.StringNullableListFilter<"Store">
@@ -400,6 +456,14 @@ export type StoreWhereInput = {
   freeShippingEnabled?: Prisma.BoolFilter<"Store"> | boolean
   freeShippingThreshold?: Prisma.IntFilter<"Store"> | number
   acceptTransferPayments?: Prisma.BoolFilter<"Store"> | boolean
+  acceptCashPayments?: Prisma.BoolFilter<"Store"> | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFilter<"Store"> | boolean
+  checkoutSettings?: Prisma.JsonFilter<"Store">
+  deliveryMethods?: Prisma.JsonFilter<"Store">
+  designDraft?: Prisma.JsonNullableFilter<"Store">
+  menuConfig?: Prisma.JsonFilter<"Store">
+  taxRatePercent?: Prisma.IntFilter<"Store"> | number
+  showPricesWithoutTax?: Prisma.BoolFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableFilter<"Store"> | string | null
@@ -417,6 +481,8 @@ export type StoreWhereInput = {
   products?: Prisma.ProductListRelationFilter
   orders?: Prisma.OrderListRelationFilter
   storefrontEvents?: Prisma.StorefrontEventListRelationFilter
+  customers?: Prisma.CustomerListRelationFilter
+  members?: Prisma.StoreMemberListRelationFilter
 }
 
 export type StoreOrderByWithRelationInput = {
@@ -429,6 +495,8 @@ export type StoreOrderByWithRelationInput = {
   businessType?: Prisma.SortOrder
   template?: Prisma.SortOrder
   logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  faviconUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  designConfig?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroImageUrls?: Prisma.SortOrder
@@ -439,6 +507,14 @@ export type StoreOrderByWithRelationInput = {
   freeShippingEnabled?: Prisma.SortOrder
   freeShippingThreshold?: Prisma.SortOrder
   acceptTransferPayments?: Prisma.SortOrder
+  acceptCashPayments?: Prisma.SortOrder
+  whatsappOrdersEnabled?: Prisma.SortOrder
+  checkoutSettings?: Prisma.SortOrder
+  deliveryMethods?: Prisma.SortOrder
+  designDraft?: Prisma.SortOrderInput | Prisma.SortOrder
+  menuConfig?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
+  showPricesWithoutTax?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProvider?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentAlias?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -456,6 +532,8 @@ export type StoreOrderByWithRelationInput = {
   products?: Prisma.ProductOrderByRelationAggregateInput
   orders?: Prisma.OrderOrderByRelationAggregateInput
   storefrontEvents?: Prisma.StorefrontEventOrderByRelationAggregateInput
+  customers?: Prisma.CustomerOrderByRelationAggregateInput
+  members?: Prisma.StoreMemberOrderByRelationAggregateInput
 }
 
 export type StoreWhereUniqueInput = Prisma.AtLeast<{
@@ -471,6 +549,8 @@ export type StoreWhereUniqueInput = Prisma.AtLeast<{
   businessType?: Prisma.EnumBusinessTypeFilter<"Store"> | $Enums.BusinessType
   template?: Prisma.StringFilter<"Store"> | string
   logoUrl?: Prisma.StringNullableFilter<"Store"> | string | null
+  faviconUrl?: Prisma.StringNullableFilter<"Store"> | string | null
+  designConfig?: Prisma.JsonFilter<"Store">
   heroTitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableFilter<"Store"> | string | null
   heroImageUrls?: Prisma.StringNullableListFilter<"Store">
@@ -481,6 +561,14 @@ export type StoreWhereUniqueInput = Prisma.AtLeast<{
   freeShippingEnabled?: Prisma.BoolFilter<"Store"> | boolean
   freeShippingThreshold?: Prisma.IntFilter<"Store"> | number
   acceptTransferPayments?: Prisma.BoolFilter<"Store"> | boolean
+  acceptCashPayments?: Prisma.BoolFilter<"Store"> | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFilter<"Store"> | boolean
+  checkoutSettings?: Prisma.JsonFilter<"Store">
+  deliveryMethods?: Prisma.JsonFilter<"Store">
+  designDraft?: Prisma.JsonNullableFilter<"Store">
+  menuConfig?: Prisma.JsonFilter<"Store">
+  taxRatePercent?: Prisma.IntFilter<"Store"> | number
+  showPricesWithoutTax?: Prisma.BoolFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableFilter<"Store"> | string | null
@@ -498,6 +586,8 @@ export type StoreWhereUniqueInput = Prisma.AtLeast<{
   products?: Prisma.ProductListRelationFilter
   orders?: Prisma.OrderListRelationFilter
   storefrontEvents?: Prisma.StorefrontEventListRelationFilter
+  customers?: Prisma.CustomerListRelationFilter
+  members?: Prisma.StoreMemberListRelationFilter
 }, "id" | "ownerId" | "slug">
 
 export type StoreOrderByWithAggregationInput = {
@@ -510,6 +600,8 @@ export type StoreOrderByWithAggregationInput = {
   businessType?: Prisma.SortOrder
   template?: Prisma.SortOrder
   logoUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  faviconUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  designConfig?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrderInput | Prisma.SortOrder
   heroImageUrls?: Prisma.SortOrder
@@ -520,6 +612,14 @@ export type StoreOrderByWithAggregationInput = {
   freeShippingEnabled?: Prisma.SortOrder
   freeShippingThreshold?: Prisma.SortOrder
   acceptTransferPayments?: Prisma.SortOrder
+  acceptCashPayments?: Prisma.SortOrder
+  whatsappOrdersEnabled?: Prisma.SortOrder
+  checkoutSettings?: Prisma.SortOrder
+  deliveryMethods?: Prisma.SortOrder
+  designDraft?: Prisma.SortOrderInput | Prisma.SortOrder
+  menuConfig?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
+  showPricesWithoutTax?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentProvider?: Prisma.SortOrderInput | Prisma.SortOrder
   paymentAlias?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -552,6 +652,8 @@ export type StoreScalarWhereWithAggregatesInput = {
   businessType?: Prisma.EnumBusinessTypeWithAggregatesFilter<"Store"> | $Enums.BusinessType
   template?: Prisma.StringWithAggregatesFilter<"Store"> | string
   logoUrl?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
+  faviconUrl?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
+  designConfig?: Prisma.JsonWithAggregatesFilter<"Store">
   heroTitle?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   heroSubtitle?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   heroImageUrls?: Prisma.StringNullableListFilter<"Store">
@@ -562,6 +664,14 @@ export type StoreScalarWhereWithAggregatesInput = {
   freeShippingEnabled?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
   freeShippingThreshold?: Prisma.IntWithAggregatesFilter<"Store"> | number
   acceptTransferPayments?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  acceptCashPayments?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  whatsappOrdersEnabled?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
+  checkoutSettings?: Prisma.JsonWithAggregatesFilter<"Store">
+  deliveryMethods?: Prisma.JsonWithAggregatesFilter<"Store">
+  designDraft?: Prisma.JsonNullableWithAggregatesFilter<"Store">
+  menuConfig?: Prisma.JsonWithAggregatesFilter<"Store">
+  taxRatePercent?: Prisma.IntWithAggregatesFilter<"Store"> | number
+  showPricesWithoutTax?: Prisma.BoolWithAggregatesFilter<"Store"> | boolean
   paymentAccountHolder?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   paymentProvider?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
   paymentAlias?: Prisma.StringNullableWithAggregatesFilter<"Store"> | string | null
@@ -585,6 +695,8 @@ export type StoreCreateInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -595,6 +707,14 @@ export type StoreCreateInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -612,6 +732,8 @@ export type StoreCreateInput = {
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUncheckedCreateInput = {
@@ -624,6 +746,8 @@ export type StoreUncheckedCreateInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -634,6 +758,14 @@ export type StoreUncheckedCreateInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -650,6 +782,8 @@ export type StoreUncheckedCreateInput = {
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUpdateInput = {
@@ -661,6 +795,8 @@ export type StoreUpdateInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -671,6 +807,14 @@ export type StoreUpdateInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -688,6 +832,8 @@ export type StoreUpdateInput = {
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateInput = {
@@ -700,6 +846,8 @@ export type StoreUncheckedUpdateInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -710,6 +858,14 @@ export type StoreUncheckedUpdateInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -726,6 +882,8 @@ export type StoreUncheckedUpdateInput = {
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreCreateManyInput = {
@@ -738,6 +896,8 @@ export type StoreCreateManyInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -748,6 +908,14 @@ export type StoreCreateManyInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -771,6 +939,8 @@ export type StoreUpdateManyMutationInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -781,6 +951,14 @@ export type StoreUpdateManyMutationInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -805,6 +983,8 @@ export type StoreUncheckedUpdateManyInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -815,6 +995,14 @@ export type StoreUncheckedUpdateManyInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -832,6 +1020,11 @@ export type StoreUncheckedUpdateManyInput = {
 export type StoreNullableScalarRelationFilter = {
   is?: Prisma.StoreWhereInput | null
   isNot?: Prisma.StoreWhereInput | null
+}
+
+export type StoreScalarRelationFilter = {
+  is?: Prisma.StoreWhereInput
+  isNot?: Prisma.StoreWhereInput
 }
 
 export type StringNullableListFilter<$PrismaModel = never> = {
@@ -852,6 +1045,8 @@ export type StoreCountOrderByAggregateInput = {
   businessType?: Prisma.SortOrder
   template?: Prisma.SortOrder
   logoUrl?: Prisma.SortOrder
+  faviconUrl?: Prisma.SortOrder
+  designConfig?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
   heroImageUrls?: Prisma.SortOrder
@@ -862,6 +1057,14 @@ export type StoreCountOrderByAggregateInput = {
   freeShippingEnabled?: Prisma.SortOrder
   freeShippingThreshold?: Prisma.SortOrder
   acceptTransferPayments?: Prisma.SortOrder
+  acceptCashPayments?: Prisma.SortOrder
+  whatsappOrdersEnabled?: Prisma.SortOrder
+  checkoutSettings?: Prisma.SortOrder
+  deliveryMethods?: Prisma.SortOrder
+  designDraft?: Prisma.SortOrder
+  menuConfig?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
+  showPricesWithoutTax?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
@@ -878,6 +1081,7 @@ export type StoreCountOrderByAggregateInput = {
 
 export type StoreAvgOrderByAggregateInput = {
   freeShippingThreshold?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
 }
 
@@ -891,6 +1095,7 @@ export type StoreMaxOrderByAggregateInput = {
   businessType?: Prisma.SortOrder
   template?: Prisma.SortOrder
   logoUrl?: Prisma.SortOrder
+  faviconUrl?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
   address?: Prisma.SortOrder
@@ -899,6 +1104,10 @@ export type StoreMaxOrderByAggregateInput = {
   freeShippingEnabled?: Prisma.SortOrder
   freeShippingThreshold?: Prisma.SortOrder
   acceptTransferPayments?: Prisma.SortOrder
+  acceptCashPayments?: Prisma.SortOrder
+  whatsappOrdersEnabled?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
+  showPricesWithoutTax?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
@@ -921,6 +1130,7 @@ export type StoreMinOrderByAggregateInput = {
   businessType?: Prisma.SortOrder
   template?: Prisma.SortOrder
   logoUrl?: Prisma.SortOrder
+  faviconUrl?: Prisma.SortOrder
   heroTitle?: Prisma.SortOrder
   heroSubtitle?: Prisma.SortOrder
   address?: Prisma.SortOrder
@@ -929,6 +1139,10 @@ export type StoreMinOrderByAggregateInput = {
   freeShippingEnabled?: Prisma.SortOrder
   freeShippingThreshold?: Prisma.SortOrder
   acceptTransferPayments?: Prisma.SortOrder
+  acceptCashPayments?: Prisma.SortOrder
+  whatsappOrdersEnabled?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
+  showPricesWithoutTax?: Prisma.SortOrder
   paymentAccountHolder?: Prisma.SortOrder
   paymentProvider?: Prisma.SortOrder
   paymentAlias?: Prisma.SortOrder
@@ -943,12 +1157,8 @@ export type StoreMinOrderByAggregateInput = {
 
 export type StoreSumOrderByAggregateInput = {
   freeShippingThreshold?: Prisma.SortOrder
+  taxRatePercent?: Prisma.SortOrder
   mobileProductColumns?: Prisma.SortOrder
-}
-
-export type StoreScalarRelationFilter = {
-  is?: Prisma.StoreWhereInput
-  isNot?: Prisma.StoreWhereInput
 }
 
 export type StoreCreateNestedOneWithoutOwnerInput = {
@@ -983,6 +1193,20 @@ export type StoreUncheckedUpdateOneWithoutOwnerNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutOwnerInput, Prisma.StoreUpdateWithoutOwnerInput>, Prisma.StoreUncheckedUpdateWithoutOwnerInput>
 }
 
+export type StoreCreateNestedOneWithoutMembersInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutMembersInput, Prisma.StoreUncheckedCreateWithoutMembersInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutMembersInput
+  connect?: Prisma.StoreWhereUniqueInput
+}
+
+export type StoreUpdateOneRequiredWithoutMembersNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutMembersInput, Prisma.StoreUncheckedCreateWithoutMembersInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutMembersInput
+  upsert?: Prisma.StoreUpsertWithoutMembersInput
+  connect?: Prisma.StoreWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutMembersInput, Prisma.StoreUpdateWithoutMembersInput>, Prisma.StoreUncheckedUpdateWithoutMembersInput>
+}
+
 export type StoreCreateheroImageUrlsInput = {
   set: string[]
 }
@@ -998,14 +1222,6 @@ export type StoreUpdateheroImageUrlsInput = {
 
 export type BoolFieldUpdateOperationsInput = {
   set?: boolean
-}
-
-export type IntFieldUpdateOperationsInput = {
-  set?: number
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
 }
 
 export type StoreCreateNestedOneWithoutCategoriesInput = {
@@ -1050,6 +1266,20 @@ export type StoreUpdateOneRequiredWithoutOrdersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutOrdersInput, Prisma.StoreUpdateWithoutOrdersInput>, Prisma.StoreUncheckedUpdateWithoutOrdersInput>
 }
 
+export type StoreCreateNestedOneWithoutCustomersInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutCustomersInput, Prisma.StoreUncheckedCreateWithoutCustomersInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutCustomersInput
+  connect?: Prisma.StoreWhereUniqueInput
+}
+
+export type StoreUpdateOneRequiredWithoutCustomersNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreCreateWithoutCustomersInput, Prisma.StoreUncheckedCreateWithoutCustomersInput>
+  connectOrCreate?: Prisma.StoreCreateOrConnectWithoutCustomersInput
+  upsert?: Prisma.StoreUpsertWithoutCustomersInput
+  connect?: Prisma.StoreWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.StoreUpdateToOneWithWhereWithoutCustomersInput, Prisma.StoreUpdateWithoutCustomersInput>, Prisma.StoreUncheckedUpdateWithoutCustomersInput>
+}
+
 export type StoreCreateNestedOneWithoutStorefrontEventsInput = {
   create?: Prisma.XOR<Prisma.StoreCreateWithoutStorefrontEventsInput, Prisma.StoreUncheckedCreateWithoutStorefrontEventsInput>
   connectOrCreate?: Prisma.StoreCreateOrConnectWithoutStorefrontEventsInput
@@ -1073,6 +1303,8 @@ export type StoreCreateWithoutOwnerInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1083,6 +1315,14 @@ export type StoreCreateWithoutOwnerInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1099,6 +1339,8 @@ export type StoreCreateWithoutOwnerInput = {
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUncheckedCreateWithoutOwnerInput = {
@@ -1110,6 +1352,8 @@ export type StoreUncheckedCreateWithoutOwnerInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1120,6 +1364,14 @@ export type StoreUncheckedCreateWithoutOwnerInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1136,6 +1388,8 @@ export type StoreUncheckedCreateWithoutOwnerInput = {
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreCreateOrConnectWithoutOwnerInput = {
@@ -1163,6 +1417,8 @@ export type StoreUpdateWithoutOwnerInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1173,6 +1429,14 @@ export type StoreUpdateWithoutOwnerInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1189,6 +1453,8 @@ export type StoreUpdateWithoutOwnerInput = {
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateWithoutOwnerInput = {
@@ -1200,6 +1466,8 @@ export type StoreUncheckedUpdateWithoutOwnerInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1210,6 +1478,14 @@ export type StoreUncheckedUpdateWithoutOwnerInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1226,6 +1502,220 @@ export type StoreUncheckedUpdateWithoutOwnerInput = {
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
+}
+
+export type StoreCreateWithoutMembersInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  whatsappPhone: string
+  businessType?: $Enums.BusinessType
+  template?: string
+  logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: string | null
+  heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
+  address?: string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  showFeatured?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
+  paymentAccountHolder?: string | null
+  paymentProvider?: string | null
+  paymentAlias?: string | null
+  paymentCbu?: string | null
+  restrictBySchedule?: boolean
+  businessHoursText?: string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
+  categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
+  products?: Prisma.ProductCreateNestedManyWithoutStoreInput
+  orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
+  storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+}
+
+export type StoreUncheckedCreateWithoutMembersInput = {
+  id?: string
+  ownerId: string
+  name: string
+  slug: string
+  description?: string | null
+  whatsappPhone: string
+  businessType?: $Enums.BusinessType
+  template?: string
+  logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: string | null
+  heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
+  address?: string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  showFeatured?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
+  paymentAccountHolder?: string | null
+  paymentProvider?: string | null
+  paymentAlias?: string | null
+  paymentCbu?: string | null
+  restrictBySchedule?: boolean
+  businessHoursText?: string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  categories?: Prisma.CategoryUncheckedCreateNestedManyWithoutStoreInput
+  products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
+  storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+}
+
+export type StoreCreateOrConnectWithoutMembersInput = {
+  where: Prisma.StoreWhereUniqueInput
+  create: Prisma.XOR<Prisma.StoreCreateWithoutMembersInput, Prisma.StoreUncheckedCreateWithoutMembersInput>
+}
+
+export type StoreUpsertWithoutMembersInput = {
+  update: Prisma.XOR<Prisma.StoreUpdateWithoutMembersInput, Prisma.StoreUncheckedUpdateWithoutMembersInput>
+  create: Prisma.XOR<Prisma.StoreCreateWithoutMembersInput, Prisma.StoreUncheckedCreateWithoutMembersInput>
+  where?: Prisma.StoreWhereInput
+}
+
+export type StoreUpdateToOneWithWhereWithoutMembersInput = {
+  where?: Prisma.StoreWhereInput
+  data: Prisma.XOR<Prisma.StoreUpdateWithoutMembersInput, Prisma.StoreUncheckedUpdateWithoutMembersInput>
+}
+
+export type StoreUpdateWithoutMembersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showFeatured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
+  categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
+  storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+}
+
+export type StoreUncheckedUpdateWithoutMembersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showFeatured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
+  storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreCreateWithoutCategoriesInput = {
@@ -1237,6 +1727,8 @@ export type StoreCreateWithoutCategoriesInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1247,6 +1739,14 @@ export type StoreCreateWithoutCategoriesInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1263,6 +1763,8 @@ export type StoreCreateWithoutCategoriesInput = {
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUncheckedCreateWithoutCategoriesInput = {
@@ -1275,6 +1777,8 @@ export type StoreUncheckedCreateWithoutCategoriesInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1285,6 +1789,14 @@ export type StoreUncheckedCreateWithoutCategoriesInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1300,6 +1812,8 @@ export type StoreUncheckedCreateWithoutCategoriesInput = {
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreCreateOrConnectWithoutCategoriesInput = {
@@ -1327,6 +1841,8 @@ export type StoreUpdateWithoutCategoriesInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1337,6 +1853,14 @@ export type StoreUpdateWithoutCategoriesInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1353,6 +1877,8 @@ export type StoreUpdateWithoutCategoriesInput = {
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateWithoutCategoriesInput = {
@@ -1365,6 +1891,8 @@ export type StoreUncheckedUpdateWithoutCategoriesInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1375,6 +1903,14 @@ export type StoreUncheckedUpdateWithoutCategoriesInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1390,6 +1926,8 @@ export type StoreUncheckedUpdateWithoutCategoriesInput = {
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreCreateWithoutProductsInput = {
@@ -1401,6 +1939,8 @@ export type StoreCreateWithoutProductsInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1411,6 +1951,14 @@ export type StoreCreateWithoutProductsInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1427,6 +1975,8 @@ export type StoreCreateWithoutProductsInput = {
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUncheckedCreateWithoutProductsInput = {
@@ -1439,6 +1989,8 @@ export type StoreUncheckedCreateWithoutProductsInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1449,6 +2001,14 @@ export type StoreUncheckedCreateWithoutProductsInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1464,6 +2024,8 @@ export type StoreUncheckedCreateWithoutProductsInput = {
   categories?: Prisma.CategoryUncheckedCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreCreateOrConnectWithoutProductsInput = {
@@ -1491,6 +2053,8 @@ export type StoreUpdateWithoutProductsInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1501,6 +2065,14 @@ export type StoreUpdateWithoutProductsInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1517,6 +2089,8 @@ export type StoreUpdateWithoutProductsInput = {
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateWithoutProductsInput = {
@@ -1529,6 +2103,8 @@ export type StoreUncheckedUpdateWithoutProductsInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1539,6 +2115,14 @@ export type StoreUncheckedUpdateWithoutProductsInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1554,6 +2138,8 @@ export type StoreUncheckedUpdateWithoutProductsInput = {
   categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreCreateWithoutOrdersInput = {
@@ -1565,6 +2151,8 @@ export type StoreCreateWithoutOrdersInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1575,6 +2163,14 @@ export type StoreCreateWithoutOrdersInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1591,6 +2187,8 @@ export type StoreCreateWithoutOrdersInput = {
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
 export type StoreUncheckedCreateWithoutOrdersInput = {
@@ -1603,6 +2201,8 @@ export type StoreUncheckedCreateWithoutOrdersInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1613,6 +2213,14 @@ export type StoreUncheckedCreateWithoutOrdersInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1628,6 +2236,8 @@ export type StoreUncheckedCreateWithoutOrdersInput = {
   categories?: Prisma.CategoryUncheckedCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreCreateOrConnectWithoutOrdersInput = {
@@ -1655,6 +2265,8 @@ export type StoreUpdateWithoutOrdersInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1665,6 +2277,14 @@ export type StoreUpdateWithoutOrdersInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1681,6 +2301,8 @@ export type StoreUpdateWithoutOrdersInput = {
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateWithoutOrdersInput = {
@@ -1693,6 +2315,8 @@ export type StoreUncheckedUpdateWithoutOrdersInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1703,6 +2327,14 @@ export type StoreUncheckedUpdateWithoutOrdersInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1718,9 +2350,11 @@ export type StoreUncheckedUpdateWithoutOrdersInput = {
   categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
   storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
 }
 
-export type StoreCreateWithoutStorefrontEventsInput = {
+export type StoreCreateWithoutCustomersInput = {
   id?: string
   name: string
   slug: string
@@ -1729,6 +2363,8 @@ export type StoreCreateWithoutStorefrontEventsInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1739,6 +2375,14 @@ export type StoreCreateWithoutStorefrontEventsInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1755,9 +2399,11 @@ export type StoreCreateWithoutStorefrontEventsInput = {
   categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
+  storefrontEvents?: Prisma.StorefrontEventCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
 }
 
-export type StoreUncheckedCreateWithoutStorefrontEventsInput = {
+export type StoreUncheckedCreateWithoutCustomersInput = {
   id?: string
   ownerId: string
   name: string
@@ -1767,6 +2413,8 @@ export type StoreUncheckedCreateWithoutStorefrontEventsInput = {
   businessType?: $Enums.BusinessType
   template?: string
   logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: string | null
   heroSubtitle?: string | null
   heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
@@ -1777,6 +2425,14 @@ export type StoreUncheckedCreateWithoutStorefrontEventsInput = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: number
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: string | null
   paymentProvider?: string | null
   paymentAlias?: string | null
@@ -1792,6 +2448,220 @@ export type StoreUncheckedCreateWithoutStorefrontEventsInput = {
   categories?: Prisma.CategoryUncheckedCreateNestedManyWithoutStoreInput
   products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
   orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
+  storefrontEvents?: Prisma.StorefrontEventUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
+}
+
+export type StoreCreateOrConnectWithoutCustomersInput = {
+  where: Prisma.StoreWhereUniqueInput
+  create: Prisma.XOR<Prisma.StoreCreateWithoutCustomersInput, Prisma.StoreUncheckedCreateWithoutCustomersInput>
+}
+
+export type StoreUpsertWithoutCustomersInput = {
+  update: Prisma.XOR<Prisma.StoreUpdateWithoutCustomersInput, Prisma.StoreUncheckedUpdateWithoutCustomersInput>
+  create: Prisma.XOR<Prisma.StoreCreateWithoutCustomersInput, Prisma.StoreUncheckedCreateWithoutCustomersInput>
+  where?: Prisma.StoreWhereInput
+}
+
+export type StoreUpdateToOneWithWhereWithoutCustomersInput = {
+  where?: Prisma.StoreWhereInput
+  data: Prisma.XOR<Prisma.StoreUpdateWithoutCustomersInput, Prisma.StoreUncheckedUpdateWithoutCustomersInput>
+}
+
+export type StoreUpdateWithoutCustomersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showFeatured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  owner?: Prisma.UserUpdateOneRequiredWithoutStoreNestedInput
+  categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
+  storefrontEvents?: Prisma.StorefrontEventUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
+}
+
+export type StoreUncheckedUpdateWithoutCustomersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  ownerId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  whatsappPhone?: Prisma.StringFieldUpdateOperationsInput | string
+  businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
+  template?: Prisma.StringFieldUpdateOperationsInput | string
+  logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
+  address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  showFeatured?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  paymentCbu?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  restrictBySchedule?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  businessHoursText?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: Prisma.IntFieldUpdateOperationsInput | number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
+  products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
+  orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
+  storefrontEvents?: Prisma.StorefrontEventUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
+}
+
+export type StoreCreateWithoutStorefrontEventsInput = {
+  id?: string
+  name: string
+  slug: string
+  description?: string | null
+  whatsappPhone: string
+  businessType?: $Enums.BusinessType
+  template?: string
+  logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: string | null
+  heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
+  address?: string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  showFeatured?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
+  paymentAccountHolder?: string | null
+  paymentProvider?: string | null
+  paymentAlias?: string | null
+  paymentCbu?: string | null
+  restrictBySchedule?: boolean
+  businessHoursText?: string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  owner: Prisma.UserCreateNestedOneWithoutStoreInput
+  categories?: Prisma.CategoryCreateNestedManyWithoutStoreInput
+  products?: Prisma.ProductCreateNestedManyWithoutStoreInput
+  orders?: Prisma.OrderCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberCreateNestedManyWithoutStoreInput
+}
+
+export type StoreUncheckedCreateWithoutStorefrontEventsInput = {
+  id?: string
+  ownerId: string
+  name: string
+  slug: string
+  description?: string | null
+  whatsappPhone: string
+  businessType?: $Enums.BusinessType
+  template?: string
+  logoUrl?: string | null
+  faviconUrl?: string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  heroTitle?: string | null
+  heroSubtitle?: string | null
+  heroImageUrls?: Prisma.StoreCreateheroImageUrlsInput | string[]
+  address?: string | null
+  theme?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  showCategories?: boolean
+  showFeatured?: boolean
+  freeShippingEnabled?: boolean
+  freeShippingThreshold?: number
+  acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: number
+  showPricesWithoutTax?: boolean
+  paymentAccountHolder?: string | null
+  paymentProvider?: string | null
+  paymentAlias?: string | null
+  paymentCbu?: string | null
+  restrictBySchedule?: boolean
+  businessHoursText?: string | null
+  businessHours?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  mobileProductColumns?: number
+  publicPageConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  isPublished?: boolean
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  categories?: Prisma.CategoryUncheckedCreateNestedManyWithoutStoreInput
+  products?: Prisma.ProductUncheckedCreateNestedManyWithoutStoreInput
+  orders?: Prisma.OrderUncheckedCreateNestedManyWithoutStoreInput
+  customers?: Prisma.CustomerUncheckedCreateNestedManyWithoutStoreInput
+  members?: Prisma.StoreMemberUncheckedCreateNestedManyWithoutStoreInput
 }
 
 export type StoreCreateOrConnectWithoutStorefrontEventsInput = {
@@ -1819,6 +2689,8 @@ export type StoreUpdateWithoutStorefrontEventsInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1829,6 +2701,14 @@ export type StoreUpdateWithoutStorefrontEventsInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1845,6 +2725,8 @@ export type StoreUpdateWithoutStorefrontEventsInput = {
   categories?: Prisma.CategoryUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUpdateManyWithoutStoreNestedInput
 }
 
 export type StoreUncheckedUpdateWithoutStorefrontEventsInput = {
@@ -1857,6 +2739,8 @@ export type StoreUncheckedUpdateWithoutStorefrontEventsInput = {
   businessType?: Prisma.EnumBusinessTypeFieldUpdateOperationsInput | $Enums.BusinessType
   template?: Prisma.StringFieldUpdateOperationsInput | string
   logoUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  faviconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  designConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   heroTitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroSubtitle?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   heroImageUrls?: Prisma.StoreUpdateheroImageUrlsInput | string[]
@@ -1867,6 +2751,14 @@ export type StoreUncheckedUpdateWithoutStorefrontEventsInput = {
   freeShippingEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   freeShippingThreshold?: Prisma.IntFieldUpdateOperationsInput | number
   acceptTransferPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  acceptCashPayments?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  whatsappOrdersEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  checkoutSettings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  deliveryMethods?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  designDraft?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  menuConfig?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  taxRatePercent?: Prisma.IntFieldUpdateOperationsInput | number
+  showPricesWithoutTax?: Prisma.BoolFieldUpdateOperationsInput | boolean
   paymentAccountHolder?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentProvider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paymentAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1882,6 +2774,8 @@ export type StoreUncheckedUpdateWithoutStorefrontEventsInput = {
   categories?: Prisma.CategoryUncheckedUpdateManyWithoutStoreNestedInput
   products?: Prisma.ProductUncheckedUpdateManyWithoutStoreNestedInput
   orders?: Prisma.OrderUncheckedUpdateManyWithoutStoreNestedInput
+  customers?: Prisma.CustomerUncheckedUpdateManyWithoutStoreNestedInput
+  members?: Prisma.StoreMemberUncheckedUpdateManyWithoutStoreNestedInput
 }
 
 
@@ -1894,6 +2788,8 @@ export type StoreCountOutputType = {
   products: number
   orders: number
   storefrontEvents: number
+  customers: number
+  members: number
 }
 
 export type StoreCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1901,6 +2797,8 @@ export type StoreCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.
   products?: boolean | StoreCountOutputTypeCountProductsArgs
   orders?: boolean | StoreCountOutputTypeCountOrdersArgs
   storefrontEvents?: boolean | StoreCountOutputTypeCountStorefrontEventsArgs
+  customers?: boolean | StoreCountOutputTypeCountCustomersArgs
+  members?: boolean | StoreCountOutputTypeCountMembersArgs
 }
 
 /**
@@ -1941,6 +2839,20 @@ export type StoreCountOutputTypeCountStorefrontEventsArgs<ExtArgs extends runtim
   where?: Prisma.StorefrontEventWhereInput
 }
 
+/**
+ * StoreCountOutputType without action
+ */
+export type StoreCountOutputTypeCountCustomersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CustomerWhereInput
+}
+
+/**
+ * StoreCountOutputType without action
+ */
+export type StoreCountOutputTypeCountMembersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.StoreMemberWhereInput
+}
+
 
 export type StoreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1952,6 +2864,8 @@ export type StoreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   businessType?: boolean
   template?: boolean
   logoUrl?: boolean
+  faviconUrl?: boolean
+  designConfig?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
   heroImageUrls?: boolean
@@ -1962,6 +2876,14 @@ export type StoreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   freeShippingEnabled?: boolean
   freeShippingThreshold?: boolean
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: boolean
+  deliveryMethods?: boolean
+  designDraft?: boolean
+  menuConfig?: boolean
+  taxRatePercent?: boolean
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
@@ -1979,6 +2901,8 @@ export type StoreSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   products?: boolean | Prisma.Store$productsArgs<ExtArgs>
   orders?: boolean | Prisma.Store$ordersArgs<ExtArgs>
   storefrontEvents?: boolean | Prisma.Store$storefrontEventsArgs<ExtArgs>
+  customers?: boolean | Prisma.Store$customersArgs<ExtArgs>
+  members?: boolean | Prisma.Store$membersArgs<ExtArgs>
   _count?: boolean | Prisma.StoreCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["store"]>
 
@@ -1992,6 +2916,8 @@ export type StoreSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   businessType?: boolean
   template?: boolean
   logoUrl?: boolean
+  faviconUrl?: boolean
+  designConfig?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
   heroImageUrls?: boolean
@@ -2002,6 +2928,14 @@ export type StoreSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   freeShippingEnabled?: boolean
   freeShippingThreshold?: boolean
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: boolean
+  deliveryMethods?: boolean
+  designDraft?: boolean
+  menuConfig?: boolean
+  taxRatePercent?: boolean
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
@@ -2027,6 +2961,8 @@ export type StoreSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   businessType?: boolean
   template?: boolean
   logoUrl?: boolean
+  faviconUrl?: boolean
+  designConfig?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
   heroImageUrls?: boolean
@@ -2037,6 +2973,14 @@ export type StoreSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   freeShippingEnabled?: boolean
   freeShippingThreshold?: boolean
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: boolean
+  deliveryMethods?: boolean
+  designDraft?: boolean
+  menuConfig?: boolean
+  taxRatePercent?: boolean
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
@@ -2062,6 +3006,8 @@ export type StoreSelectScalar = {
   businessType?: boolean
   template?: boolean
   logoUrl?: boolean
+  faviconUrl?: boolean
+  designConfig?: boolean
   heroTitle?: boolean
   heroSubtitle?: boolean
   heroImageUrls?: boolean
@@ -2072,6 +3018,14 @@ export type StoreSelectScalar = {
   freeShippingEnabled?: boolean
   freeShippingThreshold?: boolean
   acceptTransferPayments?: boolean
+  acceptCashPayments?: boolean
+  whatsappOrdersEnabled?: boolean
+  checkoutSettings?: boolean
+  deliveryMethods?: boolean
+  designDraft?: boolean
+  menuConfig?: boolean
+  taxRatePercent?: boolean
+  showPricesWithoutTax?: boolean
   paymentAccountHolder?: boolean
   paymentProvider?: boolean
   paymentAlias?: boolean
@@ -2086,13 +3040,15 @@ export type StoreSelectScalar = {
   updatedAt?: boolean
 }
 
-export type StoreOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerId" | "name" | "slug" | "description" | "whatsappPhone" | "businessType" | "template" | "logoUrl" | "heroTitle" | "heroSubtitle" | "heroImageUrls" | "address" | "theme" | "showCategories" | "showFeatured" | "freeShippingEnabled" | "freeShippingThreshold" | "acceptTransferPayments" | "paymentAccountHolder" | "paymentProvider" | "paymentAlias" | "paymentCbu" | "restrictBySchedule" | "businessHoursText" | "businessHours" | "mobileProductColumns" | "publicPageConfig" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["store"]>
+export type StoreOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "ownerId" | "name" | "slug" | "description" | "whatsappPhone" | "businessType" | "template" | "logoUrl" | "faviconUrl" | "designConfig" | "heroTitle" | "heroSubtitle" | "heroImageUrls" | "address" | "theme" | "showCategories" | "showFeatured" | "freeShippingEnabled" | "freeShippingThreshold" | "acceptTransferPayments" | "acceptCashPayments" | "whatsappOrdersEnabled" | "checkoutSettings" | "deliveryMethods" | "designDraft" | "menuConfig" | "taxRatePercent" | "showPricesWithoutTax" | "paymentAccountHolder" | "paymentProvider" | "paymentAlias" | "paymentCbu" | "restrictBySchedule" | "businessHoursText" | "businessHours" | "mobileProductColumns" | "publicPageConfig" | "isPublished" | "createdAt" | "updatedAt", ExtArgs["result"]["store"]>
 export type StoreInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   categories?: boolean | Prisma.Store$categoriesArgs<ExtArgs>
   products?: boolean | Prisma.Store$productsArgs<ExtArgs>
   orders?: boolean | Prisma.Store$ordersArgs<ExtArgs>
   storefrontEvents?: boolean | Prisma.Store$storefrontEventsArgs<ExtArgs>
+  customers?: boolean | Prisma.Store$customersArgs<ExtArgs>
+  members?: boolean | Prisma.Store$membersArgs<ExtArgs>
   _count?: boolean | Prisma.StoreCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type StoreIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2110,6 +3066,8 @@ export type $StorePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     products: Prisma.$ProductPayload<ExtArgs>[]
     orders: Prisma.$OrderPayload<ExtArgs>[]
     storefrontEvents: Prisma.$StorefrontEventPayload<ExtArgs>[]
+    customers: Prisma.$CustomerPayload<ExtArgs>[]
+    members: Prisma.$StoreMemberPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -2121,6 +3079,8 @@ export type $StorePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     businessType: $Enums.BusinessType
     template: string
     logoUrl: string | null
+    faviconUrl: string | null
+    designConfig: runtime.JsonValue
     heroTitle: string | null
     heroSubtitle: string | null
     heroImageUrls: string[]
@@ -2131,6 +3091,14 @@ export type $StorePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     freeShippingEnabled: boolean
     freeShippingThreshold: number
     acceptTransferPayments: boolean
+    acceptCashPayments: boolean
+    whatsappOrdersEnabled: boolean
+    checkoutSettings: runtime.JsonValue
+    deliveryMethods: runtime.JsonValue
+    designDraft: runtime.JsonValue | null
+    menuConfig: runtime.JsonValue
+    taxRatePercent: number
+    showPricesWithoutTax: boolean
     paymentAccountHolder: string | null
     paymentProvider: string | null
     paymentAlias: string | null
@@ -2542,6 +3510,8 @@ export interface Prisma__StoreClient<T, Null = never, ExtArgs extends runtime.Ty
   products<T extends Prisma.Store$productsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Store$productsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ProductPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   orders<T extends Prisma.Store$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Store$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   storefrontEvents<T extends Prisma.Store$storefrontEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Store$storefrontEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StorefrontEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  customers<T extends Prisma.Store$customersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Store$customersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CustomerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  members<T extends Prisma.Store$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Store$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$StoreMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2580,6 +3550,8 @@ export interface StoreFieldRefs {
   readonly businessType: Prisma.FieldRef<"Store", 'BusinessType'>
   readonly template: Prisma.FieldRef<"Store", 'String'>
   readonly logoUrl: Prisma.FieldRef<"Store", 'String'>
+  readonly faviconUrl: Prisma.FieldRef<"Store", 'String'>
+  readonly designConfig: Prisma.FieldRef<"Store", 'Json'>
   readonly heroTitle: Prisma.FieldRef<"Store", 'String'>
   readonly heroSubtitle: Prisma.FieldRef<"Store", 'String'>
   readonly heroImageUrls: Prisma.FieldRef<"Store", 'String[]'>
@@ -2590,6 +3562,14 @@ export interface StoreFieldRefs {
   readonly freeShippingEnabled: Prisma.FieldRef<"Store", 'Boolean'>
   readonly freeShippingThreshold: Prisma.FieldRef<"Store", 'Int'>
   readonly acceptTransferPayments: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly acceptCashPayments: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly whatsappOrdersEnabled: Prisma.FieldRef<"Store", 'Boolean'>
+  readonly checkoutSettings: Prisma.FieldRef<"Store", 'Json'>
+  readonly deliveryMethods: Prisma.FieldRef<"Store", 'Json'>
+  readonly designDraft: Prisma.FieldRef<"Store", 'Json'>
+  readonly menuConfig: Prisma.FieldRef<"Store", 'Json'>
+  readonly taxRatePercent: Prisma.FieldRef<"Store", 'Int'>
+  readonly showPricesWithoutTax: Prisma.FieldRef<"Store", 'Boolean'>
   readonly paymentAccountHolder: Prisma.FieldRef<"Store", 'String'>
   readonly paymentProvider: Prisma.FieldRef<"Store", 'String'>
   readonly paymentAlias: Prisma.FieldRef<"Store", 'String'>
@@ -3096,6 +4076,54 @@ export type Store$storefrontEventsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.StorefrontEventScalarFieldEnum | Prisma.StorefrontEventScalarFieldEnum[]
+}
+
+/**
+ * Store.customers
+ */
+export type Store$customersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Customer
+   */
+  select?: Prisma.CustomerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Customer
+   */
+  omit?: Prisma.CustomerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CustomerInclude<ExtArgs> | null
+  where?: Prisma.CustomerWhereInput
+  orderBy?: Prisma.CustomerOrderByWithRelationInput | Prisma.CustomerOrderByWithRelationInput[]
+  cursor?: Prisma.CustomerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CustomerScalarFieldEnum | Prisma.CustomerScalarFieldEnum[]
+}
+
+/**
+ * Store.members
+ */
+export type Store$membersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the StoreMember
+   */
+  select?: Prisma.StoreMemberSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the StoreMember
+   */
+  omit?: Prisma.StoreMemberOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreMemberInclude<ExtArgs> | null
+  where?: Prisma.StoreMemberWhereInput
+  orderBy?: Prisma.StoreMemberOrderByWithRelationInput | Prisma.StoreMemberOrderByWithRelationInput[]
+  cursor?: Prisma.StoreMemberWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.StoreMemberScalarFieldEnum | Prisma.StoreMemberScalarFieldEnum[]
 }
 
 /**

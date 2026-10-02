@@ -33,6 +33,20 @@ enum OrderSource {
   BACKOFFICE
 }
 
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum FulfillmentStatus {
+  PENDING
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
 enum UserRole {
   SUPER_ADMIN
   MERCHANT
@@ -41,6 +55,11 @@ enum UserRole {
 enum UserStatus {
   ACTIVE
   SUSPENDED
+}
+
+enum StoreMemberRole {
+  ADMIN
+  OPERATOR
 }
 
 model User {
@@ -52,14 +71,27 @@ model User {
   passwordHash  String?
   role          UserRole   @default(MERCHANT)
   status        UserStatus @default(ACTIVE)
+  authVersion   Int        @default(0)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
   accounts Account[]
   sessions Session[]
   store    Store?
+  membership StoreMember?
 
   @@index([role, status])
+}
+
+model StoreMember {
+  userId  String @id
+  storeId String
+  role    StoreMemberRole @default(OPERATOR)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
 }
 
 model Account {
@@ -105,8 +137,10 @@ model Store {
   description            String?
   whatsappPhone          String
   businessType           BusinessType @default(MIXED)
-  template               String       @default("ecommerce")
+  template               String       @default("roma")
   logoUrl                String?
+  faviconUrl             String?
+  designConfig           Json         @default("{\"font\":\"serif\",\"iconStyle\":\"regular\",\"headerSticky\":true,\"logoSize\":44,\"productImageRatio\":\"portrait\",\"productImageFit\":\"cover\",\"cardRadius\":0,\"showSku\":false,\"footerText\":\"\"}")
   heroTitle              String?
   heroSubtitle           String?
   heroImageUrls          String[]     @default([])
@@ -117,6 +151,14 @@ model Store {
   freeShippingEnabled    Boolean      @default(false)
   freeShippingThreshold  Int          @default(35000)
   acceptTransferPayments Boolean      @default(false)
+  acceptCashPayments     Boolean      @default(false)
+  whatsappOrdersEnabled  Boolean      @default(false)
+  checkoutSettings       Json         @default("{\"requirePhone\":true,\"requireDni\":false,\"requireBilling\":false,\"allowNotes\":true,\"minimumAmount\":null,\"showFreeShippingProgress\":false,\"showLowStock\":false}")
+  deliveryMethods        Json         @default("[{\"id\":\"default\",\"name\":\"A convenir\",\"description\":\"Coordiná la entrega con el vendedor\",\"price\":null,\"enabled\":true}]")
+  designDraft            Json?
+  menuConfig             Json         @default("{\"header\":[{\"label\":\"Inicio\",\"href\":\"/\"},{\"label\":\"Productos\",\"href\":\"/productos\"},{\"label\":\"Contacto\",\"href\":\"/contacto\"}],\"footer\":[]}")
+  taxRatePercent         Int          @default(21)
+  showPricesWithoutTax   Boolean      @default(false)
   paymentAccountHolder   String?
   paymentProvider        String?
   paymentAlias           String?
@@ -135,6 +177,8 @@ model Store {
   products         Product[]
   orders           Order[]
   storefrontEvents StorefrontEvent[]
+  customers Customer[]
+  members StoreMember[]
 }
 
 model Category {
@@ -143,12 +187,17 @@ model Category {
   name      String
   slug      String
   imageUrl  String?
+  isVisible Boolean  @default(true)
   sortOrder Int      @default(0)
+  parentId  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   store    Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   products Product[]
+  assignedProducts Product[] @relation("ProductAssignments")
+  parent   Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
 
   @@unique([storeId, slug])
 }
@@ -165,6 +214,9 @@ model Product {
   imageUrls     String[] @default([])
   isVisible     Boolean  @default(true)
   stockQuantity Int?
+  sku           String?
+  freeShipping  Boolean  @default(false)
+  variants      Json     @default("[]")
   isFeatured    Boolean  @default(false)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
@@ -172,6 +224,7 @@ model Product {
 
   store            Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  assignedCategories Category[] @relation("ProductAssignments")
   optionGroups     OptionGroup[]
   orderItems       OrderItem[]
   storefrontEvents StorefrontEvent[]
@@ -213,6 +266,19 @@ model Order {
   storeId       String
   code          String
   status        OrderStatus @default(PENDING_WHATSAPP)
+  paymentStatus PaymentStatus @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(PENDING)
+  trackingTokenHash String? @unique
+  clientRequestId String?
+  requestFingerprint String?
+  stockReserved Boolean @default(false)
+  archivedAt DateTime?
+  readAt DateTime?
+  receiptKey String?
+  receiptName String?
+  receiptMimeType String?
+  receiptUploadedAt DateTime?
+  customerEmail String?
   source        OrderSource @default(STOREFRONT)
   customerName  String
   customerPhone String
@@ -225,15 +291,59 @@ model Order {
 
   store Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
   items OrderItem[]
+  events OrderEvent[]
 
   @@unique([storeId, code])
+  @@unique([storeId, clientRequestId])
+  @@index([storeId, readAt])
+}
+
+model OrderEvent {
+  id String @id @default(cuid())
+  orderId String
+  type String
+  label String
+  createdAt DateTime @default(now())
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+model Customer {
+  id String @id @default(cuid())
+  storeId String
+  email String
+  name String
+  passwordHash String
+  emailVerifiedAt DateTime?
+  verificationTokenHash String? @unique
+  verificationExpiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  sessions CustomerSession[]
+
+  @@unique([storeId, email])
+}
+
+model CustomerSession {
+  id String @id @default(cuid())
+  customerId String
+  tokenHash String @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, expiresAt])
 }
 
 model OrderItem {
   id          String  @id @default(cuid())
   orderId     String
   productId   String?
+  variantKey  String?
   productName String
+  imageUrl String?
   quantity    Int
   unitPrice   Int
   options     Json

@@ -28,10 +28,12 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ where: { email }, include: { membership: { include: { store: { select: { owner: { select: { status: true } } } } } } } });
         if (!user?.passwordHash || user.status !== "ACTIVE") {
           return null;
         }
+
+        if (user.membership && user.membership.store.owner.status !== "ACTIVE") return null;
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
         if (!isValid) {
@@ -42,7 +44,8 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role
+          role: user.role,
+          authVersion: user.authVersion
         };
       }
     })
@@ -52,6 +55,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.authVersion = user.authVersion;
       }
       return token;
     },
@@ -59,6 +63,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = String(token.id);
         session.user.role = token.role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "MERCHANT";
+        session.user.authVersion = token.authVersion ?? 0;
       }
       return session;
     }

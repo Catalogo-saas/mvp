@@ -8,9 +8,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 import { SaveOverlay } from "@/components/save-overlay";
+import { notifyError, notifySuccess } from "@/lib/internal-notifications";
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
-import { getDefaultCategoryTitle, normalizeStoreTemplate, storeTemplateLabels, storeTemplates, templateOriginalColors, type StoreTemplate } from "@/lib/catalog";
+import { getDefaultCategoryTitle, normalizeStoreTemplate, publicStoreTemplates, storeTemplateLabels, templateOriginalColors, type StoreTemplate } from "@/lib/catalog";
+import { normalizeDesignConfig } from "@/lib/design-config";
 import { getImageUploadErrorMessage, prepareImageUpload, uploadImagesDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference, ImageUploadScope } from "@/lib/image-upload-contract";
 import {
@@ -37,6 +39,8 @@ type StoreSettings = {
   description: string | null;
   whatsappPhone: string;
   logoUrl: string | null;
+  faviconUrl: string | null;
+  designConfig: unknown;
   heroTitle: string | null;
   heroSubtitle: string | null;
   heroImageUrls: string[];
@@ -185,7 +189,9 @@ function StorePreview({
   heroSubtitle,
   heroImage,
   primary,
-  config
+  config,
+  template,
+  designConfig
 }: {
   device: "mobile" | "desktop";
   storeName: string;
@@ -195,31 +201,18 @@ function StorePreview({
   heroImage?: string;
   primary: string;
   config: PublicPageConfig;
+  template: StoreTemplate;
+  designConfig: ReturnType<typeof normalizeDesignConfig>;
 }) {
-  return (
-    <div className={`mx-auto overflow-hidden border-[6px] border-slate-900 bg-white shadow-xl ${device === "mobile" ? "w-[250px] rounded-[32px]" : "w-full max-w-[680px] rounded-[20px]"}`}>
-      {config.announcement.enabled && config.announcement.text ? <div className="truncate px-3 py-2 text-center text-[8px] font-black uppercase tracking-wider text-white" style={{ backgroundColor: primary }}>{config.announcement.text}</div> : null}
-      <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-        <span className="flex min-w-0 items-center gap-2 text-[9px] font-black">
-          {logoUrl ? <img src={logoUrl} alt="" className="h-6 w-6 rounded-full object-cover" /> : <i className="grid h-6 w-6 place-items-center rounded-full text-[8px] not-italic text-white" style={{ backgroundColor: primary }}>{storeName.slice(0, 1)}</i>}
-          <span className="truncate">{storeName || "Mi tienda"}</span>
-        </span>
-        <span className="rounded-full bg-slate-900 px-2 py-1 text-[7px] font-black text-white">Carrito · 0</span>
-      </div>
-      <div className={`grid ${device === "desktop" ? "grid-cols-2" : "grid-cols-1"}`}>
-        {heroImage ? <img src={heroImage} alt="" className={`w-full object-cover ${device === "mobile" ? "h-36" : "h-48"}`} /> : <div className="h-36 bg-slate-100" />}
-        <div className="order-first p-4">
-          <p className="text-[7px] font-black uppercase tracking-wider" style={{ color: primary }}>Nueva colección</p>
-          <p className="mt-2 text-lg font-black leading-tight">{heroTitle || storeName || "Tu marca"}</p>
-          <p className="mt-2 line-clamp-2 text-[8px] leading-4 text-slate-500">{heroSubtitle || "Una tienda propia, clara y lista para compartir."}</p>
-          <span className="mt-3 inline-flex rounded-full px-3 py-1.5 text-[7px] font-black text-white" style={{ backgroundColor: primary }}>Ver productos</span>
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2 p-3">
-        {Array.from({ length: 3 }).map((_, index) => <span key={index} className="block"><i className="block aspect-[4/5] bg-slate-100" /><b className="mt-1 block h-1.5 rounded bg-slate-800" /><i className="mt-1 block h-1 w-2/3 rounded bg-slate-200" /></span>)}
-      </div>
-    </div>
-  );
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const sendPreview = () => iframeRef.current?.contentWindow?.postMessage({
+    type: "design-preview", name: storeName, logoUrl, heroTitle, heroSubtitle,
+    heroImageUrls: heroImage ? [heroImage] : [], primary, publicPageConfig: config, template, designConfig
+  }, window.location.origin);
+  useEffect(() => { sendPreview(); });
+  return <div className={`mx-auto overflow-hidden border-[5px] border-slate-900 bg-white shadow-xl ${device === "mobile" ? "max-w-[390px] rounded-[28px]" : "w-full rounded-xl"}`}>
+    <iframe ref={iframeRef} src="/vista-previa/tienda" title="Vista real de tu tienda" className="block h-[640px] w-full bg-white" onLoad={sendPreview} />
+  </div>;
 }
 
 export function StoreSettingsForm({ store, categories: initialCategories }: { store: StoreSettings; categories: CategorySetting[] }) {
@@ -241,6 +234,10 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
   const [logoUrl, setLogoUrl] = useState(store.logoUrl ?? "");
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState(store.faviconUrl ?? "");
+  const [selectedFaviconFile, setSelectedFaviconFile] = useState<File | null>(null);
+  const [faviconPreviewUrl, setFaviconPreviewUrl] = useState("");
+  const [designConfig, setDesignConfig] = useState(() => normalizeDesignConfig(store.designConfig));
   const [heroImages, setHeroImages] = useState<ImageDraft[]>(() => store.heroImageUrls.map((url) => ({ id: url, url })));
   const [showCategories, setShowCategories] = useState(store.showCategories);
   const [showFeatured, setShowFeatured] = useState(store.showFeatured);
@@ -275,6 +272,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
   const normalizedTemplate = normalizeStoreTemplate(template);
   const originalColors = templateOriginalColors[normalizedTemplate] ?? null;
   const visibleLogoUrl = logoPreviewUrl || logoUrl;
+  const visibleFaviconUrl = faviconPreviewUrl || faviconUrl;
   const heroFileCount = heroImages.filter((image) => image.file).length;
 
   const snapshot = useMemo(
@@ -290,6 +288,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         accent,
         useTemplateColors,
         logoUrl,
+        faviconUrl,
+        designConfig,
         heroImages: heroImages.map((image) => ({ url: image.url, file: image.file?.name ?? null })),
         showCategories,
         showFeatured,
@@ -309,7 +309,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         categoryFiles: Object.fromEntries(
           Object.entries(categoryFiles).map(([categoryId, file]) => [categoryId, { name: file.name, size: file.size, lastModified: file.lastModified }])
         ),
-        selectedLogoFile: selectedLogoFile ? { name: selectedLogoFile.name, size: selectedLogoFile.size, lastModified: selectedLogoFile.lastModified } : null
+        selectedLogoFile: selectedLogoFile ? { name: selectedLogoFile.name, size: selectedLogoFile.size, lastModified: selectedLogoFile.lastModified } : null,
+        selectedFaviconFile: selectedFaviconFile ? { name: selectedFaviconFile.name, size: selectedFaviconFile.size, lastModified: selectedFaviconFile.lastModified } : null
       }),
     [
       acceptTransferPayments,
@@ -327,6 +328,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
       accent,
       useTemplateColors,
       logoUrl,
+      faviconUrl,
+      designConfig,
       mobileProductColumns,
       publicPageConfig,
       paymentAccountHolder,
@@ -335,6 +338,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
       paymentProvider,
       restrictBySchedule,
       selectedLogoFile,
+      selectedFaviconFile,
       showCategories,
       showFeatured,
       storeName,
@@ -418,14 +422,14 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
       await navigator.clipboard.writeText(publicStoreUrl);
       setPublicUrlCopied(true);
     } catch {
-      setError("No se pudo copiar la URL pública.");
+      notifyError("No se pudo copiar la URL pública.");
     }
   }
 
   function downloadStoreQr() {
     const qr = document.getElementById("storefront-qr");
     if (!(qr instanceof SVGElement)) {
-      setError("No se pudo preparar el QR.");
+      notifyError("No se pudo preparar el QR.");
       return;
     }
     const source = new XMLSerializer().serializeToString(qr);
@@ -467,14 +471,15 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
     }
   }
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveDesign(mode: "draft" | "publish") {
     if (loading) return;
+    if (mode === "draft" && Object.keys(categoryFiles).length) { setError("Publicá los cambios de imágenes de categorías antes de guardar un borrador."); return; }
     setLoading(true);
     setError("");
 
     const uploadTasks: Array<{ id: string; scope: ImageUploadScope; file: File }> = [];
     if (selectedLogoFile) uploadTasks.push({ id: "logo", scope: "logos", file: selectedLogoFile });
+    if (selectedFaviconFile) uploadTasks.push({ id: "favicon", scope: "logos", file: selectedFaviconFile });
     heroImages.forEach((image) => {
       if (image.file) uploadTasks.push({ id: `hero:${image.id}`, scope: "hero", file: image.file });
     });
@@ -491,6 +496,11 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         ? uploadedReferences.get("logo") ?? null
         : logoUrl
           ? { kind: "stored", url: logoUrl }
+          : null;
+      const favicon: ImageReference | null = selectedFaviconFile
+        ? uploadedReferences.get("favicon") ?? null
+        : faviconUrl
+          ? { kind: "stored", url: faviconUrl }
           : null;
       const heroImageReferences = heroImages.map((image) =>
         image.file
@@ -510,6 +520,8 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         heroTitle,
         heroSubtitle,
         logo,
+        favicon,
+        designConfig,
         heroImages: heroImageReferences,
         categoryImages,
         primary,
@@ -532,18 +544,19 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         mobileProductColumns
       };
 
-      const response = await fetch("/api/admin/store", {
+      const response = await fetch(mode === "draft" ? "/api/admin/design-draft" : "/api/admin/store", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(data?.error ?? "No pudimos guardar la configuración. Intentá nuevamente.");
+        notifyError(data?.error ?? "No pudimos guardar la configuración. Intentá nuevamente.");
         return;
       }
 
       setLogoUrl(data.store.logoUrl ?? "");
+      setFaviconUrl(data.store.faviconUrl ?? "");
       heroImages.forEach((image) => {
         if (image.file) URL.revokeObjectURL(image.url);
       });
@@ -553,27 +566,30 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
       setCategoryFiles({});
       setCategoryPreviews({});
       if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+      if (faviconPreviewUrl) URL.revokeObjectURL(faviconPreviewUrl);
       setLogoPreviewUrl("");
       setSelectedLogoFile(null);
+      setFaviconPreviewUrl("");
+      setSelectedFaviconFile(null);
+      setDesignConfig(normalizeDesignConfig(data.store.designConfig));
       setPublicPageConfig(normalizePublicPageConfig(data.store.publicPageConfig));
+      notifySuccess(mode === "draft" ? "Borrador guardado. Tu tienda pública no cambió." : "Diseño publicado.");
       resetDirtyBaselineRef.current = true;
       setFormRevision((current) => current + 1);
       router.refresh();
     } catch (saveError) {
-      setError(getImageUploadErrorMessage(saveError) ?? "No pudimos guardar la configuración. Revisá tu conexión e intentá nuevamente.");
+      notifyError(getImageUploadErrorMessage(saveError) ?? "No pudimos guardar la configuración. Revisá tu conexión e intentá nuevamente.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} onChange={() => setFormRevision((current) => current + 1)} aria-busy={loading} className="grid gap-5 pb-28">
-      <nav className="panel sticky top-4 z-30 grid grid-cols-4 gap-1 p-1.5" aria-label="Secciones de configuración">
+    <form ref={formRef} onSubmit={(event) => { event.preventDefault(); void saveDesign("publish"); }} onChange={() => setFormRevision((current) => current + 1)} aria-busy={loading} className="grid gap-5 pb-28">
+      <nav className="panel sticky top-4 z-30 grid grid-cols-2 gap-1 p-1.5" aria-label="Secciones de configuración">
         {([
-          ["brand", "Marca"],
-          ["page", "Página"],
-          ["sales", "Venta"],
-          ["hours", "Horario"]
+          ["brand", "Marca y estilo"],
+          ["page", "Página de inicio"]
         ] as const).map(([value, label]) => (
           <button key={value} className={`rounded-2xl px-2 py-3 text-xs font-black sm:text-sm ${activeSection === value ? "bg-brand text-white" : "text-muted hover:bg-surface"}`} type="button" onClick={() => setActiveSection(value)}>{label}</button>
         ))}
@@ -614,6 +630,24 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
             {originalColors ? <div className="grid gap-3 rounded-3xl border border-line bg-white p-4 sm:col-span-2"><Switch checked={useTemplateColors} onChange={setUseTemplateColors} label="Usar colores originales de la plantilla" description={`Aplica la paleta original de ${storeTemplateLabels[normalizedTemplate]} sin borrar tus colores personalizados.`} />{useTemplateColors ? <div className="flex flex-wrap gap-3 text-xs font-bold text-muted"><span className="flex items-center gap-2"><i className="h-6 w-6 rounded-full border border-black/10" style={{ backgroundColor: originalColors.primary }} />Principal · {originalColors.primary}</span><span className="flex items-center gap-2"><i className="h-6 w-6 rounded-full border border-black/10" style={{ backgroundColor: originalColors.accent }} />Secundario · {originalColors.accent}</span></div> : null}</div> : null}
             <label className="grid gap-2 text-sm font-bold">Color principal<input className="field h-14 disabled:cursor-not-allowed disabled:opacity-45" name="primary" type="color" value={primary} disabled={Boolean(originalColors && useTemplateColors)} onChange={(event) => setPrimary(event.target.value)} /></label>
             <label className="grid gap-2 text-sm font-bold">Color secundario<input className="field h-14 disabled:cursor-not-allowed disabled:opacity-45" name="accent" type="color" value={accent} disabled={Boolean(originalColors && useTemplateColors)} onChange={(event) => setAccent(event.target.value)} /></label>
+            <label className="grid gap-2 text-sm font-bold sm:col-span-2">Favicon
+              <span className="flex items-center gap-3 rounded-2xl border border-line bg-white p-3">
+                {visibleFaviconUrl ? <img src={visibleFaviconUrl} alt="Favicon" className="h-10 w-10 rounded-lg object-contain" /> : <span className="grid h-10 w-10 place-items-center rounded-lg bg-surface text-xs">Sin ícono</span>}
+                <input className="min-w-0 flex-1 text-xs" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => {
+                  const file = event.currentTarget.files?.[0];
+                  if (!file) return;
+                  const validationError = validateSelectedImage(file);
+                  if (validationError) { setError(validationError); return; }
+                  prepareImageUpload("logos", file);
+                  if (faviconPreviewUrl) URL.revokeObjectURL(faviconPreviewUrl);
+                  setFaviconPreviewUrl(URL.createObjectURL(file));
+                  setSelectedFaviconFile(file);
+                }} />
+                {visibleFaviconUrl ? <button type="button" className="text-xs text-red-600" onClick={() => { if (faviconPreviewUrl) URL.revokeObjectURL(faviconPreviewUrl); setFaviconPreviewUrl(""); setFaviconUrl(""); setSelectedFaviconFile(null); }}>Quitar</button> : null}
+              </span>
+            </label>
+            <label className="grid gap-2 text-sm font-bold">Tipo de letra<select className="field" value={designConfig.font} onChange={(event) => setDesignConfig((current) => ({ ...current, font: event.target.value as typeof current.font }))}><option value="serif">Editorial</option><option value="sans">Moderna</option><option value="rounded">Redondeada</option></select></label>
+            <label className="grid gap-2 text-sm font-bold">Estilo de íconos<select className="field" value={designConfig.iconStyle} onChange={(event) => setDesignConfig((current) => ({ ...current, iconStyle: event.target.value as typeof current.iconStyle }))}><option value="thin">Finito</option><option value="regular">Regular</option><option value="bold">Grueso</option></select></label>
           </div>
         </div>
         <label className="grid gap-2 text-sm font-bold"><span>WhatsApp de pedidos</span><div className="relative"><span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-black">+54</span><input className="field !pl-[3.25rem]" inputMode="numeric" maxLength={12} value={whatsappLocal} onChange={(event) => setWhatsappLocal(formatArgentineLocalPhone(event.target.value))} onBlur={() => setWhatsappLocal(formatArgentineLocalPhone(whatsappLocal))} required /></div></label>
@@ -629,19 +663,28 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
           <div className="grid content-start gap-4">
             <label className="grid gap-2 text-sm font-bold">Estilo visual
               <select className="field" value={template} onChange={(event) => setTemplate(event.target.value as StoreTemplate)}>
-                <optgroup label="Versátil"><option value="ecommerce">{storeTemplateLabels.ecommerce}</option></optgroup>
-                <optgroup label="Moda y belleza"><option value="premium-minimal">{storeTemplateLabels["premium-minimal"]}</option><option value="boutique-soft">{storeTemplateLabels["boutique-soft"]}</option><option value="beauty-pop">{storeTemplateLabels["beauty-pop"]}</option></optgroup>
-                <optgroup label="Infantil">{storeTemplates.filter((value) => value.startsWith("baby-")).map((value) => <option key={value} value={value}>{storeTemplateLabels[value]}</option>)}</optgroup>
-                <optgroup label="Otros"><option value="food">{storeTemplateLabels.food}</option></optgroup>
+                {publicStoreTemplates.map((value) => <option key={value} value={value}>{storeTemplateLabels[value]}</option>)}
               </select>
             </label>
           </div>
           <div className="rounded-3xl border border-line bg-[#e8efec] p-4">
             <div className="mb-4 flex items-center justify-between gap-3"><p className="text-sm font-black">Vista previa</p><div className="flex rounded-full bg-white p-1"><button className={`rounded-full p-2 ${previewDevice === "mobile" ? "bg-ink text-white" : "text-muted"}`} type="button" onClick={() => setPreviewDevice("mobile")} aria-label="Vista móvil"><Smartphone size={15} /></button><button className={`rounded-full p-2 ${previewDevice === "desktop" ? "bg-ink text-white" : "text-muted"}`} type="button" onClick={() => setPreviewDevice("desktop")} aria-label="Vista de escritorio"><Monitor size={15} /></button></div></div>
-            <StorePreview device={previewDevice} storeName={storeName} logoUrl={visibleLogoUrl} heroTitle={heroTitle} heroSubtitle={heroSubtitle} heroImage={heroImages[0]?.url} primary={originalColors && useTemplateColors ? originalColors.primary : primary} config={publicPageConfig} />
+            <StorePreview device={previewDevice} storeName={storeName} logoUrl={visibleLogoUrl} heroTitle={heroTitle} heroSubtitle={heroSubtitle} heroImage={heroImages[0]?.url} primary={originalColors && useTemplateColors ? originalColors.primary : primary} config={publicPageConfig} template={template} designConfig={designConfig} />
             <a className="mt-4 flex items-center justify-center gap-2 text-sm font-black text-brand" href={publicStoreUrl} target="_blank" rel="noreferrer">Abrir tienda actual <ExternalLink size={15} /></a>
           </div>
         </div>
+        <section className="grid gap-4 rounded-3xl border border-line bg-white p-4">
+          <h3 className="font-black">Encabezado</h3>
+          <Switch checked={designConfig.headerSticky} onChange={(headerSticky) => setDesignConfig((current) => ({ ...current, headerSticky }))} label="Encabezado fijo" description="Permanece visible al desplazarse por la tienda." />
+          <label className="grid gap-2 text-sm font-bold">Tamaño del logo: {designConfig.logoSize} px<input type="range" min={32} max={96} step={4} value={designConfig.logoSize} onChange={(event) => setDesignConfig((current) => ({ ...current, logoSize: Number(event.target.value) }))} /></label>
+        </section>
+        <section className="grid gap-4 rounded-3xl border border-line bg-white p-4">
+          <h3 className="font-black">Tarjeta de producto</h3>
+          <div className="grid gap-4 sm:grid-cols-2"><label className="grid gap-2 text-sm font-bold">Formato de imagen<select className="field" value={designConfig.productImageRatio} onChange={(event) => setDesignConfig((current) => ({ ...current, productImageRatio: event.target.value as typeof current.productImageRatio }))}><option value="portrait">Vertical</option><option value="square">Cuadrada</option></select></label><label className="grid gap-2 text-sm font-bold">Ajuste de imagen<select className="field" value={designConfig.productImageFit} onChange={(event) => setDesignConfig((current) => ({ ...current, productImageFit: event.target.value as typeof current.productImageFit }))}><option value="cover">Rellenar</option><option value="contain">Mostrar completa</option></select></label></div>
+          <label className="grid gap-2 text-sm font-bold">Redondez de la tarjeta: {designConfig.cardRadius} px<input type="range" min={0} max={32} step={4} value={designConfig.cardRadius} onChange={(event) => setDesignConfig((current) => ({ ...current, cardRadius: Number(event.target.value) }))} /></label>
+          <Switch checked={designConfig.showSku} onChange={(showSku) => setDesignConfig((current) => ({ ...current, showSku }))} label="Mostrar SKU" />
+        </section>
+        <section className="grid gap-3 rounded-3xl border border-line bg-white p-4"><h3 className="font-black">Pie de página</h3><label className="grid gap-2 text-sm font-bold">Texto adicional<textarea className="field min-h-20" maxLength={240} value={designConfig.footerText} onChange={(event) => setDesignConfig((current) => ({ ...current, footerText: event.target.value }))} placeholder="Gracias por visitar nuestra tienda" /></label></section>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold">Título principal<input className="field" value={heroTitle} onChange={(event) => setHeroTitle(event.target.value)} placeholder={store.name} /></label>
           <label className="grid gap-2 text-sm font-bold">Subtítulo<input className="field" value={heroSubtitle} onChange={(event) => setHeroSubtitle(event.target.value)} placeholder="Elegí tus productos y pedí por WhatsApp" /></label>
@@ -683,6 +726,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
         </> : null}
         <Switch checked={showFeatured} onChange={setShowFeatured} label="Productos destacados" description="Muestra una selección especial de productos en la tienda pública." />
         {showFeatured ? <label className="grid gap-2 text-sm font-bold">Título de productos destacados<input className="field" value={publicPageConfig.featuredTitle} onChange={(event) => updatePageConfig((current) => ({ ...current, featuredTitle: event.target.value }))} /></label> : null}
+        <details className="rounded-3xl border border-line bg-white p-4"><summary className="cursor-pointer font-black">Opciones adicionales de la portada y el pie</summary><div className="mt-4 grid gap-4">
         <section className="grid gap-4 rounded-3xl border border-line bg-white p-4">
           <div><p className="font-black">Orden de las secciones</p><p className="mt-1 text-sm font-semibold text-muted">Elegí qué aparece primero entre destacados, categorías, productos e información útil.</p></div>
           <div className="grid gap-2">
@@ -705,6 +749,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
           <div><p className="font-black">Redes sociales</p><p className="mt-1 text-sm font-semibold text-muted">Pegá enlaces completos; se mostrarán en el pie de página.</p></div>
           <div className="grid gap-4 sm:grid-cols-3">{socialNetworkFields.map(({ key, label, iconSrc }) => <label key={key} className="grid gap-2 text-sm font-bold"><span className="flex items-center gap-2"><img src={iconSrc} alt="" aria-hidden="true" className="h-5 w-5 shrink-0" />{label}</span><input className="field" type="url" value={publicPageConfig.socials[key]} onChange={(event) => updatePageConfig((current) => ({ ...current, socials: { ...current.socials, [key]: event.target.value } }))} placeholder={`https://${key}.com/...`} /></label>)}</div>
         </section>
+        </div></details>
       </section>
 
       <section className={`${activeSection === "sales" ? "grid" : "hidden"} panel gap-4 p-5 sm:p-6`}>
@@ -755,7 +800,7 @@ export function StoreSettingsForm({ store, categories: initialCategories }: { st
 
       {hoursModalOpen ? <div className="fixed inset-0 z-50 flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Editar horarios"><div className="panel grid h-[100dvh] min-h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-4 sm:h-auto sm:min-h-0 sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">Horario</p><h3 className="mt-1 text-2xl font-black">Editar atención</h3></div><button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={() => setHoursModalOpen(false)}><X size={18} /></button></div><div className="grid gap-3 overflow-y-auto pb-6 pr-1">{businessDayKeys.map((day) => <article key={day} className="grid gap-3 rounded-2xl border border-line bg-white p-3"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-black">{businessDayLabels[day]}</p><div className="flex flex-wrap gap-2">{businessHours.days[day].length ? <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => copyRangesToAllDays(day)}><Copy size={15} /> Copiar</button> : null}<button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => addRange(day)}><Plus size={15} /> Rango</button></div></div>{businessHours.days[day].length ? businessHours.days[day].map((range, index) => <div key={`${day}-${index}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_44px] items-end gap-2"><label className="grid gap-1 text-xs font-bold text-muted">Apertura<input className="field !px-2 !py-2 text-center" type="time" value={range.open} onChange={(event) => updateRange(day, index, { open: event.target.value })} /></label><label className="grid gap-1 text-xs font-bold text-muted">Cierre<input className="field !px-2 !py-2 text-center" type="time" value={range.close} onChange={(event) => updateRange(day, index, { close: event.target.value })} /></label><button className="grid h-11 w-11 place-items-center rounded-xl border border-line text-red-600" type="button" onClick={() => removeRange(day, index)}><Trash2 size={15} /></button></div>) : <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Cerrado</p>}</article>)}</div><div className="-mx-4 -mb-4 border-t border-line bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6"><button className="btn-primary w-full" type="button" onClick={() => setHoursModalOpen(false)}>Listo</button></div></div></div> : null}
 
-      <div className="fixed inset-x-4 bottom-4 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<button className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>Guardar configuración</button></div>
+      <div className="fixed inset-x-4 bottom-20 z-40 grid gap-2 lg:bottom-6 lg:left-[calc((100vw-min(1120px,calc(100vw-32px)))/2+284px)] lg:right-[calc((100vw-min(1120px,calc(100vw-32px)))/2)]">{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700 shadow-lg">{error}</p> : null}<div className="grid grid-cols-2 gap-2"><button type="button" className="btn-secondary w-full bg-white" disabled={loading} onClick={() => void saveDesign("draft")}>Guardar borrador</button><button type="submit" className="btn-primary w-full shadow-2xl shadow-green-900/20" disabled={loading}>Publicar cambios</button></div></div>
       {loading ? <SaveOverlay title="Guardando configuración…" /> : null}
     </form>
   );

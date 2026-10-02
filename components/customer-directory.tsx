@@ -30,10 +30,10 @@ export function CustomerDirectory({ customers }: { customers: CustomerSummary[] 
       {visibleCustomers.length ? (
         <section className="grid gap-3">
           {visibleCustomers.map((customer) => (
-            <article className="panel p-5" key={customer.id}>
+            <article className="panel p-4 sm:p-5" key={customer.id}>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2"><Users className="shrink-0 text-brand" size={18} /><h2 className="truncate text-lg font-black">{customer.name}</h2></div>
+                  <div className="flex items-center gap-2"><Users className="shrink-0 text-brand" size={18} /><h2 className="truncate text-sm font-semibold">{customer.name}</h2></div>
                   <p className="mt-1 text-sm font-semibold text-muted">{customer.phone}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -41,7 +41,7 @@ export function CustomerDirectory({ customers }: { customers: CustomerSummary[] 
                   <Link className="btn-primary !px-3 !py-2" href={`/gestion/pedidos?q=${encodeURIComponent(customer.phone)}`}><ShoppingBag size={16} /> Pedidos</Link>
                 </div>
               </div>
-              <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 sm:grid-cols-3">
+              <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-line pt-3 sm:grid-cols-3">
                 <div><dt className="text-xs font-bold text-muted">Pedidos</dt><dd className="mt-1 font-black">{customer.orderCount}</dd></div>
                 <div><dt className="text-xs font-bold text-muted">Total comprado</dt><dd className="mt-1 font-black">{formatMoney(customer.totalSpent)}</dd></div>
                 <div className="col-span-2 sm:col-span-1"><dt className="flex items-center gap-1 text-xs font-bold text-muted"><CalendarDays size={13} /> Última compra</dt><dd className="mt-1 text-sm font-black">{formatBuenosAiresDate(customer.lastOrderAt)} · #{customer.lastOrderCode}</dd></div>

@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
+import { normalizeDesignConfig } from "@/lib/design-config";
 import { PackageCheck, RotateCcw, Ruler } from "lucide-react";
 
 import type { StorefrontProduct, StorefrontStore } from "@/components/public-store";
@@ -21,6 +22,7 @@ export function StorefrontBrandSection({
   onOpenProduct: (product: StorefrontProduct) => void;
 }) {
   const config = normalizePublicPageConfig(store.publicPageConfig);
+  const design = normalizeDesignConfig(store.designConfig);
 
   if (section === "featured") {
     if (!store.showFeatured) return null;
@@ -33,11 +35,11 @@ export function StorefrontBrandSection({
           <div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-[var(--store-primary)]">Selección especial</p><h2 id="featured-title" className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{config.featuredTitle}</h2></div>
           <a className="hidden text-sm font-black underline underline-offset-4 sm:block" href="#catalogo">Ver todo</a>
         </div>
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className={`mt-6 grid ${store.mobileProductColumns===2?"grid-cols-2":"grid-cols-1"} gap-3 md:grid-cols-4`}>
           {featuredProducts.map((product) => (
             <button key={product.id} type="button" className="group min-w-0 text-left" onClick={() => onOpenProduct(product)}>
-              <span className="block aspect-[4/5] overflow-hidden rounded-2xl bg-black/5">{product.imageUrls[0] ? <img src={product.imageUrls[0]} alt={product.name} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" /> : null}</span>
-              <strong className="mt-3 block truncate text-sm">{product.name}</strong>
+              <span className="block overflow-hidden bg-black/5" style={{aspectRatio:design.productImageRatio==="square"?"1":"4/5",borderRadius:design.cardRadius}}>{product.imageUrls[0] ? <img src={product.imageUrls[0]} alt={product.name} style={{objectFit:design.productImageFit}} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" /> : null}</span>
+              <strong className="mt-3 block truncate text-sm">{product.name}</strong>{design.showSku&&product.sku&&<span className="text-xs">SKU: {product.sku}</span>}
               <span className="mt-1 block text-sm font-black">{formatMoney(getEffectiveProductPrice(product))}</span>
             </button>
           ))}

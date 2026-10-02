@@ -1,0 +1,4 @@
+ALTER TYPE "FulfillmentStatus" ADD VALUE IF NOT EXISTS 'SHIPPED';
+ALTER TABLE "Category" ADD COLUMN "isVisible" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "Order" ADD COLUMN "archivedAt" TIMESTAMP(3), ADD COLUMN "receiptKey" TEXT, ADD COLUMN "receiptName" TEXT, ADD COLUMN "receiptMimeType" TEXT, ADD COLUMN "receiptUploadedAt" TIMESTAMP(3);
+ALTER TABLE "OrderItem" ADD COLUMN "imageUrl" TEXT;

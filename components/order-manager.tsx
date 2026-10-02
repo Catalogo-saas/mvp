@@ -24,9 +24,13 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import { AdminDialog } from "@/components/admin-ui";
+import { useDirtyForm } from "@/components/use-dirty-form";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
+import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { formatBuenosAiresDate } from "@/lib/date-format";
 import { formatMoney } from "@/lib/money";
+import { notifyError, notifySuccess } from "@/lib/internal-notifications";
 
 type OrderStatus = "PENDING_WHATSAPP" | "PAID" | "IN_PREPARATION" | "DELIVERED" | "CANCELLED";
 type StatusFilter = OrderStatus | "all";
@@ -50,6 +54,9 @@ type OrderListItem = {
   id: string;
   code: string;
   status: OrderStatus;
+  paymentStatus: "PENDING" | "CONFIRMED" | "CANCELLED";
+  fulfillmentStatus: "PENDING" | "PACKED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  trackingPath: string | null;
   source: "STOREFRONT" | "BACKOFFICE";
   customerName: string;
   customerPhone: string;
@@ -442,7 +449,7 @@ function printableOrderHtml(order: OrderListItem) {
   `;
 }
 
-function printOrder(order: OrderListItem) {
+export function printOrder(order: OrderListItem) {
   const printWindow = window.open("", "_blank", "width=520,height=720");
   if (!printWindow) {
     return;
@@ -452,7 +459,8 @@ function printOrder(order: OrderListItem) {
   printWindow.document.close();
 }
 
-export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[] }) {
+export function OrderManager({ orders: initialOrders, editorOnly = false, editTarget, renderTrigger }: { orders: OrderListItem[]; editorOnly?: boolean; editTarget?: OrderListItem; renderTrigger?: (open: () => void, disabled: boolean) => React.ReactNode }) {
+  const { confirm } = useUnsavedChanges();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -464,12 +472,15 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   const appliedFilters = urlFilters.advancedFilters;
   const [draftFilters, setDraftFilters] = useState<AdvancedFilters>(appliedFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderListItem | null>(() => initialOrders.find((order) => order.id === searchParams.get("orderId")) ?? null);
   const [openActionMenuId, setOpenActionMenuId] = useState<string | null>(null);
   const [actionOrder, setActionOrder] = useState<OrderListItem | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<OrderEditDraft | null>(null);
+  const [initialEdit,setInitialEdit]=useState("");
+  useDirtyForm(editOpen && JSON.stringify(editDraft)!==initialEdit);
+  async function closeEditor(){if(editLoading)return;if(JSON.stringify(editDraft)!==initialEdit&&!await confirm({title:"Descartar cambios",message:"¿Descartar los cambios de esta venta?",confirmLabel:"Descartar",destructive:true}))return;setEditOpen(false);setEditDraft(null);setEditingOrderId(null);}
   const [editableProducts, setEditableProducts] = useState<EditableProduct[]>([]);
   const [editLoading, setEditLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -615,12 +626,25 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
     setUpdatingId(null);
 
     if (!response.ok) {
-      setError(data?.error ?? "No se pudo actualizar el pedido.");
+      notifyError(data?.error ?? "No se pudo actualizar el pedido.");
       return;
     }
 
     setOrders((current) => current.map((order) => (order.id === orderId ? { ...data.order, createdAt: data.order.createdAt } : order)));
     setSelectedOrder((current) => (current?.id === orderId ? { ...data.order, createdAt: data.order.createdAt } : current));
+    notifySuccess("Estado del pedido actualizado.");
+  }
+
+  async function updateOrderState(orderId: string, patch: { paymentStatus?: OrderListItem["paymentStatus"]; fulfillmentStatus?: OrderListItem["fulfillmentStatus"] }) {
+    setUpdatingId(orderId);
+    setError("");
+    const response = await fetch(`/api/admin/orders/${orderId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
+    const data = await response.json().catch(() => null);
+    setUpdatingId(null);
+    if (!response.ok) { notifyError(data?.error ?? "No se pudo actualizar el pedido."); return; }
+    setOrders((current) => current.map((order) => order.id === orderId ? { ...order, ...data.order } : order));
+    setSelectedOrder((current) => current?.id === orderId ? { ...current, ...data.order } : current);
+    notifySuccess("Estado del pedido actualizado.");
   }
 
   async function openOrderEditor(order: OrderListItem) {
@@ -632,14 +656,14 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
     const data = await response.json().catch(() => null);
     setEditLoading(false);
     if (!response.ok || !Array.isArray(data?.products)) {
-      setError(data?.error ?? "No se pudo cargar el catálogo para editar el pedido.");
+      notifyError(data?.error ?? "No se pudo cargar el catálogo para editar el pedido.");
       return;
     }
 
     const products = data.products as EditableProduct[];
     setEditableProducts(products);
     setEditingOrderId(order.id);
-    setEditDraft({
+    const nextDraft:OrderEditDraft = {
       customerName: order.customerName,
       customerPhone: order.customerPhone,
       fulfillment: order.fulfillment,
@@ -655,36 +679,9 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
           selectedOptionIds: product ? selectedOptionIdsFromSnapshot(product, item.options) : []
         };
       })
-    });
+    };
+    setEditDraft(nextDraft);setInitialEdit(JSON.stringify(nextDraft));
     setSelectedOrder(null);
-    setEditOpen(true);
-  }
-
-  async function openOrderCreator() {
-    setError("");
-    setEditLoading(true);
-    const response = await fetch("/api/admin/products");
-    const data = await response.json().catch(() => null);
-    setEditLoading(false);
-    if (!response.ok || !Array.isArray(data?.products)) {
-      setError(data?.error ?? "No se pudo cargar el catálogo para crear el pedido.");
-      return;
-    }
-    const products = data.products as EditableProduct[];
-    if (!products.length) {
-      setError("Primero cargá al menos un producto en el catálogo.");
-      return;
-    }
-    setEditableProducts(products);
-    setEditingOrderId(null);
-    setEditDraft({
-      customerName: "",
-      customerPhone: "",
-      fulfillment: "Retiro",
-      notes: "",
-      status: "PENDING_WHATSAPP",
-      items: [{ id: `new-${Date.now()}`, productId: products[0].id, productName: products[0].name, quantity: 1, selectedOptionIds: [] }]
-    });
     setEditOpen(true);
   }
 
@@ -739,19 +736,20 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
 
   async function saveOrderEdits(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!editingOrderId) { setError("No se puede crear una venta manual desde esta pantalla."); return; }
     if (!editDraft || editDraft.items.some((item) => item.quantity < 1)) {
       setError("Cada línea debe tener una cantidad válida.");
       return;
     }
     setEditLoading(true);
     setError("");
-    const isCreating = editingOrderId === null;
-    const response = await fetch(isCreating ? "/api/admin/orders" : `/api/admin/orders/${editingOrderId}`, {
-      method: isCreating ? "POST" : "PATCH",
+    const response = await fetch(`/api/admin/orders/${editingOrderId}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...editDraft,
-        items: editDraft.items.every((item) => item.productId)
+        status: undefined,
+        items: JSON.stringify(editDraft.items)!==JSON.stringify(JSON.parse(initialEdit).items) && editDraft.items.every((item) => item.productId)
           ? editDraft.items.map((item) => ({ productId: item.productId, quantity: item.quantity, selectedOptionIds: item.selectedOptionIds }))
           : undefined
       })
@@ -762,17 +760,19 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
       setError(data?.error ?? "No se pudo guardar el pedido.");
       return;
     }
+    router.refresh();
     const nextOrder = { ...data.order, createdAt: data.order.createdAt } as OrderListItem;
-    setOrders((current) => isCreating ? [nextOrder, ...current] : current.map((order) => (order.id === nextOrder.id ? nextOrder : order)));
+    setOrders((current) => current.map((order) => (order.id === nextOrder.id ? nextOrder : order)));
     setEditOpen(false);
     setEditingOrderId(null);
     setEditDraft(null);
     router.refresh();
+    notifySuccess("Venta actualizada.");
   }
 
   async function deleteOrder(order: OrderListItem) {
     setOpenActionMenuId(null);
-    if (!window.confirm(`¿Eliminar el pedido #${order.code}? Esta acción no se puede deshacer.`)) {
+    if (!await confirm({ title: "Eliminar pedido", message: `¿Eliminar el pedido #${order.code}? Esta acción no se puede deshacer.`, confirmLabel: "Eliminar pedido", destructive: true })) {
       return;
     }
     setUpdatingId(order.id);
@@ -781,7 +781,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
     const data = await response.json().catch(() => null);
     setUpdatingId(null);
     if (!response.ok) {
-      setError(data?.error ?? "No se pudo eliminar el pedido.");
+      notifyError(data?.error ?? "No se pudo eliminar el pedido.");
       return;
     }
     setOrders((current) => current.filter((item) => item.id !== order.id));
@@ -790,6 +790,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
     setEditOpen(false);
     setEditingOrderId(null);
     setEditDraft(null);
+    notifySuccess("Pedido eliminado.");
   }
 
   function resetAdvancedFilters() {
@@ -814,7 +815,8 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
   }
 
   return (
-    <div className="space-y-6">
+    <div className={editorOnly ? "order-editor-actions" : "space-y-6"}>
+      {editorOnly ? <>{editTarget && (renderTrigger ? renderTrigger(() => void openOrderEditor(editTarget), editLoading) : <button className="btn-secondary" disabled={editLoading} onClick={() => void openOrderEditor(editTarget)}><Edit3 size={16}/> Editar venta</button>)}{error && !editOpen && <p className="text-red-600 text-xs mt-2" role="alert">{error}</p>}</> : <>
       <section className="grid gap-4 md:grid-cols-3">
         <article className="panel p-5">
           <p className="text-sm font-bold text-muted">Pedidos</p>
@@ -834,7 +836,6 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
         <div className="grid gap-3 border-b border-line p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><p className="text-sm font-black uppercase tracking-[0.16em] text-brand">Operación</p><h2 className="mt-1 text-xl font-black">Listado de pedidos</h2></div>
-            <button className="btn-primary" type="button" onClick={() => void openOrderCreator()}><Plus size={18} /> Nuevo pedido</button>
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <label className="grid gap-2">
@@ -1103,6 +1104,7 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
         )}
       </section>
 
+      </>}
       {actionOrder ? (
         <div className="fixed inset-0 z-[110] flex items-end bg-ink/45 p-4 backdrop-blur-sm lg:hidden" role="dialog" aria-modal="true" aria-label={`Acciones del pedido ${actionOrder.code}`} onClick={() => setActionOrder(null)}>
           <div className="grid w-full gap-3 rounded-[28px] bg-white p-5 shadow-2xl" onClick={(event) => event.stopPropagation()}>
@@ -1199,127 +1201,20 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
               </div>
             </div>
 
-            <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <button className="btn-secondary w-full" type="button" onClick={resetAdvancedFilters}>
-                  Limpiar
-                </button>
-                <button className="btn-primary w-full" type="button" onClick={applyAdvancedFilters}>
-                  Aplicar filtros
-                </button>
-              </div>
-            </div>
+            <div className="flex justify-end gap-3"><button className="btn-secondary" onClick={resetAdvancedFilters}>Limpiar filtros</button><button className="btn-primary" onClick={applyAdvancedFilters}>Aplicar filtros</button></div>
           </div>
         </div>
       ) : null}
-
-      {editOpen && editDraft ? (
-        <div className="fixed inset-0 z-[105] flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label={editingOrderId ? "Editar pedido" : "Crear pedido"}>
-          <form onSubmit={saveOrderEdits} className="grid max-h-[96dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden rounded-t-[32px] bg-white p-5 shadow-2xl sm:max-h-[calc(100dvh-32px)] sm:rounded-[32px] sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Gestión</p>
-                <h2 className="mt-1 text-2xl font-black">{editingOrderId ? "Editar pedido" : "Nuevo pedido"}</h2>
-              </div>
-              <button className="btn-secondary !h-11 !w-11 !p-0" type="button" onClick={() => { setEditOpen(false); setEditDraft(null); setEditingOrderId(null); }} aria-label="Cerrar edición">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="grid gap-5 overflow-y-auto overscroll-contain pb-6 pr-1">
-              <div className="grid gap-3 rounded-3xl border border-line bg-surface p-4 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm font-bold">
-                  Cliente
-                  <input className="field" value={editDraft.customerName} onChange={(event) => setEditDraft((current) => current ? { ...current, customerName: event.target.value } : current)} required />
-                </label>
-                <label className="grid gap-2 text-sm font-bold">
-                  Celular
-                  <input className="field" value={editDraft.customerPhone} onChange={(event) => setEditDraft((current) => current ? { ...current, customerPhone: event.target.value } : current)} required />
-                </label>
-                <label className="grid gap-2 text-sm font-bold">
-                  Modalidad
-                  <input className="field" value={editDraft.fulfillment} onChange={(event) => setEditDraft((current) => current ? { ...current, fulfillment: event.target.value } : current)} required />
-                </label>
-                <label className="grid gap-2 text-sm font-bold">
-                  Estado
-                  <select className="field" value={editDraft.status} onChange={(event) => setEditDraft((current) => current ? { ...current, status: event.target.value as OrderStatus } : current)}>
-                    {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </label>
-                <label className="grid gap-2 text-sm font-bold sm:col-span-2">
-                  Notas
-                  <textarea className="field min-h-20" value={editDraft.notes} onChange={(event) => setEditDraft((current) => current ? { ...current, notes: event.target.value } : current)} />
-                </label>
-              </div>
-
-              <section className="grid gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Pedido</p>
-                    <h3 className="mt-1 text-xl font-black">Productos</h3>
-                  </div>
-                  <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={addEditItem} disabled={editableProducts.length === 0 || editDraft.items.some((item) => !item.productId)}>
-                    <Plus size={16} /> Agregar
-                  </button>
-                </div>
-
-                {editDraft.items.map((item) => {
-                  const product = editableProducts.find((candidate) => candidate.id === item.productId);
-                  return (
-                    <article key={item.id} className="grid gap-3 rounded-3xl border border-line p-4">
-                      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_110px_auto] sm:items-end">
-                        <label className="grid gap-2 text-sm font-bold">
-                          Producto
-                          {item.productId ? <select className="field" value={item.productId} onChange={(event) => { const nextProduct = editableProducts.find((candidate) => candidate.id === event.target.value); updateEditItem(item.id, { productId: event.target.value, productName: nextProduct?.name ?? item.productName, selectedOptionIds: [] }); }}>
-                            <option value="">Seleccionar producto</option>
-                            {editableProducts.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
-                          </select> : <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-900">{item.productName}<span className="mt-1 block text-xs font-semibold">El producto ya no está en el catálogo; esta línea se conservará.</span></div>}
-                        </label>
-                        <label className="grid gap-2 text-sm font-bold">
-                          Cantidad
-                          <input className="field" type="number" min={1} max={99} value={item.quantity} onChange={(event) => updateEditItem(item.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} />
-                        </label>
-                        <button className="grid h-12 place-items-center rounded-2xl border border-line px-3 text-red-600" type="button" onClick={() => setEditDraft((current) => current ? { ...current, items: current.items.filter((candidate) => candidate.id !== item.id) } : current)} disabled={editDraft.items.length === 1} aria-label="Quitar producto">
-                          <Minus size={17} />
-                        </button>
-                      </div>
-
-                      {product?.optionGroups.length ? (
-                        <div className="grid gap-3 rounded-2xl bg-surface p-3">
-                          {product.optionGroups.map((group) => (
-                            <fieldset key={group.id} className="grid gap-2">
-                              <legend className="text-sm font-black">{group.name}{group.isRequired ? " *" : ""}</legend>
-                              <div className="flex flex-wrap gap-2">
-                                {group.options.filter((option) => option.isAvailable).map((option) => {
-                                  const selected = item.selectedOptionIds.includes(option.id);
-                                  return (
-                                    <button key={option.id} className={`rounded-full border px-3 py-2 text-sm font-bold ${selected ? "border-brand bg-brand/10 text-brand" : "border-line bg-white"}`} type="button" onClick={() => toggleEditOption(item.id, group, option.id)}>
-                                      {option.name}{option.priceDelta ? ` +${formatMoney(option.priceDelta)}` : ""}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </fieldset>
-                          ))}
-                        </div>
-                      ) : null}
-                    </article>
-                  );
-                })}
-              </section>
-              {editLoading ? <p className="text-sm font-semibold text-muted">Guardando cambios...</p> : null}
-              {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
-            </div>
-
-            <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <button className="btn-secondary" type="button" onClick={() => { setEditOpen(false); setEditDraft(null); setEditingOrderId(null); }}>Cancelar</button>
-                <button className="btn-primary" type="submit" disabled={editLoading || !editDraft.items.length}><Save size={18} /> {editingOrderId ? "Guardar cambios" : "Crear pedido"}</button>
-              </div>
-            </div>
-          </form>
+      {editOpen && editDraft ? <AdminDialog open title="Editar venta" onClose={closeEditor} footer={<><button className="btn-secondary" type="button" onClick={closeEditor}>Cancelar</button><button form="edit-order-form" type="submit" className="btn-primary" disabled={editLoading||!editDraft.items.length}><Save size={16}/>Guardar cambios</button></>}>
+       <form id="edit-order-form" onSubmit={saveOrderEdits} className="admin-form-grid">
+        <div className="grid gap-4 sm:grid-cols-2">{(["customerName","customerPhone","fulfillment"] as const).map((key,index)=><label key={key}>{["Cliente","Celular","Modalidad de entrega"][index]}<input className="field" required value={editDraft[key]} onChange={e=>setEditDraft({...editDraft,[key]:e.target.value})}/></label>)}
+         <label className="sm:col-span-2">Notas<textarea className="field" value={editDraft.notes} onChange={e=>setEditDraft({...editDraft,notes:e.target.value})}/></label>
         </div>
-      ) : null}
+        <section className="grid gap-4"><div className="flex items-center justify-between"><h3 className="font-semibold">Productos</h3><button className="btn-secondary" type="button" onClick={addEditItem}><Plus size={16}/>Agregar</button></div>
+         {editDraft.items.map(item=>{const product=editableProducts.find(p=>p.id===item.productId);return <article className="rounded-xl border p-4 grid gap-3" key={item.id}><div className="flex items-center gap-2"><label className="flex-1 min-w-0">Producto{item.productId?<select className="field w-full" value={item.productId} onChange={e=>{const product=editableProducts.find(p=>p.id===e.target.value);updateEditItem(item.id,{productId:e.target.value,productName:product?.name??item.productName,selectedOptionIds:[]});}}>{editableProducts.map(product=><option key={product.id} value={product.id}>{product.name}</option>)}</select>:<span className="text-sm">{item.productName} · producto eliminado</span>}</label><button type="button" className="admin-icon-button" aria-label="Quitar producto de la venta" onClick={()=>setEditDraft({...editDraft,items:editDraft.items.filter(i=>i.id!==item.id)})}><Trash2 size={16}/></button></div><div className="flex gap-3 items-center"><span className="text-sm">Cantidad</span><button type="button" className="admin-icon-button" disabled={item.quantity<=1} aria-label="Restar unidad" onClick={()=>updateEditItem(item.id,{quantity:Math.max(1,item.quantity-1)})}><Minus size={15}/></button><input className="field w-20 text-center" aria-label="Cantidad" type="number" min={1} max={999} value={item.quantity} onChange={e=>updateEditItem(item.id,{quantity:Number(e.target.value)})}/><button type="button" className="admin-icon-button" aria-label="Sumar unidad" onClick={()=>updateEditItem(item.id,{quantity:item.quantity+1})}><Plus size={15}/></button></div>{product?.optionGroups.map(group=><fieldset key={group.id} className="grid gap-2"><legend className="text-sm font-semibold mb-2">{group.name}{group.isRequired?" · obligatorio":""}</legend>{group.options.map(option=><label key={option.id} className="!flex items-center gap-2 text-sm"><input type={group.selectionType==="SINGLE"?"radio":"checkbox"} name={item.id+"-"+group.id} checked={item.selectedOptionIds.includes(option.id)} disabled={!option.isAvailable} onChange={()=>toggleEditOption(item.id,group,option.id)}/>{option.name}{option.priceDelta? " + "+formatMoney(option.priceDelta):""}</label>)}</fieldset>)}{product&&<p className="text-right text-sm font-semibold">{formatMoney(((product.promoPrice??product.basePrice)+product.optionGroups.flatMap(g=>g.options).filter(o=>item.selectedOptionIds.includes(o.id)).reduce((sum,o)=>sum+o.priceDelta,0))*item.quantity)}</p>}</article>;})}
+        </section>{error&&<p role="alert" className="admin-notice is-error">{error}</p>}
+       </form>
+      </AdminDialog> : null}
 
       {selectedOrder ? (
         <div className="fixed inset-0 z-[100] flex items-end overflow-hidden bg-ink/45 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4" role="dialog" aria-modal="true" aria-label="Detalle del pedido">
@@ -1341,6 +1236,11 @@ export function OrderManager({ orders: initialOrders }: { orders: OrderListItem[
             </div>
 
             <div className="overflow-y-auto overscroll-contain pb-6 pr-1">
+              {selectedOrder.trackingPath ? <a className="mb-4 block rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-bold text-green-900 underline" href={selectedOrder.trackingPath} target="_blank" rel="noreferrer">Ver enlace de seguimiento del cliente</a> : null}
+              <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1 text-sm font-bold">Estado del pago<select className="field" value={selectedOrder.paymentStatus} disabled={updatingId === selectedOrder.id} onChange={(event) => void updateOrderState(selectedOrder.id, { paymentStatus: event.target.value as OrderListItem["paymentStatus"] })}><option value="PENDING">Pendiente</option><option value="CONFIRMED">Confirmado</option><option value="CANCELLED">Cancelado</option></select></label>
+                <label className="grid gap-1 text-sm font-bold">Preparación y entrega<select className="field" value={selectedOrder.fulfillmentStatus} disabled={updatingId === selectedOrder.id} onChange={(event) => void updateOrderState(selectedOrder.id, { fulfillmentStatus: event.target.value as OrderListItem["fulfillmentStatus"] })}><option value="PENDING">Por empaquetar</option><option value="PACKED">Empaquetado</option><option value="SHIPPED">Enviado</option><option value="DELIVERED">Entregado</option><option value="CANCELLED">Cancelado</option></select></label>
+              </div>
               <div className="grid gap-3 rounded-3xl border border-line bg-surface p-4">
                 <div className="min-w-0">
                   <p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Cliente</p>

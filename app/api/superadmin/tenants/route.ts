@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { reservedSlugs, slugify } from "@/lib/slug";
 import { normalizeArgentineWhatsAppPhone } from "@/lib/store-settings";
 import { createTenantSchema, getTenantSummaries } from "@/lib/tenant-admin";
-import { isBabyTemplate, templateOriginalColors } from "@/lib/catalog";
+import { templateOriginalColors } from "@/lib/catalog";
 
 export async function GET() {
   if (!(await getSuperAdminUser())) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           status: result.data.status
         }
       });
-      const originalColors = isBabyTemplate(result.data.template) ? templateOriginalColors[result.data.template] : null;
+      const originalColors = templateOriginalColors[result.data.template];
       return tx.store.create({
         data: {
           ownerId: owner.id,
@@ -52,11 +52,11 @@ export async function POST(request: Request) {
           whatsappPhone: normalizeArgentineWhatsAppPhone(result.data.whatsappPhone),
           businessType: result.data.businessType,
           template: result.data.template,
+          designConfig: { font: result.data.template === "roma" ? "serif" : result.data.template === "dana" ? "sans" : "rounded" },
           ...(originalColors ? { theme: { ...originalColors, font: "Inter", useTemplateColors: true } } : {}),
-          isPublished: result.data.isPublished,
+          isPublished: false,
           heroTitle: result.data.storeName,
-          heroSubtitle: "Catálogo online con pedidos por WhatsApp",
-          categories: { create: { name: "Destacados", slug: "destacados" } }
+          heroSubtitle: "Descubrí nuestro catálogo online"
         }
       });
     });

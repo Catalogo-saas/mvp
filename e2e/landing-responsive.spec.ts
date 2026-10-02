@@ -14,11 +14,11 @@ test("the public footer stacks cleanly on mobile", async ({ page }, testInfo) =>
 
   const footer = page.locator("footer");
   await expect(footer).toBeVisible();
-  const layout = await footer.locator(":scope > div").evaluate((element) => {
+  const layout = await footer.locator(":scope > div").first().evaluate((element) => {
     const style = getComputedStyle(element);
-    return { flexDirection: style.flexDirection, right: element.getBoundingClientRect().right };
+    return { columns: style.gridTemplateColumns.split(" ").length, right: element.getBoundingClientRect().right };
   });
-  expect(layout.flexDirection).toBe("column");
+  expect(layout.columns).toBe(1);
 
   const overflow = await page.evaluate(() => {
     const viewportRight = document.documentElement.clientWidth;
@@ -27,21 +27,34 @@ test("the public footer stacks cleanly on mobile", async ({ page }, testInfo) =>
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test("a product card opens its detail without an accidental quick add", async ({ page }) => {
-  await page.goto("/demo");
+test("a product card opens its own page with sharing metadata", async ({ page }) => {
+  await page.goto("/demo/productos");
   const productButton = page.locator("#catalogo article button").first();
   await expect(productButton).toBeVisible();
   await productButton.click();
-  const dialog = page.getByRole("dialog", { name: /Detalle de/i });
-  await expect(dialog).toBeVisible();
-  const shareBox = await dialog.getByRole("button", { name: "Compartir producto" }).boundingBox();
-  const closeBox = await dialog.getByRole("button", { name: "Cerrar" }).boundingBox();
-  expect(shareBox).not.toBeNull();
-  expect(closeBox).not.toBeNull();
-  expect(Math.abs((shareBox?.y ?? 0) - (closeBox?.y ?? 0))).toBeLessThanOrEqual(1);
-  expect(Math.abs((shareBox?.height ?? 0) - (closeBox?.height ?? 0))).toBeLessThanOrEqual(1);
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
+  await expect(page).toHaveURL(/\/product\/[^/]+$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Compartir producto" })).toBeVisible();
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", /.+/);
+  await expect(page.getByRole("dialog", { name: /Detalle de/i })).toHaveCount(0);
+});
+
+test("secondary public pages keep the fixed menu and nested categories", async ({ page }, testInfo) => {
+  await page.goto("/demo/productos");
+  if (testInfo.project.name === "mobile") {
+    await page.getByRole("button", { name: "Abrir menú" }).click();
+    const drawer = page.getByRole("dialog", { name: "Menú de la tienda" });
+    await drawer.locator("summary").first().click();
+    await expect(drawer.getByText("Mujer", { exact: true })).toBeVisible();
+    await drawer.locator("summary").nth(1).click();
+    await expect(drawer.getByText("Camisas", { exact: true })).toBeVisible();
+  } else {
+    const nav = page.getByRole("navigation", { name: "Menú de la tienda" });
+    await expect(nav.getByRole("link", { name: "Inicio" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Contáctanos" })).toBeVisible();
+    await nav.getByRole("button", { name: /Categorías/ }).hover();
+    await expect(nav.getByRole("link", { name: "Lino" })).toBeVisible();
+  }
 });
 
 test("product management keeps the simple responsive action layout", async ({ page }, testInfo) => {
@@ -52,31 +65,34 @@ test("product management keeps the simple responsive action layout", async ({ pa
   await page.waitForURL(/\/(panel|gestion)/);
   await page.goto("/gestion/productos");
 
-  const importButton = page.getByRole("button", { name: "Importar", exact: true });
-  const exportLink = page.getByRole("link", { name: "Exportar", exact: true });
-  const newButton = page.getByRole("button", { name: "Nuevo", exact: true });
-  await expect(importButton).toBeVisible();
-  await expect(exportLink).toBeVisible();
+  const moreButton = page.getByRole("button", { name: "Más opciones de productos" });
+  const newButton = page.getByRole("link", { name: "Agregar producto", exact: true }).first();
+  await expect(moreButton).toBeVisible();
   await expect(newButton).toBeVisible();
-  await expect(page.getByRole("button", { name: "Plantilla", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Importar productos", exact: true })).toBeHidden();
 
   if (testInfo.project.name === "mobile") {
-    const [importBox, exportBox, newBox] = await Promise.all([importButton.boundingBox(), exportLink.boundingBox(), newButton.boundingBox()]);
-    expect(Math.abs((importBox?.y ?? 0) - (exportBox?.y ?? 0))).toBeLessThanOrEqual(1);
-    expect(newBox?.y ?? 0).toBeGreaterThan((importBox?.y ?? 0) + (importBox?.height ?? 0));
-    expect(newBox?.width ?? 0).toBeGreaterThan((importBox?.width ?? 0) * 1.8);
+    const bottomNav = page.getByRole("navigation", { name: "Navegación principal" });
+    await expect(bottomNav).toBeVisible();
+    expect(await bottomNav.evaluate(element => getComputedStyle(element).position)).toBe("fixed");
+    await expect(page.locator(".admin-sidebar")).toBeHidden();
+    const rowHeight = await page.locator(".catalog-row").first().evaluate(element => element.getBoundingClientRect().height);
+    expect(rowHeight).toBeLessThan(130);
   }
 
-  await importButton.click();
+  await moreButton.click();
+  const moreDialog = page.getByRole("dialog", { name: "Más opciones", exact: true });
+  await expect(moreDialog.getByRole("link", { name: "Exportar productos" })).toBeVisible();
+  await moreDialog.getByRole("button", { name: "Importar productos", exact: true }).click();
   const importDialog = page.getByRole("dialog", { name: "Importar productos" });
   await expect(importDialog.getByRole("link", { name: "Descargar plantilla" })).toBeVisible();
-  await expect(importDialog.getByRole("button", { name: /Seleccionar archivo/ })).toBeVisible();
-  await importDialog.getByRole("button", { name: "Cerrar importación" }).click();
+  await expect(importDialog.getByLabel("Seleccionar archivo")).toBeVisible();
+  await importDialog.getByRole("button", { name: "Cerrar Importar productos", exact: true }).click();
 
   await newButton.click();
-  await expect(page.getByRole("switch", { name: "Producto de oferta" })).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Visible en la web" })).toBeVisible();
+  await expect(page).toHaveURL(/\/gestion\/productos\/nuevo$/);
+  await expect(page.getByRole("textbox", { name: "Oferta $" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Visibilidad" })).toBeVisible();
   await expect(page.getByRole("switch", { name: "Producto destacado" })).toBeVisible();
-  await expect(page.getByText("SKU", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Slug", { exact: true })).toHaveCount(0);
 });

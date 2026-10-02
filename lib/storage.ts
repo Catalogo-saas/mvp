@@ -43,6 +43,23 @@ export function getStorageClient() {
   });
 }
 
+function requirePrivateBucket() {
+  if (!process.env.S3_PRIVATE_BUCKET) throw new Error("Missing S3_PRIVATE_BUCKET");
+  return process.env.S3_PRIVATE_BUCKET;
+}
+
+export async function putPrivateObject(key: string, body: Uint8Array, contentType: string) {
+  await getStorageClient().send(new PutObjectCommand({ Bucket: requirePrivateBucket(), Key: key, Body: body, ContentType: contentType, CacheControl: "private, no-store" }));
+}
+
+export async function getPrivateObject(key: string) {
+  return getStorageClient().send(new GetObjectCommand({ Bucket: requirePrivateBucket(), Key: key }));
+}
+
+export async function deletePrivateObject(key: string) {
+  await getStorageClient().send(new DeleteObjectCommand({ Bucket: requirePrivateBucket(), Key: key }));
+}
+
 export async function createPresignedUploadUrl(input: {
   key: string;
   contentType: string;

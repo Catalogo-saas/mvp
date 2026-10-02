@@ -1,190 +1,54 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { ClipboardList, LayoutDashboard, LogOut, Menu, Package, Settings, Store, Users, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-
+import { ArrowUpRight, BarChart3, ChevronRight, LogOut, Menu, Package, Palette, Settings2, ShoppingBag, Store, Tags, Users, UserRoundCog } from "lucide-react";
+import { hasStorePermission, type StoreRole } from "@/lib/store-permissions";
+import { useState } from "react";
+import { AdminDialog } from "@/components/admin-ui";
 import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
-import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 
-function linkClass(pathname: string, href: string) {
-  const isActive = href === "/gestion" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
-  return `rounded-2xl px-3 py-3 font-bold transition ${isActive ? "bg-green-50 text-brand" : "hover:bg-surface"}`;
+import { useOrderRead } from "@/components/order-read-provider";
+
+const links = [
+  { href: "/gestion", label: "Inicio", icon: BarChart3, group: "Tu negocio" },
+  { href: "/gestion/pedidos", label: "Ventas", icon: ShoppingBag, group: "Tu negocio" },
+  { href: "/gestion/productos", label: "Productos", icon: Package, group: "Tu negocio" },
+  { href: "/gestion/categorias", label: "Categorías", icon: Tags, group: "Tu negocio" },
+  { href: "/gestion/clientes", label: "Clientes", icon: Users, group: "Tu negocio" },
+  { href: "/gestion/configuracion/diseno", label: "Diseño de la tienda", icon: Palette, group: "Personalización" },
+  { href: "/gestion/configuracion", label: "Configuración", icon: Settings2, group: "Personalización" },
+  { href: "/gestion/usuarios", label: "Usuarios", icon: UserRoundCog, group: "Personalización" }
+];
+function active(path: string, href: string) {
+  if (href === "/gestion") return path === href;
+  if (href === "/gestion/configuracion" && path.startsWith(href + "/diseno")) return false;
+  return path === href || path.startsWith(href + "/");
 }
-
-function NavContent({ pathname, storeSlug, onNavigate }: { pathname: string; storeSlug: string; onNavigate?: () => void }) {
-  const { confirmNavigation } = useUnsavedChanges();
-
-  return (
-    <>
-      <Link href="/gestion" className="mb-6 flex items-center gap-2 px-2 text-xl font-black">
-        <Store className="text-brand" /> Gestión
-      </Link>
-      <nav className="grid gap-2">
-        <Link className={linkClass(pathname, "/gestion")} href="/gestion" onClick={onNavigate}>
-          <LayoutDashboard className="mr-2 inline" size={18} /> Resumen
-        </Link>
-        <Link className={linkClass(pathname, "/gestion/pedidos")} href="/gestion/pedidos" onClick={onNavigate}>
-          <ClipboardList className="mr-2 inline" size={18} /> Pedidos
-        </Link>
-        <Link className={linkClass(pathname, "/gestion/productos")} href="/gestion/productos" onClick={onNavigate}>
-          <Package className="mr-2 inline" size={18} /> Productos
-        </Link>
-        <Link className={linkClass(pathname, "/gestion/clientes")} href="/gestion/clientes" onClick={onNavigate}>
-          <Users className="mr-2 inline" size={18} /> Clientes
-        </Link>
-        <Link className={linkClass(pathname, "/gestion/configuracion")} href="/gestion/configuracion" onClick={onNavigate}>
-          <Settings className="mr-2 inline" size={18} /> Configuración
-        </Link>
-        <Link className="rounded-2xl px-3 py-3 font-bold text-brand hover:bg-green-50" href={`/${storeSlug}`} onClick={onNavigate}>
-          Ver tienda pública
-        </Link>
-        <button
-          className="rounded-2xl px-3 py-3 text-left font-bold text-red-600 hover:bg-red-50"
-          onClick={() => {
-            if (confirmNavigation()) {
-              void signOut({ callbackUrl: "/" });
-            }
-          }}
-          type="button"
-        >
-          <LogOut className="mr-2 inline" size={18} /> Salir
-        </button>
-      </nav>
-    </>
-  );
-}
-
-export function AdminNav({ storeSlug }: { storeSlug: string }) {
+export function AdminNav({ storeSlug, storeName, role }: { storeSlug: string; storeName: string; role: StoreRole }) {
   const pathname = usePathname();
-  const [menuMounted, setMenuMounted] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [navHidden, setNavHidden] = useState(false);
-  const [bodyScrollLocked, setBodyScrollLocked] = useState(false);
-  const closeTimeoutRef = useRef<number | null>(null);
-  const openFrameRef = useRef<number | null>(null);
-  useLockBodyScroll(menuMounted);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) {
-        window.clearTimeout(closeTimeoutRef.current);
-      }
-      if (openFrameRef.current) {
-        window.cancelAnimationFrame(openFrameRef.current);
-      }
-    };
-  }, []);
-
-  const shouldHideMobileNav = (navHidden || (bodyScrollLocked && !menuMounted)) && !menuOpen;
-
-  useEffect(() => {
-    function syncBodyScrollLock() {
-      const isLocked = Number(document.body.dataset.scrollLockCount ?? "0") > 0;
-      setBodyScrollLocked(isLocked);
-      if (isLocked && !menuMounted) {
-        setNavHidden(true);
-      } else if (!isLocked) {
-        setNavHidden(false);
-      }
-    }
-
-    syncBodyScrollLock();
-    window.addEventListener("body-scroll-lock-change", syncBodyScrollLock);
-    return () => window.removeEventListener("body-scroll-lock-change", syncBodyScrollLock);
-  }, [menuMounted]);
-
-  useEffect(() => {
-    let lastY = window.scrollY;
-    let ticking = false;
-
-    function handleScroll() {
-      if (ticking) {
-        return;
-      }
-
-      ticking = true;
-      window.requestAnimationFrame(() => {
-        const currentY = window.scrollY;
-        const delta = currentY - lastY;
-
-        if (menuOpen || currentY <= 24) {
-          setNavHidden(false);
-        } else if (bodyScrollLocked) {
-          setNavHidden(true);
-        } else if (currentY > 80 && delta > 8) {
-          setNavHidden(true);
-        } else if (delta < -8) {
-          setNavHidden(false);
-        }
-
-        lastY = currentY;
-        ticking = false;
-      });
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [bodyScrollLocked, menuOpen]);
-
-  function openMenu() {
-    setNavHidden(false);
-    if (closeTimeoutRef.current) {
-      window.clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-    setMenuMounted(true);
-    openFrameRef.current = window.requestAnimationFrame(() => setMenuOpen(true));
-  }
-
-  function closeMenu() {
-    if (openFrameRef.current) {
-      window.cancelAnimationFrame(openFrameRef.current);
-      openFrameRef.current = null;
-    }
-    setMenuOpen(false);
-    closeTimeoutRef.current = window.setTimeout(() => {
-      setMenuMounted(false);
-      closeTimeoutRef.current = null;
-    }, 300);
-  }
-
-  return (
-    <>
-      <div className={`panel sticky top-4 z-30 flex items-center justify-between p-3 transition-transform duration-300 ease-out lg:hidden ${shouldHideMobileNav ? "-translate-y-[calc(100%+24px)]" : "translate-y-0"}`}>
-        <Link href="/gestion" className="flex items-center gap-2 text-lg font-black">
-          <Store className="text-brand" /> Gestión
-        </Link>
-        <button className="rounded-full border border-line p-2" type="button" onClick={openMenu} aria-label="Abrir menú de gestión">
-          <Menu size={20} />
-        </button>
-      </div>
-
-      <aside className="panel hidden h-fit p-4 lg:sticky lg:top-6 lg:block">
-        <NavContent pathname={pathname} storeSlug={storeSlug} />
-      </aside>
-
-      {menuMounted ? (
-        <div
-          className={`fixed inset-0 z-50 bg-slate-950/45 transition-opacity duration-300 ease-out lg:hidden ${menuOpen ? "opacity-100" : "opacity-0"}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menú de gestión"
-        >
-          <div className={`grid h-[100dvh] w-full grid-rows-[auto_1fr] bg-white p-4 shadow-2xl transition-transform duration-300 ease-out ${menuOpen ? "translate-x-0" : "-translate-x-full"}`}>
-            <div className="mb-4 flex justify-end">
-              <button className="rounded-full border border-line p-2" type="button" onClick={closeMenu} aria-label="Cerrar menú de gestión">
-                <X size={18} />
-              </button>
-            </div>
-            <div>
-              <NavContent pathname={pathname} storeSlug={storeSlug} onNavigate={closeMenu} />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  );
+  const isDesignEditor = pathname === "/gestion/configuracion/diseno";
+  const { count } = useOrderRead();
+  const salesBadge = <span className="admin-nav-count" aria-label={`${count} ventas sin leer`}>{count > 99 ? "99+" : count}</span>;
+  const [menuState, setMenuState] = useState({ pathname, open: false });
+  if (menuState.pathname !== pathname) setMenuState({ pathname, open: false });
+  const menu = menuState.open;
+  const { confirmNavigation } = useUnsavedChanges();
+  const visibleLinks = links.filter(link => hasStorePermission(role, link.href === "/gestion/usuarios" ? "users" : link.group === "Personalización" ? "settings" : "operate"));
+  const bottomLinks = visibleLinks.filter(link => ["/gestion", "/gestion/pedidos", "/gestion/productos", role === "OPERATOR" ? "/gestion/clientes" : "/gestion/configuracion/diseno"].includes(link.href));
+  const content = <>
+    <Link href="/gestion" className="admin-brand"><span><Store size={23} /></span><div>Mi negocio<small>{storeName}</small></div></Link>
+    <nav aria-label="Secciones de gestión" className="admin-side-links">
+      {["Tu negocio", "Personalización"].filter(group => visibleLinks.some(link => link.group === group)).map(group => <div key={group}><p className="admin-nav-label">{group}</p>{visibleLinks.filter(link => link.group === group).map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-current={active(pathname, href) ? "page" : undefined}><span className="admin-nav-icon"><Icon size={19} />{href === "/gestion/pedidos" && count > 0 && salesBadge}</span><span>{label}</span>{active(pathname, href) && <ChevronRight size={15} />}</Link>)}</div>)}
+    </nav>
+    <div className="admin-side-footer"><Link href={`/${storeSlug}`} target="_blank"><Store size={17} />Ver mi tienda<ArrowUpRight size={16} /></Link><button type="button" onClick={() => { void confirmNavigation().then(confirmed => { if (confirmed) void signOut({ callbackUrl: "/" }); }); }}><LogOut size={17} />Cerrar sesión</button></div>
+  </>;
+  return <>
+    <aside className="admin-sidebar">{content}</aside>
+    <nav className={"admin-bottom-nav" + (isDesignEditor ? " admin-bottom-nav--design-editor" : "")} aria-label="Navegación principal">
+      {bottomLinks.map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-current={active(pathname, href) ? "page" : undefined}><span className="admin-nav-icon"><Icon size={21} />{href === "/gestion/pedidos" && count > 0 && salesBadge}</span><span>{href === "/gestion/configuracion/diseno" ? "Diseño" : label}</span></Link>)}
+      <button type="button" onClick={() => setMenuState({ pathname, open: true })} aria-expanded={menu}><Menu size={21} /><span>Menú</span></button>
+    </nav>
+    <AdminDialog open={menu} onClose={() => setMenuState({ pathname, open: false })} title="Menú de gestión" rightDrawerMobile><div className="admin-mobile-menu">{content}</div></AdminDialog>
+  </>;
 }

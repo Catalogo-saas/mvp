@@ -1,23 +1,32 @@
 "use client";
 
-import { Check, Download, Eye, EyeOff, ImagePlus, Pencil, Plus, Save, Trash2, Upload, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Download, Eye, EyeOff, Pencil, Plus, Settings2, Save, Trash2, Upload, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { useDirtyForm } from "@/components/use-dirty-form";
+import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
+import { notifySuccess } from "@/lib/internal-notifications";
 import { SaveOverlay } from "@/components/save-overlay";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
-import { normalizeStoreTemplate } from "@/lib/catalog";
+import { ProductCategoryPaths } from "@/components/product-category-paths";
+import { ProductImages } from "@/components/product-images";
+import { ProductVariantEditor } from "@/components/product-variant-editor";
+import { categoryPath } from "@/lib/category-tree";
 import { getImageUploadErrorMessage, prepareImageUploads, uploadImagesDirect, validateSelectedImage } from "@/lib/image-upload-client";
 import type { ImageReference } from "@/lib/image-upload-contract";
 import { formatMoney } from "@/lib/money";
+import { normalizeVariants, variantCombinations } from "@/lib/product-variants";
 
 type CategoryListItem = {
+  parentId?: string | null;
   id: string;
   name: string;
   slug: string;
   _count: { products: number };
 };
+
 
 type ProductOption = {
   id: string;
@@ -37,6 +46,7 @@ type ProductOptionGroup = {
 
 type ProductListItem = {
   id: string;
+  updatedAt: Date | string;
   name: string;
   slug: string;
   description: string | null;
@@ -45,8 +55,12 @@ type ProductListItem = {
   imageUrls: string[];
   isVisible: boolean;
   stockQuantity: number | null;
+  sku: string | null;
+  freeShipping: boolean;
+  variants: unknown;
   isFeatured: boolean;
   category: { id: string; name: string; slug: string } | null;
+  assignedCategories: Array<{ id: string; name: string; slug: string }>;
   optionGroups: ProductOptionGroup[];
 };
 
@@ -76,7 +90,7 @@ type ProductDraft = {
   basePrice: string;
   promoPrice: string;
   categoryId: string;
-  categoryName: string;
+  categoryIds: string[];
   images: ImageDraft[];
   isVisible: boolean;
   isFeatured: boolean;
@@ -84,31 +98,9 @@ type ProductDraft = {
   optionGroups: GroupDraft[];
   stockLimited: boolean;
   stockQuantity: string;
-};
-
-type VariantDrawerState =
-  | { step: "pick" }
-  | {
-      step: "edit";
-      kind: "color" | "size" | "preset" | "custom";
-      name: string;
-      values: string[];
-      suggestions: string[];
-      selectionType: "SINGLE" | "MULTIPLE";
-      isRequired: boolean;
-      maxSelections: string;
-    };
-
-type VariantPreset = {
-  key: string;
-  kind: "color" | "size" | "preset" | "custom";
-  name: string;
-  description: string;
-  suggestions: string[];
-  selectionType?: "SINGLE" | "MULTIPLE";
-  isRequired?: boolean;
-  maxSelections?: string;
-  preselect?: boolean;
+  sku: string;
+  freeShipping: boolean;
+  variants: Array<{ key: string; stockQuantity: string; basePrice: string; promoPrice: string; isVisible: boolean; imageUrl: string | null }>;
 };
 
 type ImportPreview = {
@@ -132,28 +124,11 @@ const colorSuggestions = [
   { name: "Plata", color: "#d1d5db" }
 ];
 
-const sizeSuggestions = ["XS", "S", "M", "L", "XL", "XXL", "34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45"];
-
-const ecommerceVariantPresets: VariantPreset[] = [
-  { key: "color", kind: "color", name: "Color", description: "Amarillo, azul, negro, blanco...", suggestions: colorSuggestions.map(({ name }) => name) },
-  { key: "size", kind: "size", name: "Talle", description: "XS, S, M, 38, 39, 40...", suggestions: sizeSuggestions },
-  { key: "presentation", kind: "preset", name: "Presentación", description: "Unidad, Pack x2 o Pack x3.", suggestions: ["Unidad", "Pack x2", "Pack x3"], preselect: true }
+const sizeGroups = [
+  { name: "Talles comunes", values: ["XS", "S", "M", "L", "XL", "XXL"] },
+  { name: "Niños", values: ["2", "4", "6", "8", "10", "12", "14"] },
+  { name: "Calzados", values: ["34", "35", "36", "37", "38", "39", "40", "41", "42", "43", "44"] }
 ];
-
-const foodVariantPresets: VariantPreset[] = [
-  { key: "food-size", kind: "preset", name: "Tamaño", description: "Simple, doble o triple.", suggestions: ["Simple", "Doble", "Triple"], preselect: true },
-  { key: "side", kind: "preset", name: "Guarnición", description: "Papas fritas, puré, fideos o arroz.", suggestions: ["Papas fritas", "Puré de papas", "Fideos", "Arroz"], preselect: true },
-  { key: "sauces", kind: "preset", name: "Salsas", description: "Fuego, BBQ o alioli. Elección múltiple.", suggestions: ["Fuego", "BBQ", "Alioli"], selectionType: "MULTIPLE", isRequired: false, maxSelections: "3", preselect: true },
-  { key: "extras", kind: "preset", name: "Extras", description: "Bacon, cheddar, huevo, jamón o queso.", suggestions: ["Bacon", "Cheddar", "Huevo", "Jamón", "Queso"], selectionType: "MULTIPLE", isRequired: false, maxSelections: "3", preselect: true }
-];
-
-const customVariantPreset: VariantPreset = {
-  key: "custom",
-  kind: "custom",
-  name: "",
-  description: "Creá otra propiedad adaptada a tu producto.",
-  suggestions: []
-};
 
 function uniqueId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
@@ -183,21 +158,24 @@ function revokeImagePreviews(images: ImageDraft[]) {
   });
 }
 
-function emptyDraft(categories: CategoryListItem[]): ProductDraft {
+function emptyDraft(): ProductDraft {
   return {
     name: "",
     description: "",
     basePrice: "",
     promoPrice: "",
-    categoryId: categories[0]?.id ?? "",
-    categoryName: "",
+    categoryId: "",
+    categoryIds: [],
     images: [],
     isVisible: true,
     isFeatured: false,
     variantsEnabled: false,
     optionGroups: [],
     stockLimited: false,
-    stockQuantity: ""
+    stockQuantity: "",
+    sku: "",
+    freeShipping: false,
+    variants: []
   };
 }
 
@@ -208,24 +186,27 @@ function productToDraft(product: ProductListItem): ProductDraft {
     basePrice: formatInteger(product.basePrice),
     promoPrice: product.promoPrice ? formatInteger(product.promoPrice) : "",
     categoryId: product.category?.id ?? "",
-    categoryName: "",
+    categoryIds: product.assignedCategories?.map((category) => category.id) ?? (product.category ? [product.category.id] : []),
     images: product.imageUrls.map(imageDraftFromUrl),
     isVisible: product.isVisible,
     isFeatured: product.isFeatured,
-    variantsEnabled: product.optionGroups.length > 0,
-    optionGroups: product.optionGroups.map((group) => ({
+    variantsEnabled: product.optionGroups.some(group => group.selectionType === "SINGLE"),
+    optionGroups: product.optionGroups.filter(group => group.selectionType === "SINGLE").map((group) => ({
       name: group.name,
-      selectionType: group.selectionType,
-      isRequired: group.isRequired,
-      maxSelections: group.maxSelections ? String(group.maxSelections) : "",
+      selectionType: "SINGLE",
+      isRequired: true,
+      maxSelections: "1",
       options: group.options.map((option) => ({
         name: option.name,
-        priceDelta: option.priceDelta ? formatInteger(option.priceDelta) : "",
+        priceDelta: "",
         isAvailable: option.isAvailable
       }))
     })),
     stockLimited: product.stockQuantity !== null,
-    stockQuantity: product.stockQuantity === null ? "" : formatInteger(product.stockQuantity)
+    stockQuantity: product.stockQuantity === null ? "" : formatInteger(product.stockQuantity),
+    sku: product.sku ?? "",
+    freeShipping: product.freeShipping,
+    variants: normalizeVariants(product.variants).map((variant) => ({ key: variant.key, stockQuantity: variant.stockQuantity === null ? "" : String(variant.stockQuantity), basePrice: variant.basePrice === null ? "" : formatInteger(variant.basePrice), promoPrice: variant.promoPrice === null ? "" : formatInteger(variant.promoPrice), isVisible: variant.isVisible, imageUrl: variant.imageUrl }))
   };
 }
 
@@ -238,25 +219,32 @@ function draftToPayload(draft: ProductDraft) {
   return {
     name: draft.name,
     description: draft.description,
-    basePrice: unformatInteger(draft.basePrice),
-    promoPrice: draft.promoPrice ? unformatInteger(draft.promoPrice) : null,
-    categoryId: draft.categoryId === "__new" ? null : draft.categoryId || null,
-    categoryName: draft.categoryId === "__new" ? draft.categoryName : undefined,
+    basePrice: unformatInteger(draft.basePrice) || unformatInteger(draft.variants.find((item) => item.basePrice)?.basePrice ?? "") || "0",
+    promoPrice: !draft.variantsEnabled && draft.promoPrice ? unformatInteger(draft.promoPrice) : null,
+    categoryId: draft.categoryId || null,
+    categoryIds: draft.categoryIds,
     images: draft.images.filter((image) => !image.file).map((image) => ({ kind: "stored", url: image.url } satisfies ImageReference)),
     isVisible: draft.isVisible,
     isFeatured: draft.isFeatured,
-    stockQuantity: draft.stockLimited ? unformatInteger(draft.stockQuantity) || "0" : null,
+    stockQuantity: draft.variantsEnabled || draft.stockQuantity === "" ? null : unformatInteger(draft.stockQuantity),
+    sku: draft.sku || null,
+    freeShipping: draft.freeShipping,
+    variants: draft.variantsEnabled ? variantCombinations(draft.optionGroups).map(({ key }) => {
+      const variant = draft.variants.find((item) => item.key === key);
+      const imageIndex = draft.images.findIndex((image) => image.url === variant?.imageUrl);
+      return { key, stockQuantity: variant?.stockQuantity ? Number(unformatInteger(variant.stockQuantity)) : null, basePrice: variant?.basePrice ? Number(unformatInteger(variant.basePrice)) : Number(unformatInteger(draft.basePrice)) || null, promoPrice: variant?.promoPrice ? Number(unformatInteger(variant.promoPrice)) : null, isVisible: variant?.isVisible ?? true, imageUrl: imageIndex < 0 || variant?.imageUrl?.startsWith("blob:") ? null : variant?.imageUrl ?? null, imageIndex: imageIndex < 0 ? undefined : imageIndex };
+    }) : [],
     optionGroups: draft.variantsEnabled
       ? draft.optionGroups
           .map((group) => ({
             name: group.name.trim(),
-            selectionType: group.selectionType,
-            isRequired: group.isRequired,
-            maxSelections: group.maxSelections || null,
+            selectionType: "SINGLE" as const,
+            isRequired: true as const,
+            maxSelections: 1 as const,
             options: group.options
               .map((option) => ({
                 name: option.name.trim(),
-                priceDelta: option.priceDelta ? unformatInteger(option.priceDelta) : "0",
+                priceDelta: "0" as const,
                 isAvailable: option.isAvailable
               }))
               .filter((option) => option.name)
@@ -349,23 +337,34 @@ function Switch({
 export function ProductForm({
   products: initialProducts,
   categories: initialCategories,
-  storeTemplate,
-  showFeatured
+  editorMode
 }: {
   products: ProductListItem[];
   categories: CategoryListItem[];
   storeTemplate: string;
   showFeatured: boolean;
+  editorMode?: { type: "new" } | { type: "edit"; productId: string };
 }) {
   const router = useRouter();
+  const editorRef = useRef<HTMLFormElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+    const observer = new ResizeObserver(() => editorRef.current?.style.setProperty("--product-footer-height", `${footer.getBoundingClientRect().height}px`));
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+  const { setHasUnsavedChanges, confirm, confirmNavigation } = useUnsavedChanges();
   const [products, setProducts] = useState(initialProducts);
   const [categories, setCategories] = useState(initialCategories);
-  const [draft, setDraft] = useState<ProductDraft>(() => emptyDraft(initialCategories));
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [isProductModalOpen, setProductModalOpen] = useState(false);
-  const [offerModalOpen, setOfferModalOpen] = useState(false);
-  const [variantDrawer, setVariantDrawer] = useState<VariantDrawerState | null>(null);
-  const [newVariantValue, setNewVariantValue] = useState("");
+  const [draft, setDraft] = useState<ProductDraft>(() => editorMode?.type === "edit" ? productToDraft(initialProducts.find((product) => product.id === editorMode.productId)!) : emptyDraft());
+  const [initialDraft] = useState(() => JSON.stringify(draft));
+  const [didSave, setDidSave] = useState(false);
+  useDirtyForm(!didSave && JSON.stringify(draft) !== initialDraft);
+  const [editingProductId, setEditingProductId] = useState<string | null>(editorMode?.type === "edit" ? editorMode.productId : null);
+  const [isProductModalOpen, setProductModalOpen] = useState(Boolean(editorMode));
+  const [variantEditorOpen, setVariantEditorOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [error, setError] = useState("");
@@ -374,9 +373,7 @@ export function ProductForm({
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importing, setImporting] = useState(false);
-  const isFoodTemplate = normalizeStoreTemplate(storeTemplate) === "food";
-  const variantPresets = isFoodTemplate ? foodVariantPresets : ecommerceVariantPresets;
-  useLockBodyScroll(isProductModalOpen || Boolean(variantDrawer) || offerModalOpen || isImportModalOpen);
+  useLockBodyScroll((isProductModalOpen && !editorMode) || variantEditorOpen || isImportModalOpen);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -412,30 +409,28 @@ export function ProductForm({
     });
   }
 
-  function resetDraft(nextCategories = categories) {
+  function resetDraft() {
     setEditingProductId(null);
-    replaceDraft(emptyDraft(nextCategories));
-    setVariantDrawer(null);
-    setOfferModalOpen(false);
-    setNewVariantValue("");
+    replaceDraft(emptyDraft());
+    setVariantEditorOpen(false);
     setError("");
   }
 
   function openNewProduct() {
-    resetDraft();
-    setProductModalOpen(true);
+    router.push("/gestion/productos/nuevo");
   }
 
   function openEditProduct(product: ProductListItem) {
+    if (!editorMode) { router.push(`/gestion/productos/${product.id}/editar`); return; }
     setEditingProductId(product.id);
     replaceDraft(productToDraft(product));
-    setVariantDrawer(null);
-    setNewVariantValue("");
+    setVariantEditorOpen(false);
     setError("");
     setProductModalOpen(true);
   }
 
-  function closeProductModal() {
+  async function closeProductModal() {
+    if (editorMode) { if (await confirmNavigation()) router.push("/gestion/productos"); return; }
     setProductModalOpen(false);
     resetDraft();
   }
@@ -444,56 +439,10 @@ export function ProductForm({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
-  function updateOption(groupIndex: number, optionIndex: number, patch: Partial<OptionDraft>) {
-    setDraft((current) => ({
-      ...current,
-      optionGroups: current.optionGroups.map((group, currentGroupIndex) =>
-        currentGroupIndex === groupIndex
-          ? {
-              ...group,
-              options: group.options.map((option, currentOptionIndex) =>
-                currentOptionIndex === optionIndex ? { ...option, ...patch } : option
-              )
-            }
-          : group
-      )
-    }));
-  }
-
-  function removeGroup(index: number) {
-    setDraft((current) => ({
-      ...current,
-      optionGroups: current.optionGroups.filter((_, groupIndex) => groupIndex !== index)
-    }));
-  }
-
-  function addOption(groupIndex: number) {
-    setDraft((current) => ({
-      ...current,
-      optionGroups: current.optionGroups.map((group, currentGroupIndex) =>
-        currentGroupIndex === groupIndex
-          ? { ...group, options: [...group.options, { name: "", priceDelta: "", isAvailable: true }] }
-          : group
-      )
-    }));
-  }
-
-  function removeOption(groupIndex: number, optionIndex: number) {
-    setDraft((current) => ({
-      ...current,
-      optionGroups: current.optionGroups.map((group, currentGroupIndex) =>
-        currentGroupIndex === groupIndex
-          ? { ...group, options: group.options.filter((_, currentOptionIndex) => currentOptionIndex !== optionIndex) }
-          : group
-      )
-    }));
-  }
-
-  function setCover(index: number) {
+  function updateVariant(key: string, patch: Partial<ProductDraft["variants"][number]>) {
     setDraft((current) => {
-      const next = [...current.images];
-      const [selected] = next.splice(index, 1);
-      return { ...current, images: selected ? [selected, ...next] : next };
+      const existing = current.variants.find((variant) => variant.key === key) ?? { key, stockQuantity: "", basePrice: current.basePrice, promoPrice: current.promoPrice, isVisible: true, imageUrl: null };
+      return { ...current, variants: [...current.variants.filter((variant) => variant.key !== key), { ...existing, ...patch }] };
     });
   }
 
@@ -505,7 +454,8 @@ export function ProductForm({
       }
       return {
         ...current,
-        images: current.images.filter((_, imageIndex) => imageIndex !== index)
+        images: current.images.filter((_, imageIndex) => imageIndex !== index),
+        variants: current.variants.map(variant => variant.imageUrl === image?.url ? { ...variant, imageUrl: null } : variant)
       };
     });
   }
@@ -541,114 +491,33 @@ export function ProductForm({
   }
 
   function toggleVariants(checked: boolean) {
-    setDraft((current) => ({ ...current, variantsEnabled: checked, optionGroups: checked ? current.optionGroups : [] }));
-  }
-
-  function toggleOffer(checked: boolean) {
-    if (!checked) {
-      updateDraft("promoPrice", "");
-      setOfferModalOpen(false);
-      return;
-    }
-    setOfferModalOpen(true);
-  }
-
-  function confirmOfferPrice() {
-    const basePrice = Number(unformatInteger(draft.basePrice));
-    const promoPrice = Number(unformatInteger(draft.promoPrice));
-    if (!basePrice || !promoPrice || promoPrice >= basePrice) {
-      setError("El precio de oferta debe ser menor al precio base.");
-      return;
-    }
-    setError("");
-    setOfferModalOpen(false);
-  }
-
-  function openVariantEditor(preset: VariantPreset) {
-    setVariantDrawer({
-      step: "edit",
-      kind: preset.kind,
-      name: preset.name,
-      values: preset.preselect ? preset.suggestions : [],
-      suggestions: preset.suggestions,
-      selectionType: preset.selectionType ?? "SINGLE",
-      isRequired: preset.isRequired ?? true,
-      maxSelections: preset.maxSelections ?? "1"
-    });
-    setNewVariantValue("");
-  }
-
-  function toggleVariantValue(value: string) {
-    setVariantDrawer((current) => {
-      if (!current || current.step !== "edit") {
-        return current;
-      }
-      const exists = current.values.includes(value);
-      return {
-        ...current,
-        values: exists ? current.values.filter((item) => item !== value) : [...current.values, value]
-      };
-    });
-  }
-
-  function addManualVariantValue() {
-    const value = newVariantValue.trim();
-    if (!value) {
-      return;
-    }
-    setVariantDrawer((current) => {
-      if (!current || current.step !== "edit" || current.values.includes(value)) {
-        return current;
-      }
-      return { ...current, values: [...current.values, value] };
-    });
-    setNewVariantValue("");
-  }
-
-  function createVariantProperty() {
-    if (!variantDrawer || variantDrawer.step !== "edit") {
-      return;
-    }
-    const name = variantDrawer.name.trim();
-    const values = variantDrawer.values.map((value) => value.trim()).filter(Boolean);
-    if (!name || values.length === 0) {
-      setError("Completá el nombre de la propiedad y al menos un valor.");
-      return;
-    }
-
-    setDraft((current) => ({
-      ...current,
-      variantsEnabled: true,
-      optionGroups: [
-        ...current.optionGroups,
-        {
-          name,
-          selectionType: variantDrawer.selectionType,
-          isRequired: variantDrawer.isRequired,
-          maxSelections: variantDrawer.maxSelections,
-          options: values.map((value) => ({ name: value, priceDelta: "", isAvailable: true }))
-        }
-      ]
-    }));
-    setVariantDrawer(null);
-    setNewVariantValue("");
-    setError("");
+    setDraft((current) => ({ ...current, variantsEnabled: checked }));
   }
 
   async function saveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (loading) return;
-    if (draft.categoryId === "__new" && !draft.categoryName.trim()) {
-      setError("Ingresá el nombre de la nueva categoría.");
+    const combinations = draft.variantsEnabled ? variantCombinations(draft.optionGroups) : [];
+    if (draft.variantsEnabled && draft.optionGroups.some((group) => group.selectionType === "SINGLE") && !combinations.length) {
+      setError("Hay más de 100 combinaciones o falta completar una propiedad.");
       return;
     }
-    if (!unformatInteger(draft.basePrice)) {
-      setError("Ingresá el precio base.");
+    if (!unformatInteger(draft.basePrice) && (!combinations.length || combinations.some(({ key }) => !unformatInteger(draft.variants.find((variant) => variant.key === key)?.basePrice ?? "")))) {
+      setError("Ingresá un precio para cada combinación.");
       return;
     }
-    if (draft.promoPrice && Number(unformatInteger(draft.promoPrice)) >= Number(unformatInteger(draft.basePrice))) {
+    if (!draft.variantsEnabled && draft.promoPrice && Number(unformatInteger(draft.promoPrice)) >= Number(unformatInteger(draft.basePrice))) {
       setError("El precio de oferta debe ser menor al precio base.");
       return;
+    }
+    for (const combination of combinations) {
+      const variant = draft.variants.find((item) => item.key === combination.key);
+      const price = Number(unformatInteger(variant?.basePrice || draft.basePrice));
+      const offer = Number(unformatInteger(variant?.promoPrice || ""));
+      if (offer && offer >= price) {
+        setError(`La oferta de ${combination.label} debe ser menor que su precio.`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -666,7 +535,7 @@ export function ProductForm({
           : { kind: "stored", url: image.url }
       );
 
-      const payload = { ...draftToPayload(draft), images };
+      const payload = { ...draftToPayload(draft), images, ...(editingProductId ? {expectedUpdatedAt: new Date(products.find(product=>product.id===editingProductId)!.updatedAt).toISOString()} : {}) };
       const response = await fetch(editingProductId ? `/api/admin/products/${editingProductId}` : "/api/admin/products", {
         method: editingProductId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -683,9 +552,13 @@ export function ProductForm({
         editingProductId ? current.map((product) => (product.id === editingProductId ? data.product : product)) : [data.product, ...current]
       );
       void refreshCategories();
+      setDidSave(true);
+      setHasUnsavedChanges(false);
       resetDraft();
       setProductModalOpen(false);
+      if (editorMode) router.push("/gestion/productos");
       router.refresh();
+      notifySuccess(editingProductId ? "Producto actualizado." : "Producto creado.");
     } catch (saveError) {
       setError(getImageUploadErrorMessage(saveError) ?? "No pudimos guardar el producto. Revisá tu conexión e intentá nuevamente.");
     } finally {
@@ -707,10 +580,11 @@ export function ProductForm({
     }
     setProducts((current) => current.map((item) => (item.id === product.id ? data.product : item)));
     router.refresh();
+    notifySuccess(product.isVisible ? "Producto oculto." : "Producto visible.");
   }
 
   async function deleteProduct(product: ProductListItem) {
-    if (!window.confirm(`Eliminar ${product.name}?`)) {
+    if (!await confirm({ title: "Eliminar producto", message: `¿Eliminar ${product.name}?`, confirmLabel: "Eliminar", destructive: true })) {
       return;
     }
     setError("");
@@ -727,6 +601,7 @@ export function ProductForm({
       setProductModalOpen(false);
     }
     router.refresh();
+    notifySuccess("Producto eliminado.");
   }
 
   async function previewImport(file: File | undefined) {
@@ -762,20 +637,19 @@ export function ProductForm({
     window.location.reload();
   }
 
-  async function applyBulkAction(action: "show" | "hide" | "feature" | "unfeature") {
+  async function applyBulkAction(action: "show" | "hide") {
     if (!selectedProductIds.length) return;
     const response = await fetch("/api/admin/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productIds: selectedProductIds, action }) });
     const data = await response.json().catch(() => null);
     if (!response.ok) { setError(data?.error ?? "No se pudieron actualizar los productos."); return; }
-    const visible = action === "show" ? true : action === "hide" ? false : undefined;
-    const featured = action === "feature" ? true : action === "unfeature" ? false : undefined;
-    setProducts((current) => current.map((product) => selectedProductIds.includes(product.id) ? { ...product, ...(visible === undefined ? {} : { isVisible: visible }), ...(featured === undefined ? {} : { isFeatured: featured }) } : product));
+    setProducts((current) => current.map((product) => selectedProductIds.includes(product.id) ? { ...product, isVisible: action === "show" } : product));
     setSelectedProductIds([]);
+    notifySuccess(action === "show" ? "Productos visibles." : "Productos ocultos.");
   }
 
   return (
     <div className="grid gap-6">
-      <section className="panel overflow-hidden">
+      <section className={editorMode ? "hidden" : "panel overflow-hidden"}>
         <div className="grid gap-3 border-b border-line p-4 sm:p-5 md:grid-cols-[1fr_220px_auto]">
           <label className="grid gap-2 text-sm font-bold">
             Buscar
@@ -788,7 +662,7 @@ export function ProductForm({
               <option value="none">Sin categoría</option>
               {categories.map((category) => (
                 <option value={category.id} key={category.id}>
-                  {category.name}
+                  {categoryPath(category.id,categories.map(c=>({...c,parentId:c.parentId??null})))}
                 </option>
               ))}
             </select>
@@ -796,7 +670,7 @@ export function ProductForm({
           <div className="grid grid-cols-2 gap-2 md:mt-auto md:flex md:justify-end"><button className="btn-secondary w-full !px-3" type="button" onClick={() => { setError(""); setImportPreview(null); setImportModalOpen(true); }}><Upload size={16} /> Importar</button><Link className="btn-secondary w-full !px-3" href="/api/admin/products/export"><Download size={16} /> Exportar</Link><button className="btn-primary col-span-2 w-full whitespace-nowrap md:w-auto" type="button" onClick={openNewProduct}><Plus size={17} /> Nuevo</button></div>
         </div>
 
-        {selectedProductIds.length ? <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-3 text-sm"><strong>{selectedProductIds.length} seleccionados</strong><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("show")}>Mostrar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("hide")}>Ocultar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("feature")}>Destacar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("unfeature")}>Quitar destacados</button><button className="ml-auto text-sm font-black text-muted" type="button" onClick={() => setSelectedProductIds([])}>Cancelar</button></div> : null}
+        {selectedProductIds.length ? <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface p-3 text-sm"><strong>{selectedProductIds.length} seleccionados</strong><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("show")}>Mostrar</button><button className="btn-secondary !px-3 !py-2" type="button" onClick={() => applyBulkAction("hide")}>Ocultar</button><button className="ml-auto text-sm font-black text-muted" type="button" onClick={() => setSelectedProductIds([])}>Cancelar</button></div> : null}
 
         {error && !isProductModalOpen ? <p className="border-b border-line bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</p> : null}
 
@@ -829,7 +703,6 @@ export function ProductForm({
                       <span className={`rounded-full px-2.5 py-1 text-xs font-black ${product.isVisible ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"}`}>
                         {product.isVisible ? "Visible" : "Oculto"}
                       </span>
-                      {product.isFeatured ? <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-amber-800">Destacado</span> : null}
                       {product.stockQuantity === 0 ? <span className="rounded-full bg-red-100 px-2.5 py-1 text-xs font-black text-red-700">Sin stock</span> : null}
                     </div>
                     <p className="mt-1 text-sm font-semibold text-muted">
@@ -860,19 +733,18 @@ export function ProductForm({
       </section>
 
       {isProductModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4">
-          <form onSubmit={saveProduct} aria-busy={loading} className="panel grid h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-5 sm:h-auto sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6">
+        <div className={editorMode ? "product-editor-page" : "fixed inset-0 z-50 flex items-end bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"}>
+          <form ref={editorRef} onSubmit={saveProduct} aria-busy={loading} className="product-editor-form panel grid h-[100dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] gap-4 overflow-hidden !rounded-none p-5 sm:h-auto sm:max-h-[calc(100dvh-32px)] sm:!rounded-[24px] sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">{editingProductId ? "Editar" : "Nuevo"}</p>
-                <h2 className="text-2xl font-black">Producto</h2>
+                <h1 className="text-2xl font-black">{editingProductId ? "Editar producto" : "Nuevo producto"}</h1>
               </div>
               <button className="rounded-full border border-line p-2" type="button" onClick={closeProductModal} aria-label="Cerrar producto">
                 <X size={18} />
               </button>
             </div>
 
-            <div className="grid gap-4 overflow-y-auto pb-6 pr-1">
+            <div className="product-editor-body grid gap-4 overflow-y-auto pb-6 pr-1">
               <label className="grid gap-2 text-sm font-bold">
                 Nombre
                 <input className="field" placeholder="Zapatillas urbanas" value={draft.name} onChange={(event) => updateDraft("name", event.target.value)} required />
@@ -882,177 +754,46 @@ export function ProductForm({
                 Descripción
                 <textarea className="field min-h-20" placeholder="Detalle breve del producto" value={draft.description} onChange={(event) => updateDraft("description", event.target.value)} />
               </label>
+              <label className="grid gap-2 text-sm font-bold">SKU (opcional)<input className="field" value={draft.sku} onChange={(event) => updateDraft("sku", event.target.value)} /></label>
+              <Switch checked={draft.freeShipping} onChange={(checked) => updateDraft("freeShipping", checked)} label="Envío gratis para este producto" description="Si todos los productos del carrito tienen esta opción, la entrega será gratis." />
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              {!draft.variantsEnabled || !variantCombinations(draft.optionGroups).length ? <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold">
-                  Precio base
-                  <PriceInput value={draft.basePrice} onChange={(value) => updateDraft("basePrice", value)} placeholder="10.000" required />
+                  Precio
+                  <PriceInput value={draft.basePrice} onChange={(value) => updateDraft("basePrice", value)} placeholder="Precio de venta" />
                 </label>
-                <div className="grid gap-2 rounded-2xl border border-line bg-surface p-3">
-                  <p className="text-sm font-black">Precio de oferta</p>
-                  <p className="text-sm font-semibold text-muted">
-                    {draft.promoPrice ? formatMoney(Number(unformatInteger(draft.promoPrice))) : "Sin oferta configurada"}
-                  </p>
-                  {draft.promoPrice ? (
-                    <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => setOfferModalOpen(true)}>
-                      Editar precio
-                    </button>
-                  ) : null}
-                </div>
-              </div>
+                <label className="grid gap-2 text-sm font-bold">Oferta<PriceInput value={draft.promoPrice} onChange={(value) => updateDraft("promoPrice", value)} placeholder="Precio de venta con oferta" tone="promo" /></label>
+                <label className="grid gap-2 text-sm font-bold">Stock<input className="field" inputMode="numeric" placeholder="Infinito ∞" value={draft.stockQuantity} onChange={(event) => updateDraft("stockQuantity", formatInteger(event.target.value))} /><small className="font-normal text-muted">Si se deja vacío, se considerará como stock ilimitado.</small></label>
+                <Switch checked={draft.isVisible} onChange={(checked) => updateDraft("isVisible", checked)} label="Visibilidad" description="Mostrar este producto en la tienda." />
+              </div> : null}
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Switch
-                  checked={Boolean(draft.promoPrice)}
-                  onChange={toggleOffer}
-                  label="Producto de oferta"
-                  description="Mostrá un precio promocional en la tienda pública."
-                />
-                <Switch
-                  checked={draft.isVisible}
-                  onChange={(checked) => updateDraft("isVisible", checked)}
-                  label="Visible en la web"
-                  description="Controlá si el producto aparece en el catálogo público."
-                />
-                {showFeatured ? <Switch
-                  checked={draft.isFeatured}
-                  onChange={(checked) => updateDraft("isFeatured", checked)}
-                  label="Producto destacado"
-                  description="Aparece en la selección principal de la página pública."
-                /> : null}
-              </div>
-
-              <label className="grid gap-2 text-sm font-bold">
-                Categoría
-                <select className="field" value={draft.categoryId} onChange={(event) => updateDraft("categoryId", event.target.value)}>
-                  <option value="">Sin categoría</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                  <option value="__new">+ Nueva categoría</option>
-                </select>
-              </label>
-              {draft.categoryId === "__new" ? (
-                <label className="grid gap-2 text-sm font-bold">
-                  Nombre de categoría
-                  <input className="field" placeholder="Principales" value={draft.categoryName} onChange={(event) => updateDraft("categoryName", event.target.value)} />
-                </label>
-              ) : null}
-
-              <section className="rounded-2xl border border-line p-3">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="font-black">Imágenes</h3>
-                    <p className="text-sm font-semibold text-muted">Se suben recién al guardar el producto.</p>
-                  </div>
-                  <label className="btn-secondary !px-3">
-                    <ImagePlus size={17} /> Agregar
-                    <input className="sr-only" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => addImageFiles(event.currentTarget.files)} />
-                  </label>
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {draft.images.map((image, index) => (
-                    <div key={image.id} className="group relative aspect-square overflow-hidden rounded-xl bg-surface">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={image.url} alt="" className="h-full w-full object-cover" />
-                      <div className="absolute inset-x-1 bottom-1 flex gap-1">
-                        <button className="flex-1 rounded-full bg-white/90 px-2 py-1 text-[11px] font-black" type="button" onClick={() => setCover(index)}>
-                          {index === 0 ? "Portada" : "Hacer portada"}
-                        </button>
-                        <button className="rounded-full bg-white/90 px-2 py-1 text-red-600" type="button" onClick={() => removeImage(index)} aria-label="Eliminar imagen">
-                          <X size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {draft.images.length === 0 ? <div className="col-span-2 rounded-xl bg-surface p-4 text-center text-sm font-bold text-muted sm:col-span-3">Sin imágenes</div> : null}
-                </div>
-              </section>
+              <ProductCategoryPaths categories={categories} primary={draft.categoryId} selected={draft.categoryIds} onChange={ids => setDraft(current => ({ ...current, categoryId: ids[0] ?? "", categoryIds: ids }))}/>
+              <ProductImages images={draft.images} onChange={images => updateDraft("images", images)} onRemove={removeImage} onAdd={addImageFiles} error={error}/>
 
               <Switch
                 checked={draft.variantsEnabled}
                 onChange={toggleVariants}
                 label="Variantes"
-                description={isFoodTemplate ? "Usá tamaños, guarniciones, salsas y extras listos para configurar." : "Usá color, talle o presentación para que el cliente elija una opción."}
+                description="Usá color, talle o presentación para que el cliente elija una variante."
               />
 
               {draft.variantsEnabled ? (
-                <section className="grid gap-3 rounded-2xl border border-line p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-black">Propiedades</h3>
-                      <p className="text-sm font-semibold text-muted">Las opciones pueden ser obligatorias, opcionales o de selección múltiple según el preset.</p>
-                    </div>
-                    <button className="btn-secondary !px-3" type="button" onClick={() => setVariantDrawer({ step: "pick" })}>
-                      <Plus size={16} /> Agregar
-                    </button>
-                  </div>
+                <section className="product-section product-variant-section">
+                  <h3>Propiedades</h3>
+                  <div className="variant-property-summary">{draft.optionGroups.map(group => <div key={group.name}><h4>{group.name}</h4><div className="variant-chips">{group.options.map(option => <span key={option.name}>{option.name}</span>)}</div></div>)}</div>
+                  {!draft.optionGroups.length && <p>Agregá propiedades como talle o color para crear las variantes.</p>}
+                  <button className="btn-primary variant-edit-button" type="button" onClick={() => setVariantEditorOpen(true)}><Settings2 size={18}/>{draft.optionGroups.length ? "Editar variantes" : "Agregar variantes"}</button>
 
-                  {draft.optionGroups.length ? (
-                    <div className="grid gap-3">
-                      {draft.optionGroups.map((group, groupIndex) => (
-                        <article key={`${group.name}-${groupIndex}`} className="grid gap-3 rounded-2xl border border-line bg-white p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="font-black">{group.name}</p>
-                              <p className="text-sm font-semibold text-muted">
-                                {group.options.length} valor(es) · {group.selectionType === "MULTIPLE" ? `Hasta ${group.maxSelections || group.options.length}` : "Una opción"} · {group.isRequired ? "Obligatoria" : "Opcional"}
-                              </p>
-                            </div>
-                            <button className="rounded-xl border border-line px-3 py-2 text-red-600" type="button" onClick={() => removeGroup(groupIndex)} aria-label={`Eliminar ${group.name}`}>
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-
-                          <div className="grid gap-2">
-                            {group.options.map((option, optionIndex) => (
-                              <div key={optionIndex} className="grid gap-2 sm:grid-cols-[1fr_150px_auto]">
-                                <label className="grid gap-1 text-xs font-bold text-muted">
-                                  Valor
-                                  <input className="field !px-3 !py-2" placeholder="Rojo" value={option.name} onChange={(event) => updateOption(groupIndex, optionIndex, { name: event.target.value })} />
-                                </label>
-                                <label className="grid gap-1 text-xs font-bold text-muted">
-                                  Precio extra
-                                  <PriceInput value={option.priceDelta} onChange={(value) => updateOption(groupIndex, optionIndex, { priceDelta: value })} placeholder="0" />
-                                </label>
-                                <button className="h-12 rounded-xl border border-line px-2 text-red-600 sm:mt-5" type="button" onClick={() => removeOption(groupIndex, optionIndex)} aria-label="Eliminar valor">
-                                  <Trash2 size={15} />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-
-                          <button className="btn-secondary !px-3 !py-2 text-sm" type="button" onClick={() => addOption(groupIndex)}>
-                            <Plus size={15} /> Agregar valor
-                          </button>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Activaste variantes. Agregá una propiedad preparada para esta plantilla.</p>
-                  )}
-
+                  {variantCombinations(draft.optionGroups).length ? <div className="grid gap-3 border-t pt-4"><div><h3 className="font-black">Combinaciones</h3><p className="text-xs text-muted">Ingresá un precio por combinación. La oferta es opcional y el stock vacío es ilimitado.</p></div>{variantCombinations(draft.optionGroups).map((combination) => {
+                    const value = draft.variants.find((variant) => variant.key === combination.key);
+                    return <div key={combination.key} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-3"><p className="font-semibold sm:col-span-3">{combination.label}</p><label className="grid gap-1 text-xs font-bold">Stock<input className="field" inputMode="numeric" value={value?.stockQuantity ?? ""} onChange={(event) => updateVariant(combination.key, { stockQuantity: formatInteger(event.target.value) })} placeholder="Ilimitado" /></label><label className="grid gap-1 text-xs font-bold">Precio<PriceInput value={value?.basePrice ?? draft.basePrice} onChange={(price) => updateVariant(combination.key, { basePrice: price })} placeholder="Precio" /></label><label className="grid gap-1 text-xs font-bold">Oferta<PriceInput value={value?.promoPrice ?? draft.promoPrice} onChange={(price) => updateVariant(combination.key, { promoPrice: price })} placeholder="Sin oferta" /></label><label className="grid gap-1 text-xs font-bold">Imagen<select className="field" value={value?.imageUrl ?? ""} onChange={(event) => updateVariant(combination.key, { imageUrl: event.target.value || null })}><option value="">Imagen principal</option>{draft.images.map((image, index) => <option key={image.id} value={image.url}>Foto {index + 1}</option>)}</select></label><label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={value?.isVisible ?? true} onChange={(event) => updateVariant(combination.key, { isVisible: event.target.checked })} />Visible</label></div>;
+                  })}</div> : null}
                 </section>
-              ) : null}
-
-              <Switch
-                checked={draft.stockLimited}
-                onChange={(checked) => updateDraft("stockLimited", checked)}
-                label="Stock limitado"
-                description="Si está activo, se descuenta cuando el pedido se marca como pagado."
-              />
-              {draft.stockLimited ? (
-                <label className="grid gap-2 text-sm font-bold">
-                  Stock disponible
-                  <input className="field" inputMode="numeric" placeholder="10" value={draft.stockQuantity} onChange={(event) => updateDraft("stockQuantity", formatInteger(event.target.value))} />
-                </label>
               ) : null}
 
             </div>
 
-            <div className="-mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
+            <div ref={footerRef} className="product-editor-footer -mx-5 -mb-5 border-t border-line bg-white/95 px-5 pb-[calc(env(safe-area-inset-bottom)+20px)] pt-4 sm:-mx-6 sm:-mb-6 sm:px-6 sm:pb-6">
               {error ? <p className="mb-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
               <button className="btn-primary w-full" disabled={loading}>
                 <Save size={18} /> {editingProductId ? "Guardar cambios" : "Crear producto"}
@@ -1063,8 +804,8 @@ export function ProductForm({
       ) : null}
 
       {isImportModalOpen ? (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Importar productos">
-          <section className="panel grid max-h-[90dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-ink/50 p-0 backdrop-blur-sm sm:p-4" role="dialog" aria-modal="true" aria-label="Importar productos">
+          <section className="panel product-import-dialog grid max-h-[90dvh] w-full max-w-3xl grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
             <header className="flex items-start justify-between gap-4 border-b border-line p-5"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-brand">Importar catálogo</p><h2 className="mt-1 text-2xl font-black">{importPreview ? "Revisá antes de confirmar" : "Subí tus productos"}</h2>{importPreview ? <p className="mt-1 text-sm text-muted">{importPreview.rows.length} listos · {importPreview.errors.length} con errores · {importPreview.total} filas</p> : <p className="mt-1 text-sm text-muted">Descargá la plantilla, completala y seleccioná el archivo.</p>}</div><button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={closeImportModal} aria-label="Cerrar importación"><X size={17} /></button></header>
             {importPreview ? <div className="overflow-auto p-5"><div className="grid gap-2">{importPreview.rows.slice(0, 100).map((row) => <div key={row.rowNumber} className="grid grid-cols-[54px_1fr_auto] gap-3 rounded-xl border border-line p-3 text-sm"><span className="text-muted">Fila {row.rowNumber}</span><strong className="truncate">{row.name}</strong><span>{formatMoney(row.basePrice)}</span></div>)}</div>{importPreview.rows.length > 100 ? <p className="mt-3 text-sm text-muted">Se muestran las primeras 100 filas válidas.</p> : null}{importPreview.errors.length ? <div className="mt-5 rounded-2xl bg-red-50 p-4"><h3 className="font-black text-red-800">Filas a corregir</h3><ul className="mt-2 grid gap-1 text-sm text-red-700">{importPreview.errors.slice(0, 20).map((item) => <li key={item.rowNumber}>Fila {item.rowNumber}: {item.message}</li>)}</ul></div> : null}</div> : <div className="grid gap-4 overflow-auto p-5"><Link className="btn-secondary w-full" href="/api/admin/products/export?mode=template"><Download size={17} /> Descargar plantilla</Link><label className="grid cursor-pointer place-items-center gap-3 rounded-3xl border-2 border-dashed border-line bg-surface p-8 text-center"><Upload className="text-brand" size={28} /><span className="font-black">{importing ? "Leyendo archivo..." : "Seleccionar archivo"}</span><span className="text-sm text-muted">Excel o CSV · hasta 500 productos</span><input className="sr-only" type="file" accept=".csv,.xlsx,.xls" disabled={importing} onChange={(event) => { void previewImport(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>{error ? <p className="rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}</div>}
             {importPreview ? <footer className="grid gap-2 border-t border-line bg-white p-4 sm:grid-cols-2"><button className="btn-secondary" type="button" onClick={() => { setImportPreview(null); setError(""); }}>Elegir otro archivo</button><button className="btn-primary" type="button" disabled={importing || !importPreview.rows.length || Boolean(importPreview.errors.length)} onClick={commitImport}>{importing ? "Importando..." : `Importar ${importPreview.rows.length} productos`}</button></footer> : <footer className="border-t border-line bg-white p-4"><button className="btn-secondary w-full" type="button" onClick={closeImportModal}>Cancelar</button></footer>}
@@ -1072,186 +813,7 @@ export function ProductForm({
         </div>
       ) : null}
 
-      {offerModalOpen ? (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-ink/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Precio de oferta">
-          <div className="panel w-full max-w-md p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-brand">Oferta</p>
-                <h3 className="mt-1 text-2xl font-black">Precio de oferta</h3>
-                <p className="mt-1 text-sm text-muted">Debe ser menor que el precio base del producto.</p>
-              </div>
-              <button className="btn-secondary !h-10 !w-10 !p-0" type="button" onClick={() => setOfferModalOpen(false)} aria-label="Cerrar precio de oferta">
-                <X size={18} />
-              </button>
-            </div>
-            <label className="mt-5 grid gap-2 text-sm font-bold">
-              Precio de oferta
-              <PriceInput value={draft.promoPrice} onChange={(value) => updateDraft("promoPrice", value)} placeholder="8.000" tone="promo" required />
-            </label>
-            {error ? <p className="mt-3 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p> : null}
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <button className="btn-secondary" type="button" onClick={() => setOfferModalOpen(false)}>
-                Cancelar
-              </button>
-              <button className="btn-primary" type="button" onClick={confirmOfferPrice}>
-                <Check size={17} /> Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {variantDrawer ? (
-        <div className="fixed inset-0 z-[60] flex justify-end bg-slate-950/45" role="dialog" aria-modal="true" aria-label="Agregar variante">
-          <div className="grid h-[100dvh] w-full max-w-md grid-rows-[auto_minmax(0,1fr)_auto] bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-line p-4">
-              {variantDrawer.step === "edit" ? (
-                <button className="rounded-full border border-line p-2" type="button" onClick={() => setVariantDrawer({ step: "pick" })} aria-label="Volver">
-                  <X size={16} />
-                </button>
-              ) : (
-                <button className="rounded-full border border-line p-2" type="button" onClick={() => setVariantDrawer(null)} aria-label="Cerrar variantes">
-                  <X size={16} />
-                </button>
-              )}
-              <button className="font-black text-brand" type="button" onClick={variantDrawer.step === "edit" ? createVariantProperty : undefined}>
-                {variantDrawer.step === "edit" ? "Crear" : ""}
-              </button>
-            </div>
-
-            <div className="overflow-y-auto p-4">
-              {variantDrawer.step === "pick" ? (
-                <div className="grid gap-3">
-                  <div>
-                    <h3 className="text-2xl font-black">Agregar propiedad</h3>
-                    <p className="mt-1 text-sm font-semibold text-muted">Presets listos para tu plantilla {isFoodTemplate ? "de comida" : "ecommerce"}.</p>
-                  </div>
-                  {variantPresets.map((preset) => (
-                    <button key={preset.key} className="rounded-2xl border border-line p-4 text-left hover:bg-surface" type="button" onClick={() => openVariantEditor(preset)}>
-                      <span className="block font-black">{preset.name}</span>
-                      <span className="mt-1 block text-sm text-muted">{preset.description}</span>
-                    </button>
-                  ))}
-                  <button className="rounded-2xl border border-line p-4 text-left hover:bg-surface" type="button" onClick={() => openVariantEditor(customVariantPreset)}>
-                    <span className="block font-black">Personalizada</span>
-                    <span className="mt-1 block text-sm text-muted">{customVariantPreset.description}</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  <div>
-                    <h3 className="text-2xl font-black">{variantDrawer.kind === "custom" ? "Crear propiedad" : variantDrawer.name}</h3>
-                    <p className="mt-1 text-sm font-semibold text-muted">Seleccioná o cargá los valores disponibles para este producto.</p>
-                  </div>
-
-                  <label className="grid gap-2 text-sm font-bold">
-                    Nombre de la propiedad
-                    <input
-                      className="field"
-                      placeholder="Tipo de tejido"
-                      value={variantDrawer.name}
-                      disabled={variantDrawer.kind !== "custom"}
-                      onChange={(event) => setVariantDrawer({ ...variantDrawer, name: event.target.value })}
-                    />
-                  </label>
-
-                  <div className="grid gap-2">
-                    <p className="text-sm font-black">Valores seleccionados</p>
-                    {variantDrawer.values.length ? (
-                      variantDrawer.values.map((value) => (
-                        <button key={value} className="flex items-center justify-between rounded-xl border border-line p-3 text-left font-bold" type="button" onClick={() => toggleVariantValue(value)}>
-                          {value}
-                          <Check size={16} className="text-brand" />
-                        </button>
-                      ))
-                    ) : (
-                      <p className="rounded-xl bg-surface p-3 text-sm font-bold text-muted">Todavía no seleccionaste valores.</p>
-                    )}
-                  </div>
-
-                  <div className="grid gap-2">
-                    <label className="grid gap-2 text-sm font-bold">
-                      Agregar valor manual
-                      <div className="grid grid-cols-[1fr_auto] gap-2">
-                        <input className="field" placeholder={variantDrawer.kind === "color" ? "Azul marino" : variantDrawer.kind === "size" ? "46" : isFoodTemplate ? "Sin sal" : "Algodón"} value={newVariantValue} onChange={(event) => setNewVariantValue(event.target.value)} />
-                        <button className="btn-secondary !px-3" type="button" onClick={addManualVariantValue}>
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </label>
-                  </div>
-
-                  {variantDrawer.kind === "color" ? (
-                    <div className="grid gap-2">
-                      <p className="text-sm font-black">Colores sugeridos</p>
-                      {colorSuggestions.map((suggestion) => {
-                        const selected = variantDrawer.values.includes(suggestion.name);
-                        return (
-                          <button key={suggestion.name} className="flex items-center gap-3 border-b border-line py-3 text-left" type="button" onClick={() => toggleVariantValue(suggestion.name)}>
-                            <span className={`h-5 w-5 rounded border border-line ${selected ? "ring-2 ring-brand" : ""}`} style={{ background: suggestion.color }} />
-                            <span className="flex-1 font-semibold">{suggestion.name}</span>
-                            {selected ? <Check size={16} className="text-brand" /> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-
-                  {variantDrawer.kind === "size" ? (
-                    <div className="grid gap-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-black">Talles sugeridos</p>
-                        <button className="text-sm font-black text-brand" type="button" onClick={() => setVariantDrawer({ ...variantDrawer, values: sizeSuggestions })}>
-                          Seleccionar todos
-                        </button>
-                      </div>
-                      {sizeSuggestions.map((suggestion) => {
-                        const selected = variantDrawer.values.includes(suggestion);
-                        return (
-                          <button key={suggestion} className="flex items-center justify-between border-b border-line py-3 text-left font-semibold" type="button" onClick={() => toggleVariantValue(suggestion)}>
-                            {suggestion}
-                            {selected ? <Check size={16} className="text-brand" /> : null}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-
-                  {variantDrawer.kind === "preset" ? (
-                    <div className="grid gap-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-black">Valores sugeridos</p>
-                        <button className="text-sm font-black text-brand" type="button" onClick={() => setVariantDrawer({ ...variantDrawer, values: variantDrawer.suggestions })}>
-                          Seleccionar todos
-                        </button>
-                      </div>
-                      {variantDrawer.suggestions.map((suggestion) => {
-                        const selected = variantDrawer.values.includes(suggestion);
-                        return (
-                          <button key={suggestion} className="flex items-center justify-between border-b border-line py-3 text-left font-semibold" type="button" onClick={() => toggleVariantValue(suggestion)}>
-                            {suggestion}
-                            {selected ? <Check size={16} className="text-brand" /> : null}
-                          </button>
-                        );
-                      })}
-                      <p className="rounded-xl bg-surface p-3 text-xs font-bold text-muted">
-                        {variantDrawer.selectionType === "MULTIPLE" ? `El cliente puede elegir hasta ${variantDrawer.maxSelections} opciones. Esta propiedad es opcional.` : "El cliente debe elegir una opción."}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-            </div>
-
-            <div className="border-t border-line p-4">
-              <button className="btn-primary w-full" type="button" onClick={variantDrawer.step === "edit" ? createVariantProperty : () => setVariantDrawer(null)}>
-                {variantDrawer.step === "edit" ? "Crear propiedad" : "Cerrar"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {variantEditorOpen && <ProductVariantEditor groups={draft.optionGroups} suggestions={{ Talle: sizeGroups, Color: [{ name: "Colores sugeridos", values: colorSuggestions.map(color => color.name) }], Presentación: [{ name: "Presentaciones", values: ["Unidad", "Pack x2", "Pack x3"] }] }} onChange={optionGroups => setDraft(current => ({ ...current, variantsEnabled: true, optionGroups }))} onClose={() => setVariantEditorOpen(false)}/>}
       {loading ? <SaveOverlay title="Guardando producto…" /> : null}
     </div>
   );

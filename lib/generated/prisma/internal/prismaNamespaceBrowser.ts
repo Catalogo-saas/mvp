@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  StoreMember: 'StoreMember',
   Account: 'Account',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
@@ -61,6 +62,9 @@ export const ModelName = {
   OptionGroup: 'OptionGroup',
   ProductOption: 'ProductOption',
   Order: 'Order',
+  OrderEvent: 'OrderEvent',
+  Customer: 'Customer',
+  CustomerSession: 'CustomerSession',
   OrderItem: 'OrderItem',
   StorefrontEvent: 'StorefrontEvent'
 } as const
@@ -90,11 +94,21 @@ export const UserScalarFieldEnum = {
   passwordHash: 'passwordHash',
   role: 'role',
   status: 'status',
+  authVersion: 'authVersion',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const StoreMemberScalarFieldEnum = {
+  userId: 'userId',
+  storeId: 'storeId',
+  role: 'role'
+} as const
+
+export type StoreMemberScalarFieldEnum = (typeof StoreMemberScalarFieldEnum)[keyof typeof StoreMemberScalarFieldEnum]
 
 
 export const AccountScalarFieldEnum = {
@@ -144,6 +158,8 @@ export const StoreScalarFieldEnum = {
   businessType: 'businessType',
   template: 'template',
   logoUrl: 'logoUrl',
+  faviconUrl: 'faviconUrl',
+  designConfig: 'designConfig',
   heroTitle: 'heroTitle',
   heroSubtitle: 'heroSubtitle',
   heroImageUrls: 'heroImageUrls',
@@ -154,6 +170,14 @@ export const StoreScalarFieldEnum = {
   freeShippingEnabled: 'freeShippingEnabled',
   freeShippingThreshold: 'freeShippingThreshold',
   acceptTransferPayments: 'acceptTransferPayments',
+  acceptCashPayments: 'acceptCashPayments',
+  whatsappOrdersEnabled: 'whatsappOrdersEnabled',
+  checkoutSettings: 'checkoutSettings',
+  deliveryMethods: 'deliveryMethods',
+  designDraft: 'designDraft',
+  menuConfig: 'menuConfig',
+  taxRatePercent: 'taxRatePercent',
+  showPricesWithoutTax: 'showPricesWithoutTax',
   paymentAccountHolder: 'paymentAccountHolder',
   paymentProvider: 'paymentProvider',
   paymentAlias: 'paymentAlias',
@@ -177,7 +201,9 @@ export const CategoryScalarFieldEnum = {
   name: 'name',
   slug: 'slug',
   imageUrl: 'imageUrl',
+  isVisible: 'isVisible',
   sortOrder: 'sortOrder',
+  parentId: 'parentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -197,6 +223,9 @@ export const ProductScalarFieldEnum = {
   imageUrls: 'imageUrls',
   isVisible: 'isVisible',
   stockQuantity: 'stockQuantity',
+  sku: 'sku',
+  freeShipping: 'freeShipping',
+  variants: 'variants',
   isFeatured: 'isFeatured',
   sortOrder: 'sortOrder',
   createdAt: 'createdAt',
@@ -241,6 +270,19 @@ export const OrderScalarFieldEnum = {
   storeId: 'storeId',
   code: 'code',
   status: 'status',
+  paymentStatus: 'paymentStatus',
+  fulfillmentStatus: 'fulfillmentStatus',
+  trackingTokenHash: 'trackingTokenHash',
+  clientRequestId: 'clientRequestId',
+  requestFingerprint: 'requestFingerprint',
+  stockReserved: 'stockReserved',
+  archivedAt: 'archivedAt',
+  readAt: 'readAt',
+  receiptKey: 'receiptKey',
+  receiptName: 'receiptName',
+  receiptMimeType: 'receiptMimeType',
+  receiptUploadedAt: 'receiptUploadedAt',
+  customerEmail: 'customerEmail',
   source: 'source',
   customerName: 'customerName',
   customerPhone: 'customerPhone',
@@ -255,11 +297,51 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const OrderEventScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  type: 'type',
+  label: 'label',
+  createdAt: 'createdAt'
+} as const
+
+export type OrderEventScalarFieldEnum = (typeof OrderEventScalarFieldEnum)[keyof typeof OrderEventScalarFieldEnum]
+
+
+export const CustomerScalarFieldEnum = {
+  id: 'id',
+  storeId: 'storeId',
+  email: 'email',
+  name: 'name',
+  passwordHash: 'passwordHash',
+  emailVerifiedAt: 'emailVerifiedAt',
+  verificationTokenHash: 'verificationTokenHash',
+  verificationExpiresAt: 'verificationExpiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typeof CustomerScalarFieldEnum]
+
+
+export const CustomerSessionScalarFieldEnum = {
+  id: 'id',
+  customerId: 'customerId',
+  tokenHash: 'tokenHash',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type CustomerSessionScalarFieldEnum = (typeof CustomerSessionScalarFieldEnum)[keyof typeof CustomerSessionScalarFieldEnum]
+
+
 export const OrderItemScalarFieldEnum = {
   id: 'id',
   orderId: 'orderId',
   productId: 'productId',
+  variantKey: 'variantKey',
   productName: 'productName',
+  imageUrl: 'imageUrl',
   quantity: 'quantity',
   unitPrice: 'unitPrice',
   options: 'options',
@@ -294,6 +376,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

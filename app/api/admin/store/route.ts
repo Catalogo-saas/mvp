@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { Prisma } from "@/lib/generated/prisma/client";
 
-import { storeTemplates } from "@/lib/catalog";
+import { publicStoreTemplates } from "@/lib/catalog";
 import { imageReferenceSchema } from "@/lib/image-upload-contract";
 import {
   deletePromotedImages,
@@ -9,10 +10,10 @@ import {
   resolveImageReferences,
   type PromotedImage
 } from "@/lib/image-uploads";
-import { getMerchantStore } from "@/lib/merchant";
+import { getMerchantApiAccess } from "@/lib/merchant-authorization";
 import { prisma } from "@/lib/prisma";
 import { publicPageConfigSchema } from "@/lib/public-page-config";
-import { reservedSlugs, slugify } from "@/lib/slug";
+import { designConfigSchema } from "@/lib/design-config";
 import { deletePublicObject, getPublicObjectKeyFromUrl } from "@/lib/storage";
 import {
   emptyBusinessHours,
@@ -26,17 +27,20 @@ const schema = z.object({
   description: z.string().max(500).optional().nullable(),
   whatsappPhone: z.string().refine(isCompleteArgentineLocalPhone),
   logo: imageReferenceSchema.nullable(),
+  favicon: imageReferenceSchema.nullable(),
+  designConfig: designConfigSchema,
   heroTitle: z.string().max(120).optional().nullable(),
   heroSubtitle: z.string().max(220).optional().nullable(),
   heroImages: z.array(imageReferenceSchema).max(3).default([]),
   categoryImages: z
     .array(z.object({ categoryId: z.string().min(1), image: imageReferenceSchema.nullable() }))
+    .max(0)
     .default([]),
   address: z.string().max(180).optional().nullable(),
   primary: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   useTemplateColors: z.boolean().default(false),
-  template: z.enum(storeTemplates),
+  template: z.enum(publicStoreTemplates),
   publicPageConfig: publicPageConfigSchema,
   showCategories: z.boolean().default(true),
   showFeatured: z.boolean().default(true),
@@ -59,10 +63,9 @@ function cleanOptionalText(value: string | null | undefined) {
 }
 
 export async function PATCH(request: Request) {
-  const store = await getMerchantStore();
-  if (!store) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
+  const access = await getMerchantApiAccess("settings");
+  if (access.error) return access.error;
+  const { store } = access.context;
 
   const result = schema.safeParse(await request.json().catch(() => null));
   if (!result.success) {
@@ -87,21 +90,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Horarios inválidos" }, { status: 400 });
   }
 
-  const nextSlug = slugify(result.data.name);
-  if (!nextSlug || reservedSlugs.has(nextSlug)) {
-    return NextResponse.json({ error: "El nombre no genera una URL disponible." }, { status: 400 });
-  }
-
-  const slugOwner = await prisma.store.findUnique({ where: { slug: nextSlug }, select: { id: true } });
-  if (slugOwner && slugOwner.id !== store.id) {
-    return NextResponse.json({ error: "Ya existe una tienda con esa URL." }, { status: 409 });
-  }
+  const nextSlug = store.slug;
 
   const previousLogoUrl = store.logoUrl;
+  const previousFaviconUrl = store.faviconUrl;
   const previousHeroUrls = store.heroImageUrls;
+  const savedDraft = store.designDraft && typeof store.designDraft === "object" && !Array.isArray(store.designDraft) ? store.designDraft as Record<string, unknown> : {};
+  const draftLogoUrl = typeof savedDraft.logoUrl === "string" ? savedDraft.logoUrl : null;
+  const draftFaviconUrl = typeof savedDraft.faviconUrl === "string" ? savedDraft.faviconUrl : null;
+  const draftHeroUrls = Array.isArray(savedDraft.heroImageUrls) ? savedDraft.heroImageUrls.filter((url): url is string => typeof url === "string") : [];
   const previousCategoryImages = new Map(categoriesForUpdate.map((category) => [category.id, category.imageUrl]));
   const nextCategoryImages = new Map(previousCategoryImages);
   let nextLogoUrl: string | null = null;
+  let nextFaviconUrl: string | null = null;
   let nextHeroUrls: string[] = [];
   const promotedImages: PromotedImage[] = [];
 
@@ -111,17 +112,22 @@ export async function PATCH(request: Request) {
         storeId: store.id,
         scope: "logos",
         references: [result.data.logo],
-        allowedStoredUrls: previousLogoUrl ? [previousLogoUrl] : []
+        allowedStoredUrls: [previousLogoUrl, draftLogoUrl].filter((url): url is string => Boolean(url))
       });
       nextLogoUrl = resolvedLogo.urls[0] ?? null;
       promotedImages.push(...resolvedLogo.promoted);
+    }
+    if (result.data.favicon) {
+      const resolvedFavicon = await resolveImageReferences({ storeId: store.id, scope: "logos", references: [result.data.favicon], allowedStoredUrls: [previousFaviconUrl, draftFaviconUrl].filter((url): url is string => Boolean(url)) });
+      nextFaviconUrl = resolvedFavicon.urls[0] ?? null;
+      promotedImages.push(...resolvedFavicon.promoted);
     }
 
     const resolvedHero = await resolveImageReferences({
       storeId: store.id,
       scope: "hero",
       references: result.data.heroImages,
-      allowedStoredUrls: previousHeroUrls
+      allowedStoredUrls: [...previousHeroUrls, ...draftHeroUrls]
     });
     nextHeroUrls = resolvedHero.urls;
     promotedImages.push(...resolvedHero.promoted);
@@ -147,20 +153,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "No pudimos procesar las imágenes. Intentá nuevamente." }, { status: 400 });
   }
 
-  const paymentValues = result.data.acceptTransferPayments
-    ? {
-        paymentAccountHolder: cleanOptionalText(result.data.paymentAccountHolder),
-        paymentProvider: cleanOptionalText(result.data.paymentProvider),
-        paymentAlias: cleanOptionalText(result.data.paymentAlias),
-        paymentCbu: cleanOptionalText(result.data.paymentCbu)
-      }
-    : {
-        paymentAccountHolder: store.paymentAccountHolder,
-        paymentProvider: store.paymentProvider,
-        paymentAlias: store.paymentAlias,
-        paymentCbu: store.paymentCbu
-      };
-
   let updated;
   try {
     updated = await prisma.$transaction(async (transaction) => {
@@ -172,6 +164,8 @@ export async function PATCH(request: Request) {
           description: cleanOptionalText(result.data.description),
           whatsappPhone: normalizeArgentineWhatsAppPhone(result.data.whatsappPhone),
           logoUrl: nextLogoUrl,
+          faviconUrl: nextFaviconUrl,
+          designConfig: result.data.designConfig,
           heroTitle: cleanOptionalText(result.data.heroTitle),
           heroSubtitle: cleanOptionalText(result.data.heroSubtitle),
           heroImageUrls: nextHeroUrls,
@@ -183,12 +177,11 @@ export async function PATCH(request: Request) {
           showFeatured: result.data.showFeatured,
           freeShippingEnabled: result.data.freeShippingEnabled,
           freeShippingThreshold: result.data.freeShippingThreshold,
-          acceptTransferPayments: result.data.acceptTransferPayments,
-          ...paymentValues,
           businessHoursText: cleanOptionalText(result.data.businessHoursText),
           restrictBySchedule: result.data.restrictBySchedule,
           businessHours,
-          mobileProductColumns: result.data.mobileProductColumns
+          mobileProductColumns: result.data.mobileProductColumns,
+          designDraft: Prisma.DbNull
         }
       });
 
@@ -209,9 +202,11 @@ export async function PATCH(request: Request) {
   await deletePromotedTemporaries(promotedImages);
 
   const previousLogoKey = previousLogoUrl && nextLogoUrl !== previousLogoUrl ? getPublicObjectKeyFromUrl(previousLogoUrl) : null;
-  if (previousLogoKey?.startsWith(`logos/${store.id}/`)) {
+  if (previousLogoKey?.startsWith(`logos/${store.id}/`) && previousLogoUrl !== nextFaviconUrl) {
     await deletePublicObject(previousLogoKey).catch(() => null);
   }
+  const previousFaviconKey = previousFaviconUrl && previousFaviconUrl !== nextFaviconUrl && previousFaviconUrl !== nextLogoUrl ? getPublicObjectKeyFromUrl(previousFaviconUrl) : null;
+  if (previousFaviconKey?.startsWith(`logos/${store.id}/`)) await deletePublicObject(previousFaviconKey).catch(() => null);
 
   const removedHeroKeys = previousHeroUrls
     .filter((url) => !nextHeroUrls.includes(url))

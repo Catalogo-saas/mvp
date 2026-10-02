@@ -112,81 +112,12 @@ const faqs = [
 
 const templateGroups = [
   {
-    title: "Para todo tipo de productos",
-    description: "Una base versátil para mostrar categorías, promociones, variantes y stock con claridad.",
+    title: "Roma, Dana y Vene",
+    description: "Tres estructuras para adaptar tu tienda a tu marca y tus productos.",
     templates: [
-      {
-        name: "Tienda online",
-        description: "Una vidriera moderna y flexible, pensada para catálogos de cualquier rubro.",
-        image: "/template-previews/ecommerce.jpg",
-        href: "/mockups/template-ecommerce.html"
-      }
-    ]
-  },
-  {
-    title: "Moda y belleza",
-    description: "Diseños con personalidad para marcas donde la estética y la fotografía son protagonistas.",
-    templates: [
-      {
-        name: "Boutique",
-        description: "Cálida, cercana y delicada, con curvas y una paleta suave.",
-        image: "/template-previews/boutique-soft.jpg",
-        href: "/mockups/template-boutique-soft.html"
-      },
-      {
-        name: "Minimalista",
-        description: "Fotografía dominante, aire editorial y una grilla limpia de producto.",
-        image: "/template-previews/premium-minimal.jpg",
-        href: "/mockups/template-premium-minimal.html"
-      },
-      {
-        name: "Colorida",
-        description: "Joven, colorida y enérgica para marcas que buscan destacarse.",
-        image: "/template-previews/beauty-pop.jpg",
-        href: "/mockups/template-beauty-pop.html"
-      }
-    ]
-  },
-  {
-    title: "Infantil",
-    description: "Seis universos visuales creados para indumentaria, accesorios y productos para bebés.",
-    templates: [
-      {
-        name: "Natural",
-        description: "Serena y orgánica, con tonos tierra y formas suaves.",
-        image: "/template-previews/baby-natural.jpg",
-        href: "/mockups/template-baby-natural.html"
-      },
-      {
-        name: "Delicada",
-        description: "Clásica y editorial, con una estética de boutique refinada.",
-        image: "/template-previews/baby-atelier.jpg",
-        href: "/mockups/template-baby-atelier.html"
-      },
-      {
-        name: "Divertida",
-        description: "Lúdica y enérgica, con bloques de color y formas gráficas.",
-        image: "/template-previews/baby-mini.jpg",
-        href: "/mockups/template-baby-mini.html"
-      },
-      {
-        name: "Tierna",
-        description: "Pastel y soñadora, inspirada en nubes, estrellas y juegos.",
-        image: "/template-previews/baby-cielito.jpg",
-        href: "/mockups/template-baby-cielito.html"
-      },
-      {
-        name: "Bosque",
-        description: "Un pequeño cuento ilustrado con naturaleza y tonos cálidos.",
-        image: "/template-previews/baby-bosque.jpg",
-        href: "/mockups/template-baby-bosque.html"
-      },
-      {
-        name: "Cálida",
-        description: "Texturas, costuras y módulos suaves con espíritu artesanal.",
-        image: "/template-previews/baby-abrazo.jpg",
-        href: "/mockups/template-baby-abrazo.html"
-      }
+      { name: "Roma", description: "Clásica, con el logo al centro y un catálogo claro.", color: "#d99195", href: "/onboarding" },
+      { name: "Dana", description: "Editorial, con portada amplia y tipografía de revista.", color: "#176877", href: "/onboarding" },
+      { name: "Vene", description: "Moderna, con una grilla visual y navegación directa.", color: "#ee7947", href: "/onboarding" }
     ]
   }
 ] as const;
@@ -413,7 +344,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-3xl text-center">
             <p className={styles.sectionLabel}>Elegí cómo mostrar tu marca</p>
             <h2 className={styles.sectionTitle}>Una tienda que se siente hecha para vos.</h2>
-            <p className={styles.sectionText}>Explorá cada diseño con productos, categorías y carrito. Elegí una plantilla para recorrerla completa.</p>
+            <p className={styles.sectionText}>Elegí entre Roma, Dana y Vene. Cada una toma los colores y contenidos de tu marca.</p>
           </div>
 
           <div className={styles.templateGroups}>
@@ -424,20 +355,18 @@ export default function HomePage() {
                     <h3 id={`templates-${group.title.toLowerCase().replaceAll(" ", "-")}`}>{group.title}</h3>
                     <p>{group.description}</p>
                   </div>
-                  <span>{group.templates.length} {group.templates.length === 1 ? "diseño" : "diseños"}</span>
+                  <span>{group.templates.length} diseños</span>
                 </div>
                 <div className={styles.templateGrid}>
                   {group.templates.map((template) => (
-                    <a key={template.name} href={template.href} className={styles.templateCard} aria-label={`Ver la plantilla ${template.name} completa`}>
-                      <span className={styles.templateImage}>
-                        <Image src={template.image} alt={`Vista previa de la plantilla ${template.name}`} fill sizes="(max-width: 639px) calc(100vw - 32px), (max-width: 1023px) 50vw, 380px" />
-                      </span>
+                    <a key={template.name} href={template.href} className={styles.templateCard} aria-label={`Elegir plantilla ${template.name}`}>
+                      <span className={styles.templateImage} style={{ background: template.color }} aria-hidden="true"><span className={styles.templateMock}><span className={styles.templateMockTop}><i/><b>{template.name}</b><i/></span><span className={styles.templateMockHero}><strong>{template.name}</strong><small>Tu tienda, tu estilo</small></span><span className={styles.templateMockProducts}><i/><i/><i/></span></span></span>
                       <span className={styles.templateContent}>
                         <span>
                           <strong>{template.name}</strong>
                           <small>{template.description}</small>
                         </span>
-                        <span className={styles.templateAction}>Ver completa <ArrowRight size={16} /></span>
+                        <span className={styles.templateAction}>Elegir plantilla <ArrowRight size={16} /></span>
                       </span>
                     </a>
                   ))}

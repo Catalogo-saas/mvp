@@ -1,3 +1,4 @@
+import { AdminPageHeader } from "@/components/admin-ui";
 import { CustomerDirectory } from "@/components/customer-directory";
 import { aggregateCustomers, validCustomerOrderStatuses } from "@/lib/customer-summary";
 import { getMerchantStore } from "@/lib/merchant";
@@ -16,11 +17,7 @@ export default async function CustomersPage() {
 
   return (
     <div className="space-y-6">
-      <header className="panel hidden p-6 sm:block">
-        <p className="text-sm font-bold uppercase tracking-[0.2em] text-brand">Clientes</p>
-        <h1 className="mt-2 text-3xl font-black">Clientes de {store.name}</h1>
-        <p className="mt-2 text-muted">Historial simple construido automáticamente con tus pedidos.</p>
-      </header>
+      <AdminPageHeader title="Clientes" description="Contactos e historial de compras, en un solo lugar."/>
       <CustomerDirectory customers={customers} />
     </div>
   );

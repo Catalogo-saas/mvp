@@ -1,45 +1,25 @@
+import { normalizeVariants } from "@/lib/product-variants";
+
 export const storeTemplates = [
-  "ecommerce",
-  "food",
-  "boutique-soft",
-  "premium-minimal",
-  "beauty-pop",
-  "baby-natural",
-  "baby-atelier",
-  "baby-mini",
-  "baby-cielito",
-  "baby-bosque",
-  "baby-abrazo"
+  "roma",
+  "dana",
+  "vene"
 ] as const;
+
+export const publicStoreTemplates = ["roma", "dana", "vene"] as const;
 
 export type StoreTemplate = (typeof storeTemplates)[number];
 
 export const storeTemplateLabels: Record<StoreTemplate, string> = {
-  ecommerce: "Tienda online",
-  food: "Comida",
-  "boutique-soft": "Boutique",
-  "premium-minimal": "Minimalista",
-  "beauty-pop": "Colorida",
-  "baby-natural": "Natural",
-  "baby-atelier": "Delicada",
-  "baby-mini": "Divertida",
-  "baby-cielito": "Tierna",
-  "baby-bosque": "Bosque",
-  "baby-abrazo": "Cálida"
+  roma: "Roma · Clásica",
+  dana: "Dana · Editorial",
+  vene: "Vene · Moderna"
 };
 
 export const defaultCategoryTitles: Record<StoreTemplate, string> = {
-  ecommerce: "Categorías",
-  food: "Categorías",
-  "boutique-soft": "Encontrá eso que te encanta",
-  "premium-minimal": "Una edición para cada momento",
-  "beauty-pop": "Explorá tu estilo",
-  "baby-natural": "Todo para crecer",
-  "baby-atelier": "La selección Petit",
-  "baby-mini": "Explorá Mundo Mini",
-  "baby-cielito": "Elegí entre las nubes",
-  "baby-bosque": "Tres capítulos para explorar",
-  "baby-abrazo": "Armá su pequeño mundo"
+  roma: "Descubrí nuestras categorías",
+  dana: "Categorías",
+  vene: "Explorá la tienda"
 };
 
 export function getDefaultCategoryTitle(template: string | null | undefined) {
@@ -49,16 +29,9 @@ export function getDefaultCategoryTitle(template: string | null | undefined) {
 type StoreColors = { primary: string; accent: string };
 
 export const templateOriginalColors: Partial<Record<StoreTemplate, StoreColors>> = {
-  ecommerce: { primary: "#1e4f43", accent: "#e6ff54" },
-  "boutique-soft": { primary: "#e8a5ad", accent: "#cbd6c0" },
-  "premium-minimal": { primary: "#9d1f36", accent: "#276346" },
-  "beauty-pop": { primary: "#f44599", accent: "#efff63" },
-  "baby-natural": { primary: "#677d67", accent: "#d59b74" },
-  "baby-atelier": { primary: "#873f43", accent: "#c89570" },
-  "baby-mini": { primary: "#4b67d1", accent: "#ff6d55" },
-  "baby-cielito": { primary: "#9987c5", accent: "#f1a6b0" },
-  "baby-bosque": { primary: "#70866b", accent: "#ca8f64" },
-  "baby-abrazo": { primary: "#d57979", accent: "#65a99b" }
+  roma: { primary: "#d99195", accent: "#f2e4e4" },
+  dana: { primary: "#176877", accent: "#f5c4d4" },
+  vene: { primary: "#ee7947", accent: "#191919" }
 };
 
 export function supportsOriginalTemplateColors(template: string | null | undefined) {
@@ -85,36 +58,36 @@ export function getStoreThemeColors(template: string | null | undefined, theme: 
   };
 }
 
-export function isFashionTemplate(template: StoreTemplate) {
-  return template === "boutique-soft" || template === "premium-minimal" || template === "beauty-pop";
-}
-
-export function isBabyTemplate(template: StoreTemplate): template is Extract<StoreTemplate, `baby-${string}`> {
-  return template === "baby-natural"
-    || template === "baby-atelier"
-    || template === "baby-mini"
-    || template === "baby-cielito"
-    || template === "baby-bosque"
-    || template === "baby-abrazo";
-}
-
 export function isPanelStorefrontTemplate(template: StoreTemplate) {
-  return isFashionTemplate(template) || isBabyTemplate(template);
+  return template === "roma" || template === "dana" || template === "vene";
 }
 
-export function getEffectiveProductPrice(product: { basePrice: number; promoPrice?: number | null }) {
-  return product.promoPrice && product.promoPrice > 0 && product.promoPrice < product.basePrice ? product.promoPrice : product.basePrice;
+export function getCatalogPrices(product: { basePrice: number; promoPrice?: number | null; variants?: unknown }) {
+  const variants = normalizeVariants(product.variants).filter(variant => variant.isVisible);
+  if (variants.length) {
+    const prices = variants.map(variant => {
+      const regular = variant.basePrice ?? product.basePrice;
+      const effective = variant.promoPrice !== null && variant.promoPrice > 0 && variant.promoPrice < regular ? variant.promoPrice : regular;
+      return { regular, effective };
+    });
+    return prices.reduce((best, current) => current.effective < best.effective ? current : best);
+  }
+  const effective = product.promoPrice && product.promoPrice > 0 && product.promoPrice < product.basePrice ? product.promoPrice : product.basePrice;
+  return { regular: product.basePrice, effective };
 }
 
-export function getDiscountPercent(product: { basePrice: number; promoPrice?: number | null }) {
-  const effectivePrice = getEffectiveProductPrice(product);
-  if (effectivePrice >= product.basePrice) {
+export function getEffectiveProductPrice(product: { basePrice: number; promoPrice?: number | null; variants?: unknown }) {
+  return getCatalogPrices(product).effective;
+}
+
+export function getDiscountPercent(product: { basePrice: number; promoPrice?: number | null; variants?: unknown }) {
+  const { regular, effective } = getCatalogPrices(product);
+  if (effective >= regular) {
     return null;
   }
-  return Math.round((1 - effectivePrice / product.basePrice) * 100);
+  return Math.round((1 - effective / regular) * 100);
 }
 
 export function normalizeStoreTemplate(template: string | null | undefined): StoreTemplate {
-  if (template === "quick-menu") return "food";
-  return storeTemplates.includes(template as StoreTemplate) ? (template as StoreTemplate) : "ecommerce";
+  return storeTemplates.includes(template as StoreTemplate) ? (template as StoreTemplate) : "roma";
 }
