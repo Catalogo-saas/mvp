@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { createPaymentMethod } from "../lib/commerce-settings";
 
@@ -38,9 +38,154 @@ async function checkout(page: Page) {
   await expect(page.getByRole("button", { name: "Confirmar pedido" })).toBeEnabled();
 }
 
+async function activate(button: Locator, isMobile: boolean) {
+  if (isMobile) await button.tap();
+  else await button.click();
+}
+
+async function holdQuote(page: Page) {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let started!: () => void;
+  const captured = new Promise<void>(resolve => { started = resolve; });
+  const pending: Promise<void>[] = [];
+  const handler = (route: import("@playwright/test").Route) => {
+    const task = (async () => {
+      started();
+      const response = await route.fetch();
+      await gate;
+      await route.fulfill({ response });
+    })();
+    pending.push(task);
+    return task;
+  };
+  await page.route("**/api/storefront/cart/quote", handler);
+  return { captured, release, count: () => pending.length, dispose: async () => {
+    await Promise.all(pending);
+    await page.unroute("**/api/storefront/cart/quote", handler);
+  } };
+}
+
 test.beforeEach(async () => { test.skip(!isLocal, "Fixtures exclusivos para base y servidor locales."); fixture = await createFixture(); });
 test.afterEach(async () => { if (fixture) await prisma.user.deleteMany({ where: { id: fixture.ownerId } }); });
 test.afterAll(async () => { await prisma.$disconnect(); });
+
+test("un solo toque avanza cada paso durante la actualización por foco", async ({ page, isMobile }) => {
+  await seedCart(page);
+  await page.goto("/" + fixture.slug + "/compra");
+  await page.getByLabel("Correo electrónico").fill("cliente@example.test");
+  const next = page.getByRole("button", { name: "Continuar", exact: true });
+  await expect(next).toBeEnabled();
+  const emailQuote = await holdQuote(page);
+  try {
+    await page.getByLabel("Correo electrónico").focus();
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+      window.dispatchEvent(new Event("focus"));
+    });
+    await emailQuote.captured;
+    await expect(page.getByRole("status").locator("svg")).toBeVisible();
+    await expect(next).toBeEnabled();
+    await activate(next, isMobile);
+    await expect(page.getByRole("heading", { name: "Datos de contacto y entrega" })).toBeVisible();
+    expect(emailQuote.count()).toBe(1);
+  } finally { emailQuote.release(); await emailQuote.dispose(); }
+  await expect(page.getByRole("status").locator("svg")).toHaveCount(0);
+  await page.getByLabel("Nombre y apellido").fill("Cliente QA");
+  await page.getByLabel("Teléfono", { exact: true }).fill("1112345678");
+  await page.getByRole("radio", { name: /Retiro QA/ }).check();
+  await expect(next).toBeEnabled();
+  const deliveryQuote = await holdQuote(page);
+  try {
+    await page.getByLabel("Teléfono", { exact: true }).focus();
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await deliveryQuote.captured;
+    await expect(page.getByRole("status").locator("svg")).toBeVisible();
+    await expect(next).toBeEnabled();
+    await activate(next, isMobile);
+    await expect(page.getByRole("heading", { name: "Medio de pago" })).toBeVisible();
+    expect(deliveryQuote.count()).toBe(1);
+  } finally { deliveryQuote.release(); await deliveryQuote.dispose(); }
+  expect(await prisma.order.count({ where: { storeId: fixture.id } })).toBe(0);
+});
+
+test("cambiar la entrega bloquea el avance hasta verificar la selección nueva", async ({ page }) => {
+  await seedCart(page);
+  await page.goto("/" + fixture.slug + "/compra");
+  await page.getByLabel("Correo electrónico").fill("cliente@example.test");
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  const quote = await holdQuote(page);
+  try {
+    await page.getByRole("radio", { name: /Retiro QA/ }).check();
+    await quote.captured;
+    await expect(page.getByRole("button", { name: "Continuar", exact: true })).toBeDisabled();
+  } finally { quote.release(); await quote.dispose(); }
+  await expect(page.getByRole("button", { name: "Continuar", exact: true })).toBeEnabled();
+});
+
+test("confirmar durante una actualización espera la misma consulta y crea una sola venta", async ({ page, isMobile }) => {
+  await checkout(page);
+  const quote = await holdQuote(page);
+  try {
+    await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+    await quote.captured;
+    await expect(page.getByRole("status").locator("svg")).toBeVisible();
+    await activate(page.getByRole("button", { name: "Confirmar pedido" }), isMobile);
+    await expect(page.getByRole("button", { name: "Confirmando..." })).toBeDisabled();
+    expect(quote.count()).toBe(1);
+    expect(await prisma.order.count({ where: { storeId: fixture.id } })).toBe(0);
+  } finally { quote.release(); await quote.dispose(); }
+  await page.waitForURL("**/compra/proceso/orden?hash=*");
+  expect(await prisma.order.count({ where: { storeId: fixture.id } })).toBe(1);
+});
+
+for (const variant of ["completos", "solo alias", "solo CBU/CVU"] as const) {
+  test(`transferencia visible con datos ${variant} y copia accesible`, async ({ page, isMobile }, info) => {
+    const payment = { ...createPaymentMethod("transfer", "bank"), discountPercent: 12,
+      alias: variant === "solo CBU/CVU" ? "" : "qa.alias.largo." + "a".repeat(100),
+      cbu: variant === "solo alias" ? "" : "0000000000000000000001",
+      accountHolder: variant === "completos" ? "Titular de la cuenta QA" : "",
+      provider: variant === "completos" ? "Banco QA" : ""
+    };
+    await prisma.store.update({ where: { id: fixture.id }, data: { checkoutSettings: { paymentMethods: [payment] } } });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (value: string) => { sessionStorage.setItem("qa-copied", value); } } });
+    });
+    await checkout(page);
+    const details = page.getByRole("region", { name: "Datos para transferir" });
+    await expect(details).toBeVisible();
+    const notes = page.getByLabel("Notas del pedido (opcional)");
+    expect(await details.evaluate((element, textarea) => Boolean(element.compareDocumentPosition(textarea as Node) & Node.DOCUMENT_POSITION_FOLLOWING), await notes.elementHandle())).toBe(true);
+    for (const [name, value, feedback] of [["Copiar alias", payment.alias, "Alias copiado."], ["Copiar CBU/CVU", payment.cbu, "CBU/CVU copiado."]]) {
+      const button = details.getByRole("button", { name, exact: true });
+      if (!value) { await expect(button).toHaveCount(0); continue; }
+      await expect(details.getByText(value, { exact: true })).toBeVisible();
+      expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await activate(button, isMobile);
+      await expect(details.getByRole("status")).toHaveText(feedback);
+      expect(await page.evaluate(() => sessionStorage.getItem("qa-copied"))).toBe(value);
+      await expect(page.getByRole("heading", { name: "Medio de pago" })).toBeVisible();
+    }
+    await expect(details.getByText("Titular", { exact: true })).toHaveCount(variant === "completos" ? 1 : 0);
+    await expect(details.getByText("Banco / proveedor", { exact: true })).toHaveCount(variant === "completos" ? 1 : 0);
+    if (variant === "completos") {
+      await page.evaluate(() => { Object.defineProperty(navigator, "clipboard", { value: { writeText: async () => { throw new Error("Clipboard unavailable"); } } }); });
+      await activate(details.getByRole("button", { name: "Copiar alias", exact: true }), isMobile);
+      await expect(details.getByRole("alert")).toHaveText(/No pudimos copiar alias/);
+      for (const width of isMobile ? [320, 390, 768] : [1280]) {
+        await page.setViewportSize({ width, height: 844 });
+        expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+      }
+      await page.setViewportSize({ width: isMobile ? 390 : 1280, height: 844 });
+      await page.screenshot({ path: info.outputPath("transferencia.png"), fullPage: true });
+    }
+    expect(await prisma.order.count({ where: { storeId: fixture.id } })).toBe(0);
+  });
+}
 
 test("la verificación usa un spinner en la cantidad, sin texto ni saltos de tamaño", async ({ page }, info) => {
   await seedCart(page);

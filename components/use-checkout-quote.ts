@@ -14,8 +14,8 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
   const linesJson = JSON.stringify(cartQuoteLines(cart));
   const inputJson = JSON.stringify({ storeSlug: slug, items: JSON.parse(linesJson), ...(selection.paymentMethodId ? { paymentMethodId: selection.paymentMethodId } : {}), ...(selection.deliveryMethodId ? { deliveryMethodId: selection.deliveryMethodId } : {}) });
   const [state, setState] = useState<{ key: string; quote: CheckoutQuote | null; error: string }>({ key: "", quote: null, error: "" });
-  const [pending, setPending] = useState(false);
-  const request = useRef<{ controller: AbortController; sequence: number } | null>(null);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const request = useRef<{ key: string; controller: AbortController; sequence: number; promise: Promise<CheckoutQuote | null> } | null>(null);
   const sequence = useRef(0);
 
   const applyQuote = useCallback((quote: CheckoutQuote) => {
@@ -36,37 +36,48 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
     setState({ key: inputJson, quote: mapped, error: "" });
   }, [changeCart, inputJson, linesJson]);
 
-  const refresh = useCallback(async (): Promise<CheckoutQuote | null> => {
+  const refresh = useCallback((): Promise<CheckoutQuote | null> => {
+    // Focus, visibility and explicit confirmation can request the same quote together.
+    if (request.current?.key === inputJson && !request.current.controller.signal.aborted) return request.current.promise;
     request.current?.controller.abort();
     const controller = new AbortController();
     const id = ++sequence.current;
-    request.current = { controller, sequence: id };
-    setPending(true);
-    try {
-      const response = await fetch("/api/storefront/cart/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: inputJson, signal: controller.signal, cache: "no-store" });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "No pudimos verificar el carrito.");
-      if (controller.signal.aborted || id !== sequence.current) return null;
-      // Cross-tab cart updates can precede React's next effect cleanup.
-      const stored = JSON.parse(localStorage.getItem(`storefront-cart:${slug}`) || "[]") as StorefrontCartItem[];
-      if (JSON.stringify(cartQuoteLines(stored)) !== linesJson) return null;
-      applyQuote(result);
-      return result;
-    } catch (error) {
-      if (!controller.signal.aborted && id === sequence.current) setState({ key: inputJson, quote: null, error: error instanceof Error ? error.message : "No pudimos verificar el carrito." });
-      return null;
-    } finally { if (id === sequence.current) setPending(false); }
+    setPendingKey(inputJson);
+    const promise = (async () => {
+      try {
+        const response = await fetch("/api/storefront/cart/quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: inputJson, signal: controller.signal, cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "No pudimos verificar el carrito.");
+        if (controller.signal.aborted || id !== sequence.current) return null;
+        // Cross-tab cart updates can precede React's next effect cleanup.
+        const stored = JSON.parse(localStorage.getItem(`storefront-cart:${slug}`) || "[]") as StorefrontCartItem[];
+        if (JSON.stringify(cartQuoteLines(stored)) !== linesJson) return null;
+        applyQuote(result);
+        return result;
+      } catch (error) {
+        if (!controller.signal.aborted && id === sequence.current) setState({ key: inputJson, quote: null, error: error instanceof Error ? error.message : "No pudimos verificar el carrito." });
+        return null;
+      } finally {
+        if (id === sequence.current) { request.current = null; setPendingKey(null); }
+      }
+    })();
+    request.current = { key: inputJson, controller, sequence: id, promise };
+    return promise;
   }, [applyQuote, inputJson, linesJson, slug]);
 
   useEffect(() => {
     if (!active || !cart.length) return;
     const timer = window.setTimeout(() => { void refresh(); }, 250);
-    const focus = () => { if (document.visibilityState === "visible") void refresh(); };
+    const focus = () => {
+      if (document.visibilityState === "visible") { clearTimeout(timer); void refresh(); }
+    };
     window.addEventListener("focus", focus);
     document.addEventListener("visibilitychange", focus);
     return () => {
       clearTimeout(timer);
       request.current?.controller.abort();
+      request.current = null;
+      sequence.current += 1;
       window.removeEventListener("focus", focus);
       document.removeEventListener("visibilitychange", focus);
     };
@@ -74,5 +85,6 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
 
   const quote = state.key === inputJson ? state.quote : null;
   const error = state.key === inputJson ? state.error : "";
-  return { quote, error, refresh, applyQuote, verifying: active && cart.length > 0 && (pending || !quote && !error) };
+  const verifying = active && cart.length > 0 && (pendingKey === inputJson || !quote && !error);
+  return { quote, error, refresh, applyQuote, verifying, blocking: verifying && !quote };
 }

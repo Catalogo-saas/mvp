@@ -3,7 +3,7 @@ import base from "./playwright.config";
 
 export default defineConfig({
   ...base,
-  testMatch: "mobile-management.spec.ts",
+  testMatch: ["mobile-management.spec.ts", "checkout-integrity.spec.ts"],
   workers: 2,
   timeout: 60_000,
   projects: [

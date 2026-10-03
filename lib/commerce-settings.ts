@@ -62,7 +62,6 @@ export const checkoutSettingsSchema = z.object({
   requireBilling: z.boolean().default(false),
   allowNotes: z.boolean().default(true),
   minimumAmount: z.number().int().min(0).max(999999999).nullable().default(null),
-  showFreeShippingProgress: z.boolean().default(false),
   showLowStock: z.boolean().default(false),
   lowStockThreshold: z.number().int().min(1).max(999999).default(5),
   cashName: z.string().trim().min(2).max(80).default("Efectivo"),

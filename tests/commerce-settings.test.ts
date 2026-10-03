@@ -20,6 +20,12 @@ describe("commerce settings", () => {
     expect(delivery).toMatchObject({ type: "custom", coverage: "Argentina", amountLimitEnabled: true, freeShippingEnabled: true, deliveryTimeEnabled: true, minDays: 1, maxDays: 3 });
   });
 
+  it("ignores retired shipping progress without resetting saved checkout preferences", () => {
+    const checkout = normalizeCheckoutSettings({ showFreeShippingProgress: true, requirePhone: false, requireDni: true, showLowStock: true, minimumAmount: 25000 });
+    expect(checkout).not.toHaveProperty("showFreeShippingProgress");
+    expect(checkout).toMatchObject({ requirePhone: false, requireDni: true, showLowStock: true, minimumAmount: 25000 });
+  });
+
   it("normalizes pickup as free and preserves its location and hours", () => {
     const [pickup] = normalizeDeliveryMethods([{ id: "pickup", type: "pickup", name: "Local", pickupDetails: "Córdoba 100 · 9 a 18 h", enabled: true, price: 400 }]);
     expect(pickup).toMatchObject({ type: "pickup", price: 0, coverage: "Argentina", pickupDetails: "Córdoba 100 · 9 a 18 h" });

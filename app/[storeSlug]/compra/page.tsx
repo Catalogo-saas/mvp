@@ -11,7 +11,8 @@ export default async function CheckoutPage({ params }: { params: Promise<{ store
     name: true, slug: true, logoUrl: true, template: true, theme: true, designConfig: true,
     acceptCashPayments: true, acceptTransferPayments: true, whatsappOrdersEnabled: true,
     checkoutSettings: true, deliveryMethods: true, showPricesWithoutTax: true, taxRatePercent: true,
-    paymentAlias: true, products: { where: { isVisible: true, freeShipping: true }, select: { id: true } }
+    paymentAlias: true, paymentAccountHolder: true, paymentProvider: true, paymentCbu: true,
+    products: { where: { isVisible: true, freeShipping: true }, select: { id: true } }
   } });
   if (!store) notFound();
   return <StorefrontCheckoutPage store={{ ...store, freeShippingProductIds: store.products.map(product => product.id) }}/ >;
