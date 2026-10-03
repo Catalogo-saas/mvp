@@ -73,13 +73,32 @@ Suspender una cuenta, cambiar su email o restablecer su contraseña invalida sus
 
 En instalaciones existentes, aplicá la migración `20261002010000_store_team` con `pnpm exec prisma migrate deploy` y regenerá el cliente con `pnpm prisma:generate` antes de iniciar la nueva versión. Las cuentas titulares existentes conservan su acceso.
 
-## Usuario demo
+## Tiendas demo
 
-- Email: `demo@landing.test`
-- Password inicial: `demo1234`
-- Tienda: `/demo`
+| Tienda | URL | Administrador | Contraseña |
+| --- | --- | --- | --- |
+| NORTE · Ropa de mujer y hombre · Dana | `/demo` | `demo@landing.test` | `Ropa1234` |
+| NEXO · Hogar y tecnología · Vene | `/demo-productos` | `demo-productos@landing.test` | `Productos1234` |
 
-`pnpm seed` crea la tienda con checkout en efectivo, entrega personalizada y diseño editable. No modifica cuentas, tiendas ni productos que ya existan; una tienda demo creada con la configuración anterior debe actualizarse desde `/gestion/configuracion` y `/gestion/configuracion/diseno`. No ejecutes este seed en una base pública: la contraseña inicial es conocida.
+Ejecutá `pnpm seed` o `pnpm demo:seed` para reconstruir ambas demos. Cada una contiene 60 productos, 12 subcategorías, novedades y ofertas, galerías de fotos, variantes, inventario, promociones y siete secciones de portada. Incluyen efectivo, transferencia con descuento, pago a convenir, retiro gratuito y envío con umbral de gratuidad.
+
+Cada tienda incluye diez clientes registrados, 24 pedidos con diferentes estados y 300 eventos de navegación durante los últimos 30 días. Los clientes usan `cliente1@norte.example.invalid` a `cliente10@norte.example.invalid` (o `nexo.example.invalid`) y la misma contraseña de su demo. Estos datos permiten explorar clientes recurrentes, ventas, reservas de stock y seguimiento.
+
+**Cada ejecución elimina y reemplaza todos los datos de estas dos tiendas**, incluidos cambios manuales, clientes, sesiones, pedidos, miembros y configuración. Restablece las contraseñas e invalida las sesiones administrativas anteriores. Valida ambas identidades antes de borrar y ejecuta la reconstrucción en una transacción; ante una URL o cuenta perteneciente a otro comerciante, aborta. Conserva las demás tiendas, cuentas y el antiguo tenant `/demo-ecommerce`, si existe.
+
+La carga agrupa las inserciones y las reservas de inventario para reducir viajes a la base, especialmente si es remota. La transacción tiene un límite de diez minutos; si falla o vence ese tiempo, se revierten ambas demos completas. El aviso del driver sobre `sslmode` es independiente de ese límite: no desactives la validación SSL para resolver un timeout del seed.
+
+Configurá `DATABASE_URL`. `TRACKING_TOKEN_SECRET` (o `NEXTAUTH_SECRET`) debe tener al menos 24 caracteres. Si configurás `CHECKOUT_QUOTE_SECRET`, también debe cumplir ese mínimo. El seed valida los secretos antes de modificar datos. No envía correos ni mensajes y no necesita almacenamiento de archivos para las fotos. Las credenciales demo son conocidas: usá una base de desarrollo o una instalación dedicada a demostraciones.
+
+El catálogo y los datos comerciales son ficticios. Las galerías externas tienen su origen documentado en `prisma/demo-images.json`: imágenes de catálogos públicos de demostración Shopify y [DummyJSON](https://dummyjson.com/docs/products); los banners usan fotografías de [Unsplash](https://unsplash.com). El seed usa un manifiesto estático, sin consultar esas APIs al ejecutarse. Las fotografías requieren conexión a sus CDN. Los datos de pago, teléfonos, direcciones y enlaces sociales son ilustrativos; no realices pagos reales.
+
+Para verificar reconstrucción, aislamiento, contraseñas, importes y stock en una base temporal que tenga las migraciones aplicadas:
+
+```bash
+DEMO_SEED_TEST_DATABASE_URL="postgresql://usuario:clave@localhost:5432/landing_demo_seed_test" pnpm test
+```
+
+La prueba de integración exige una base local llamada `landing_demo_seed_test` o `landing_demo_seed_test_*` para evitar ejecutarse sobre la base de trabajo. Usa secretos propios para sus fixtures: antes de probar en navegador, reconstruí esa base con `pnpm seed`, configurando `DATABASE_URL` de pruebas y los mismos secretos de seguimiento y checkout que usará el servidor. Luego iniciá la app contra esa misma base y ejecutá `DEMO_QA=1 DEMO_SEED_TEST_DATABASE_URL="postgresql://usuario:clave@localhost:5432/landing_demo_seed_test" pnpm exec playwright test e2e/demo-stores.spec.ts`, usando el mismo `TRACKING_TOKEN_SECRET` que el servidor y `PLAYWRIGHT_BASE_URL` si no está en `http://127.0.0.1:3100`.
 
 ## Mockups HTML
 
@@ -94,14 +113,7 @@ En instalaciones existentes, aplicá la migración `20261002010000_store_team` c
 - `/mockups/template-premium-minimal.html`
 - `/mockups/template-boutique-soft.html`
 
-Para crear el tenant ecommerce de demostración o completar datos que le falten:
-
-```bash
-DEMO_TENANT_PASSWORD="una-clave-segura" pnpm demo:seed
-```
-
-Por defecto se crea con el email `demo-ecommerce@landing.test` y la URL pública `/demo-ecommerce`.
-El seed ecommerce usa el diseño Dana, checkout en efectivo, entrega personalizada y un producto con stock por variante. Al repetirlo conserva contraseñas, configuración y productos ya existentes.
+`pnpm demo:seed` es un alias compatible del seed principal y reconstruye las dos demos de la tabla. Las antiguas variables `DEMO_TENANT_*` ya no seleccionan otro tenant.
 
 ## Documento de contexto
 

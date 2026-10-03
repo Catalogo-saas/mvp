@@ -26,6 +26,8 @@ export function DesignPreviewBridge({ store, products, categories }: { store: St
       });
     }
     window.addEventListener("message", receive);
+    // The iframe's load event may fire before React installs this listener.
+    window.parent.postMessage({ type: "design-preview-ready" }, window.location.origin);
     return () => window.removeEventListener("message", receive);
   }, [store]);
   return <PublicStore store={{ ...store, ...draft, isPreview: true }} products={products} categories={categories} />;

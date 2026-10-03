@@ -22,7 +22,7 @@ test("equipo: altas, permisos, roles y revocación de sesiones", async ({ page, 
   const memberContext = await browser.newContext({ baseURL: info.project.use.baseURL });
   const adminContext = await browser.newContext({ baseURL: info.project.use.baseURL });
   try {
-    await login(page, "demo@landing.test", "demo1234");
+    await login(page, "demo@landing.test", "Ropa1234");
     await page.goto("/gestion/usuarios");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Usuarios");
     await expect(page.getByText("Titular · Cuenta protegida")).toBeVisible();

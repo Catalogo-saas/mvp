@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronRight, ChevronUp, Globe, House, Image as ImageIcon, ImagePlus, Monitor, Package, Paintbrush, Palette, Save, Smartphone, Trash2, Type as TypeIcon } from "lucide-react";
 import { AdminNotice, AdminPageHeader } from "@/components/admin-ui";
 import { notifyError, notifySuccess } from "@/lib/internal-notifications";
@@ -40,8 +40,13 @@ export function DesignEditor({store,categories,products}:{store:VisualStore&{slu
  const update=(patch:Partial<VisualSettings>)=>setDraft(current=>({...current,...patch}));
  const design=(patch:Partial<VisualSettings["designConfig"]>)=>update({designConfig:{...draft.designConfig,...patch}});
  const page=(patch:Partial<VisualSettings["publicPageConfig"]>)=>update({publicPageConfig:{...draft.publicPageConfig,...patch}});
- function sendPreview(){frame.current?.contentWindow?.postMessage({type:"design-preview",...draft,logoUrl:images.logo[0]?.url??null,heroImageUrls:images.hero.map(i=>i.url)},window.location.origin);}
+ const sendPreview=useCallback(()=>{frame.current?.contentWindow?.postMessage({type:"design-preview",...draft,logoUrl:images.logo[0]?.url??null,heroImageUrls:images.hero.map(i=>i.url)},window.location.origin);},[draft,images]);
  useEffect(()=>{sendPreview();}); // Re-send after controls or the frame mode changes.
+ useEffect(()=>{
+  function ready(event:MessageEvent){if(event.origin===window.location.origin&&event.source===frame.current?.contentWindow&&event.data?.type==="design-preview-ready")sendPreview();}
+  window.addEventListener("message",ready);
+  return ()=>window.removeEventListener("message",ready);
+ },[sendPreview]);
  function openMobileEditor(){setPreview(false);setSectionOpen(false);setMobileEditorOpen(true);setMobileEditorExpanded(false);}
  function closeMobileEditor(){setMobileEditorOpen(false);setSectionOpen(false);setHomeEditingSectionId(null);setMobileEditorExpanded(false);}
  function openSection(key:(typeof sections)[number][0]){setSection(key);setSectionOpen(true);setHomeEditingSectionId(null);setMobileEditorExpanded(true);}

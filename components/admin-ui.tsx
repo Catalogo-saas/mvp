@@ -16,8 +16,30 @@ export function AdminDialog({ open, onClose, title, children, footer, fullScreen
     const previous = document.activeElement as HTMLElement | null;
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
-    return () => { if (dialog.open) dialog.close(); if (open) previous?.focus(); };
+    return () => { if (dialog.open) dialog.close(); if (open) previous?.focus({ preventScroll: true }); };
   }, [open]);
+  useEffect(() => {
+    if (!open || !fullScreenMobile || !window.visualViewport) return;
+    const dialog = ref.current;
+    const viewport = window.visualViewport;
+    if (!dialog) return;
+    const update = () => {
+      if (!window.matchMedia("(max-width: 767px)").matches) return;
+      dialog.style.setProperty("--dialog-viewport-height", `${viewport.height}px`);
+      dialog.style.setProperty("--dialog-viewport-top", `${viewport.offsetTop}px`);
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement && dialog.contains(focused)) focused.scrollIntoView({ block: "nearest" });
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => {
+      viewport.removeEventListener("resize", update);
+      viewport.removeEventListener("scroll", update);
+      dialog.style.removeProperty("--dialog-viewport-height");
+      dialog.style.removeProperty("--dialog-viewport-top");
+    };
+  }, [open, fullScreenMobile]);
   return <dialog ref={ref} className={`admin-dialog${fullScreenMobile ? " admin-dialog-fullscreen" : ""}${centeredMobile ? " admin-dialog-centered-mobile" : ""}${rightDrawerMobile ? " admin-dialog-right-drawer" : ""}`} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const box = event.currentTarget.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) onClose(); } }} aria-label={title}><header><h2>{title}</h2><button type="button" className="admin-icon-button" onClick={onClose} aria-label={`Cerrar ${title}`}><X size={20} /></button></header><div className="admin-dialog-body">{open ? children : null}</div>{footer && <footer>{footer}</footer>}</dialog>;
 }
 export function AdminPagination({ page, pageSize, total, onChange }: { page: number; pageSize: number; total: number; onChange: (page: number, size: number) => void }) {

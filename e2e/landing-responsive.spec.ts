@@ -32,7 +32,7 @@ test("a product card opens its own page with sharing metadata", async ({ page })
   const productButton = page.locator("#catalogo article button").first();
   await expect(productButton).toBeVisible();
   await productButton.click();
-  await expect(page).toHaveURL(/\/product\/[^/]+$/);
+  await expect(page).toHaveURL(/\/producto\/[^/]+$/);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("button", { name: "Compartir producto" })).toBeVisible();
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", /.+/);
@@ -46,21 +46,21 @@ test("secondary public pages keep the fixed menu and nested categories", async (
     const drawer = page.getByRole("dialog", { name: "Menú de la tienda" });
     await drawer.locator("summary").first().click();
     await expect(drawer.getByText("Mujer", { exact: true })).toBeVisible();
-    await drawer.locator("summary").nth(1).click();
-    await expect(drawer.getByText("Camisas", { exact: true })).toBeVisible();
+    await drawer.getByRole("button", { name: "Mostrar subcategorías de Mujer" }).click();
+    await expect(drawer.getByText("Camisas y blusas", { exact: true })).toBeVisible();
   } else {
     const nav = page.getByRole("navigation", { name: "Menú de la tienda" });
     await expect(nav.getByRole("link", { name: "Inicio" })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Contáctanos" })).toBeVisible();
-    await nav.getByRole("button", { name: /Categorías/ }).hover();
-    await expect(nav.getByRole("link", { name: "Lino" })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Productos", exact: true })).toBeVisible();
+    await nav.getByRole("button", { name: /Categorías/ }).focus();
+    await expect(nav.getByRole("link", { name: "Camisas y blusas" })).toBeVisible();
   }
 });
 
 test("product management keeps the simple responsive action layout", async ({ page }, testInfo) => {
   await page.goto("/login");
   await page.getByPlaceholder("Email").fill("demo@landing.test");
-  await page.getByPlaceholder("Contraseña").fill("demo1234");
+  await page.getByPlaceholder("Contraseña").fill("Ropa1234");
   await page.getByRole("button", { name: "Ingresar" }).click();
   await page.waitForURL(/\/(panel|gestion)/);
   await page.goto("/gestion/productos");
@@ -81,9 +81,9 @@ test("product management keeps the simple responsive action layout", async ({ pa
   }
 
   await moreButton.click();
-  const moreDialog = page.getByRole("dialog", { name: "Más opciones", exact: true });
-  await expect(moreDialog.getByRole("link", { name: "Exportar productos" })).toBeVisible();
-  await moreDialog.getByRole("button", { name: "Importar productos", exact: true }).click();
+  const moreMenu = page.getByRole("menu", { name: "Más opciones de productos", exact: true });
+  await expect(moreMenu.getByRole("menuitem", { name: "Exportar productos" })).toBeVisible();
+  await moreMenu.getByRole("menuitem", { name: "Importar productos", exact: true }).click();
   const importDialog = page.getByRole("dialog", { name: "Importar productos" });
   await expect(importDialog.getByRole("link", { name: "Descargar plantilla" })).toBeVisible();
   await expect(importDialog.getByLabel("Seleccionar archivo")).toBeVisible();
@@ -93,6 +93,6 @@ test("product management keeps the simple responsive action layout", async ({ pa
   await expect(page).toHaveURL(/\/gestion\/productos\/nuevo$/);
   await expect(page.getByRole("textbox", { name: "Oferta $" })).toBeVisible();
   await expect(page.getByRole("switch", { name: "Visibilidad" })).toBeVisible();
-  await expect(page.getByRole("switch", { name: "Producto destacado" })).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Envío gratis para este producto" })).toBeVisible();
   await expect(page.getByText("Slug", { exact: true })).toHaveCount(0);
 });

@@ -308,8 +308,8 @@ export default function HomePage() {
               <div className="mt-12 min-w-[560px] origin-left scale-[0.64] sm:scale-75 lg:scale-[0.68]"><DashboardPreview /></div>
             </article>
           </div>
-          <div className="mt-7 text-center">
-            <Link href={marketingConfig.demoStorePath} className={styles.demoLink} prefetch={false}>Explorar una tienda de ejemplo <ArrowRight size={18} /></Link>
+          <div className="mt-7 flex flex-wrap justify-center gap-3" aria-label="Explorar tiendas de demostración">
+            {marketingConfig.demoStores.map(demo => <Link key={demo.path} href={demo.path} className={styles.demoLink} prefetch={false}>{demo.label} <ArrowRight size={18} /></Link>)}
           </div>
         </div>
       </section>
@@ -461,7 +461,7 @@ export default function HomePage() {
             <p className="mt-5 max-w-xl font-semibold leading-7 text-[#344b44]">Contanos qué vendés y cómo trabajás. Te mostramos cómo llevarlo a una experiencia simple para vos y para tus clientes.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <WhatsappLink className={styles.darkCta}><MessageCircle size={19} /> Hablar por WhatsApp <ArrowRight size={18} /></WhatsappLink>
-              <Link href={marketingConfig.demoStorePath} className={styles.lightCta} prefetch={false}>Ver tienda de ejemplo</Link>
+              {marketingConfig.demoStores.map(demo => <Link key={demo.path} href={demo.path} className={styles.lightCta} prefetch={false}>{demo.label}</Link>)}
             </div>
           </div>
           <div className={styles.ctaDecoration}><ShoppingBag size={160} strokeWidth={1.1} /></div>

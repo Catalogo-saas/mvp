@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.beforeEach(async ({ page }) => {
   await page.goto("/login");
   await page.getByPlaceholder("Email").fill("demo@landing.test");
-  await page.getByPlaceholder("Contraseña").fill("demo1234");
+  await page.getByPlaceholder("Contraseña").fill("Ropa1234");
   await page.getByRole("button", { name: "Ingresar" }).click();
   await page.waitForURL(/\/(panel|gestion)/);
 });
