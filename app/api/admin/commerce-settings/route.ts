@@ -24,8 +24,12 @@ export async function PATCH(request:Request){
  const merged={...current,...input};
  const mergedCheckoutSettings={...normalizeCheckoutSettings(current.checkoutSettings),...input.checkoutSettings};
  if(merged.isPublished&&!merged.whatsappOrdersEnabled){
- if(!normalizePaymentMethods({...merged,checkoutSettings:mergedCheckoutSettings}).some(method=>method.enabled))throw Error("Activá al menos un método de pago manual antes de publicar la compra normal.");
- if(!normalizeDeliveryMethods(merged.deliveryMethods).some(m=>m.enabled))throw Error("Activá al menos una forma de entrega.");
+   // Las tiendas ya publicadas pueden completar su configuración inicial por pasos.
+   const activatingNormalCheckout = !current.isPublished || current.whatsappOrdersEnabled;
+   const requiresPaymentMethod = activatingNormalCheckout || normalizePaymentMethods(current).some(method => method.enabled);
+   const requiresDeliveryMethod = activatingNormalCheckout || normalizeDeliveryMethods(current.deliveryMethods).some(method => method.enabled);
+   if(requiresPaymentMethod&&!normalizePaymentMethods({...merged,checkoutSettings:mergedCheckoutSettings}).some(method=>method.enabled))throw Error("Activá al menos un método de pago manual antes de publicar la compra normal.");
+   if(requiresDeliveryMethod&&!normalizeDeliveryMethods(merged.deliveryMethods).some(m=>m.enabled))throw Error("Activá al menos una forma de entrega.");
  }
  if(input.deliveryMethods){
  if(new Set(input.deliveryMethods.map(m=>m.id)).size!==input.deliveryMethods.length)throw Error("Las formas de entrega deben tener identificadores únicos.");

@@ -2,7 +2,7 @@ import { beforeEach,describe,expect,it,vi } from "vitest";
 import { visualSettingsFromStore } from "../lib/design-settings";
 import { createBannerItem } from "../lib/public-page-config";
 import { nextOrderState } from "../lib/order-state";
-import { createPaymentMethod } from "../lib/commerce-settings";
+import { createPaymentMethod, deliveryMethodSchema } from "../lib/commerce-settings";
 const mocks=vi.hoisted(()=>({
  merchant:vi.fn(),updateStore:vi.fn(),findStore:vi.fn(),findProduct:vi.fn(),updateProduct:vi.fn(),lock:vi.fn(),resolve:vi.fn(),cleanup:vi.fn()
 }));
@@ -46,6 +46,85 @@ describe("guardado de configuración acotado",()=>{
  it("rechaza modificar slug o visuales desde comercio",async()=>{expect((await commercePatch(request({slug:"otra"}))).status).toBe(400);expect(mocks.updateStore).not.toHaveBeenCalled();});
  it("no permite volver a editar menús desde la API",async()=>{expect((await commercePatch(request({menuConfig:{header:[],footer:[]}}))).status).toBe(400);expect(mocks.updateStore).not.toHaveBeenCalled();});
  it("no admite dejar una tienda publicada sin métodos de pago",async()=>{expect((await commercePatch(request({acceptCashPayments:false,acceptTransferPayments:false}))).status).toBe(400);expect(mocks.updateStore).not.toHaveBeenCalled();});
+});
+describe("configuración inicial de pagos y entregas", () => {
+ const emptyStore = { ...store, deliveryMethods: [], checkoutSettings: { ...store.checkoutSettings, paymentMethods: [] } };
+ const payment = createPaymentMethod("cash", "cash-a");
+ const customDelivery = deliveryMethodSchema.parse({ id: "delivery-a", type: "custom", name: "Entrega personalizada", price: null, enabled: true });
+ const pickup = deliveryMethodSchema.parse({ id: "pickup-a", type: "pickup", name: "Retiro en sucursal", price: 0, enabled: false });
+
+ it.each(["cash", "transfer", "seller", "custom"] as const)("agrega el primer pago %s sin exigir entregas", async type => {
+   mocks.findStore.mockResolvedValue(emptyStore);
+   const method = createPaymentMethod(type, "payment-a");
+   const response = await commercePatch(request({ checkoutSettings: { paymentMethods: [method] } }));
+   expect(response.status).toBe(200);
+   const data = mocks.updateStore.mock.calls[0][0].data;
+   expect(data.checkoutSettings.paymentMethods).toEqual([method]);
+   expect(data).not.toHaveProperty("deliveryMethods");
+ });
+
+ it.each([customDelivery, pickup])("agrega la primera entrega $type sin exigir pagos", async method => {
+   mocks.findStore.mockResolvedValue(emptyStore);
+   const response = await commercePatch(request({ deliveryMethods: [method] }));
+   expect(response.status).toBe(200);
+   const data = mocks.updateStore.mock.calls[0][0].data;
+   expect(data.deliveryMethods).toEqual([method]);
+   expect(data).not.toHaveProperty("checkoutSettings");
+ });
+
+ it.each(["pagos", "entregas"])("completa la configuración empezando por %s", async first => {
+   let current: Record<string, unknown> = emptyStore;
+   mocks.findStore.mockImplementation(async () => current);
+   mocks.updateStore.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+     current = { ...current, ...data };
+     return current;
+   });
+   const operations = [
+     { checkoutSettings: { paymentMethods: [payment] } },
+     { deliveryMethods: [pickup] }
+   ];
+   if (first === "entregas") operations.reverse();
+   for (const operation of operations) {
+     expect((await commercePatch(request(operation))).status).toBe(200);
+   }
+   const enabledPickup = { ...pickup, enabled: true, pickupDetails: "Av. Rivadavia 1234 · Lun a vie de 9 a 18 h" };
+   expect((await commercePatch(request({ deliveryMethods: [enabledPickup] }))).status).toBe(200);
+   expect(current).toMatchObject({ checkoutSettings: { paymentMethods: [payment] }, deliveryMethods: [enabledPickup] });
+ });
+
+ it("permite completar los datos generales mientras falta la configuración inicial", async () => {
+   mocks.findStore.mockResolvedValue(emptyStore);
+   expect((await commercePatch(request({ name: "Nuevo nombre", isPublished: true }))).status).toBe(200);
+ });
+
+ it.each([
+   { action: "eliminar", deliveryMethods: [] },
+   { action: "desactivar", deliveryMethods: [{ ...customDelivery, enabled: false }] }
+ ])("protege la última entrega activa al $action", async ({ deliveryMethods }) => {
+   mocks.findStore.mockResolvedValue({ ...store, deliveryMethods: [customDelivery] });
+   const response = await commercePatch(request({ deliveryMethods }));
+   expect(response.status).toBe(400);
+   expect(await response.json()).toEqual({ error: "Activá al menos una forma de entrega." });
+   expect(mocks.updateStore).not.toHaveBeenCalled();
+ });
+
+ it.each([
+   { current: { ...emptyStore, isPublished: false, deliveryMethods: [customDelivery] }, input: { isPublished: true }, missing: "pago" },
+   { current: { ...emptyStore, isPublished: false, checkoutSettings: { paymentMethods: [payment] } }, input: { isPublished: true }, missing: "entrega" },
+   { current: { ...emptyStore, whatsappOrdersEnabled: true, deliveryMethods: [customDelivery] }, input: { whatsappOrdersEnabled: false }, missing: "pago" },
+   { current: { ...emptyStore, whatsappOrdersEnabled: true, checkoutSettings: { paymentMethods: [payment] } }, input: { whatsappOrdersEnabled: false }, missing: "entrega" }
+ ])("rechaza habilitar la compra normal cuando falta $missing", async ({ current, input, missing }) => {
+   mocks.findStore.mockResolvedValue(current);
+   const response = await commercePatch(request(input));
+   expect(response.status).toBe(400);
+   expect((await response.json()).error).toContain(missing === "pago" ? "método de pago" : "forma de entrega");
+   expect(mocks.updateStore).not.toHaveBeenCalled();
+ });
+
+ it("permite publicar cuando el mismo guardado completa pagos y entregas", async () => {
+   mocks.findStore.mockResolvedValue({ ...emptyStore, isPublished: false });
+   expect((await commercePatch(request({ isPublished: true, checkoutSettings: { paymentMethods: [payment] }, deliveryMethods: [customDelivery] }))).status).toBe(200);
+ });
 });
 describe("borrador y publicación",()=>{
  const payload=()=>({...visualSettingsFromStore(store),expectedUpdatedAt:store.updatedAt.toISOString()});
