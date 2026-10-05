@@ -15,7 +15,7 @@ describe("plantillas Roma, Dana y Vene", () => {
     expect(normalizeDesignConfig({ font: "sans" }).font).toBe("sans");
   });
   it("ofrece paletas diferentes y conserva los colores personalizados", () => {
-    expect(new Set(publicStoreTemplates.map(template => getStoreThemeColors(template, { useTemplateColors: true }).primary)).size).toBe(3);
+    expect(new Set(publicStoreTemplates.map(template => getStoreThemeColors(template, { useTemplateColors: true }).primary)).size).toBe(publicStoreTemplates.length);
     for (const template of publicStoreTemplates) expect(getStoreThemeColors(template, { primary: "#123456", accent: "#abcdef", useTemplateColors: false })).toMatchObject({ primary: "#123456", accent: "#abcdef" });
   });
   it("filtra categorías principales incluyendo todas sus subcategorías", () => {

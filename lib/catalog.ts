@@ -3,23 +3,26 @@ import { normalizeVariants } from "@/lib/product-variants";
 export const storeTemplates = [
   "roma",
   "dana",
-  "vene"
+  "vene",
+  "strom"
 ] as const;
 
-export const publicStoreTemplates = ["roma", "dana", "vene"] as const;
+export const publicStoreTemplates = ["roma", "dana", "vene", "strom"] as const;
 
 export type StoreTemplate = (typeof storeTemplates)[number];
 
 export const storeTemplateLabels: Record<StoreTemplate, string> = {
   roma: "Roma · Clásica",
   dana: "Dana · Editorial",
-  vene: "Vene · Moderna"
+  vene: "Vene · Moderna",
+  strom: "Strom · Deportiva"
 };
 
 export const defaultCategoryTitles: Record<StoreTemplate, string> = {
   roma: "Descubrí nuestras categorías",
   dana: "Categorías",
-  vene: "Explorá la tienda"
+  vene: "Explorá la tienda",
+  strom: "Encontrá lo tuyo"
 };
 
 export function getDefaultCategoryTitle(template: string | null | undefined) {
@@ -31,7 +34,8 @@ type StoreColors = { primary: string; accent: string };
 export const templateOriginalColors: Partial<Record<StoreTemplate, StoreColors>> = {
   roma: { primary: "#d99195", accent: "#f2e4e4" },
   dana: { primary: "#176877", accent: "#f5c4d4" },
-  vene: { primary: "#ee7947", accent: "#191919" }
+  vene: { primary: "#ee7947", accent: "#191919" },
+  strom: { primary: "#ffdf00", accent: "#151515" }
 };
 
 export function supportsOriginalTemplateColors(template: string | null | undefined) {
@@ -59,7 +63,7 @@ export function getStoreThemeColors(template: string | null | undefined, theme: 
 }
 
 export function isPanelStorefrontTemplate(template: StoreTemplate) {
-  return template === "roma" || template === "dana" || template === "vene";
+  return storeTemplates.includes(template);
 }
 
 export function getCatalogPrices(product: { basePrice: number; promoPrice?: number | null; variants?: unknown }) {
@@ -67,7 +71,8 @@ export function getCatalogPrices(product: { basePrice: number; promoPrice?: numb
   if (variants.length) {
     const prices = variants.map(variant => {
       const regular = variant.basePrice ?? product.basePrice;
-      const effective = variant.promoPrice !== null && variant.promoPrice > 0 && variant.promoPrice < regular ? variant.promoPrice : regular;
+      const promo = variant.promoPrice ?? (variant.basePrice === null ? product.promoPrice : null);
+      const effective = promo != null && promo > 0 && promo < regular ? promo : regular;
       return { regular, effective };
     });
     return prices.reduce((best, current) => current.effective < best.effective ? current : best);

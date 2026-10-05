@@ -5,6 +5,7 @@ import { visibleCategories } from "@/lib/public-categories";
 import { getPublicProductPage, publicProductInclude, publicProductOrder, publicProductPageSize } from "@/lib/public-product-query";
 import { normalizePublicPageConfig } from "@/lib/public-page-config";
 import { getStoreCustomer } from "@/lib/customer-auth";
+import { publicStoreTemplates } from "@/lib/catalog";
 
 type Params = Promise<{ storeSlug: string }>;
 
@@ -30,7 +31,7 @@ export async function renderStorePage({ params, searchParams, mode }: { params: 
   if (!store) {
     notFound();
   }
-  const commerce = ["roma", "dana", "vene"].includes(store.template);
+  const commerce = (publicStoreTemplates as readonly string[]).includes(store.template);
   const homeProductIds = normalizePublicPageConfig(store.publicPageConfig).homeSections.flatMap(section => section.type === "productGroup" ? section.productIds : []);
   const publicCategories = visibleCategories(store.categories);
   const [catalog, featuredProducts, categoryAssignments, promotions, customer] = await Promise.all([

@@ -152,7 +152,8 @@ export async function PATCH(request: Request, { params }: { params: Params }) {
     });
 
     let notificationWarning: string | null = null;
-    if (order.source === "STOREFRONT" && order.trackingTokenHash && order.customerEmail && (order.paymentStatus !== previousState.paymentStatus || order.fulfillmentStatus !== previousState.fulfillmentStatus)) {
+    const demoOrder = order.checkout && typeof order.checkout === "object" && "demo" in order.checkout && order.checkout.demo === true;
+    if (!demoOrder && order.source === "STOREFRONT" && order.trackingTokenHash && order.customerEmail && (order.paymentStatus !== previousState.paymentStatus || order.fulfillmentStatus !== previousState.fulfillmentStatus)) {
       const token = createTrackingToken(order.id, store.id);
       const trackingUrl = absoluteTrackingUrl(process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin, store.slug, token);
       const label = order.status === "CANCELLED" ? "Pedido cancelado" : order.fulfillmentStatus === "DELIVERED" ? "Pedido entregado" : order.fulfillmentStatus === "SHIPPED" ? "Pedido enviado" : order.fulfillmentStatus === "PACKED" ? "Pedido empaquetado" : order.paymentStatus === "CONFIRMED" ? "Pago confirmado" : "Pago pendiente";

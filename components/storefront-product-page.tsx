@@ -19,6 +19,7 @@ import { normalizeVariants, selectedVariantKey } from "@/lib/product-variants";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp";
 import styles from "./storefront-product-page.module.css";
 import storefrontStyles from "./commerce-storefront.module.css";
+import { DemoNotice } from "./strom-storefront";
 
 export function StorefrontProductPage({ store, product, related, categories, signedIn }: {
   store: StorefrontStore; product: StorefrontProduct; related: StorefrontProduct[]; categories: StorefrontCategory[]; signedIn: boolean;
@@ -40,7 +41,9 @@ export function StorefrontProductPage({ store, product, related, categories, sig
   const variant = normalizeVariants(product.variants).find(item => item.key === selectedVariantKey(product.optionGroups, selectedOptionIds) && item.isVisible);
   const image = variant?.imageUrl || product.imageUrls[imageIndex];
   const remaining = remainingSelectedStock(product, selectedOptionIds, cart);
-  const unavailable = remaining !== null && remaining <= 0;
+  const missingSelection = product.optionGroups.some(group => group.isRequired && !group.options.some(option => selectedOptionIds.includes(option.id)));
+  const variants = normalizeVariants(product.variants);
+  const unavailable = !missingSelection && remaining !== null && remaining <= 0 || variants.length > 0 && variants.every(item => !item.isVisible || item.stockQuantity === 0);
   const price = calculateSelectedPrice(product, selectedOptionIds);
   const toggleOption = (group: StorefrontProduct["optionGroups"][number], id: string) => {
     setSelectedOptionIds(current => current.filter(item => !group.options.some(option => option.id === item)).concat(id));
@@ -91,6 +94,7 @@ export function StorefrontProductPage({ store, product, related, categories, sig
     setShareOpen(false);
   }
   return <div {...storefrontAppearance(store)}>
+    {checkout.demoMode && <DemoNotice/>}
     <StorefrontPageNav store={store} categories={categories.map(item => ({ ...item, parentId: item.parentId ?? null }))} signedIn={signedIn} cartCount={cartCount} onCart={() => setCartOpen(true)}/>
     <main className={styles.main}>
       <nav className={styles.breadcrumb} aria-label="Ubicación"><Link href={`/${store.slug}`}>Inicio</Link><span>/</span><Link href={`/${store.slug}/productos`}>Productos</Link><span>/</span><span aria-current="page">{product.name}</span></nav>

@@ -22,6 +22,7 @@ vi.mock("@/lib/prisma", () => {
   return { prisma: { store: { findFirst: mocks.store }, order: { findUnique: mocks.existing }, $transaction: async (callback: (tx: unknown) => unknown) => callback(tx) } };
 });
 import { POST } from "../app/api/orders/route";
+import { after } from "next/server";
 
 const bankA = { ...createPaymentMethod("transfer", "bank-a"), enabled: true, name: "Banco A", discountPercent: 5, alias: "cuenta.a", accountHolder: "Ana", instructions: "Pagar en A", requestReceipt: true };
 const bankB = { ...createPaymentMethod("transfer", "bank-b"), enabled: true, name: "Banco B", discountPercent: 12, alias: "cuenta.b", accountHolder: "Bea", instructions: "Pagar en B" };
@@ -53,6 +54,18 @@ beforeEach(() => {
 });
 
 describe("checkout con pagos repetidos", () => {
+  it("guarda pedidos demo sin programar notificaciones", async () => {
+    const fixture = store();
+    mocks.store.mockResolvedValue({ ...fixture, checkoutSettings: { ...fixture.checkoutSettings, demoMode: true } });
+    expect((await POST(await request({ paymentMethodId: bankA.id }))).status).toBe(201);
+    expect(mocks.create.mock.calls[0][0].data.checkout.demo).toBe(true);
+    expect(after).not.toHaveBeenCalled();
+  });
+  it("mantiene las notificaciones en las tiendas normales", async () => {
+    expect((await POST(await request({ paymentMethodId: bankA.id }))).status).toBe(201);
+    expect(mocks.create.mock.calls[0][0].data.checkout.demo).toBe(false);
+    expect(after).toHaveBeenCalledOnce();
+  });
   it.each(["discount", "discountPercent", "total", "shipping", "paymentStatus"])("rechaza el campo adulterado %s", async field => {
     expect((await POST(await request({ paymentMethodId: bankA.id, [field]: 0 }))).status).toBe(400);
     expect(mocks.create).not.toHaveBeenCalled();

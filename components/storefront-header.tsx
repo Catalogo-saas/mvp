@@ -9,6 +9,7 @@ import { normalizeDesignConfig } from "@/lib/design-config";
 import styles from "./commerce-storefront.module.css";
 
 type HeaderStore = Pick<StorefrontStore, "name" | "slug" | "logoUrl" | "designConfig"> & {
+  template?: string;
   isPreview?: boolean;
   signedIn?: boolean;
 };
@@ -38,9 +39,10 @@ export function StorefrontHeader({ store, categories, cartCount = 0, query, onQu
     const url = new URL(window.location.href);
     const requestedMode = url.searchParams.get("cuenta");
     if (requestedMode !== "login" && requestedMode !== "register") return;
-    setAccessMode(requestedMode);
+    const frame = requestAnimationFrame(() => setAccessMode(requestedMode));
     url.searchParams.delete("cuenta");
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    return () => cancelAnimationFrame(frame);
   }, [store.slug]);
 
   useEffect(() => {
@@ -113,6 +115,7 @@ export function StorefrontHeader({ store, categories, cartCount = 0, query, onQu
         <button className={styles.mobileMenuButton} aria-label="Abrir menú" type="button" onClick={() => setMenuOpen(true)}><Menu size={25}/></button>
         <a className={styles.brand} href={href("/")} aria-label={`Inicio · ${store.name}`} onClick={event => handleNavigation(event, "/")}>
           {store.logoUrl ? <img src={store.logoUrl} alt={store.name} style={{ height: design.logoSize, maxWidth: design.logoSize * 3.5 }}/> : <span>{store.name}</span>}
+          {store.logoUrl && store.template === "strom" && <span>{store.name}</span>}
         </a>
         <nav className={styles.desktopNav} aria-label="Menú de la tienda">{navItems()}</nav>
         <form className={styles.headerSearch} onSubmit={event => submitSearch(event)}>

@@ -100,6 +100,14 @@ DEMO_SEED_TEST_DATABASE_URL="postgresql://usuario:clave@localhost:5432/landing_d
 
 La prueba de integración exige una base local llamada `landing_demo_seed_test` o `landing_demo_seed_test_*` para evitar ejecutarse sobre la base de trabajo. Usa secretos propios para sus fixtures: antes de probar en navegador, reconstruí esa base con `pnpm seed`, configurando `DATABASE_URL` de pruebas y los mismos secretos de seguimiento y checkout que usará el servidor. Luego iniciá la app contra esa misma base y ejecutá `DEMO_QA=1 DEMO_SEED_TEST_DATABASE_URL="postgresql://usuario:clave@localhost:5432/landing_demo_seed_test" pnpm exec playwright test e2e/demo-stores.spec.ts`, usando el mismo `TRACKING_TOKEN_SECRET` que el servidor y `PLAYWRIGHT_BASE_URL` si no está en `http://127.0.0.1:3100`.
 
+## Propuesta Strom
+
+`pnpm strom:seed` crea `/strom` con 24 productos, seis categorías y la plantilla deportiva Strom. Es independiente de `pnpm seed`: conserva las otras tiendas y, al repetirlo, conserva credenciales, configuración, productos existentes, stock, clientes y pedidos. Si el slug o el email pertenecen a otra identidad, aborta. La primera ejecución muestra la contraseña generada para `strom-demo@landing.test`; no se guarda en el repositorio.
+
+Las 24 fotos y el logo están alojados en Cloudflare R2 con URLs públicas HTTPS, sin archivos en `public/strom`. `prisma/strom-catalog.json` registra las URLs alojadas, la procedencia original y cuáles productos se identificaron en Instagram de Strom; `prisma/strom-brand.json` registra el logo. El seed usa estos manifiestos sin descargar ni subir imágenes. Al repetirlo, migra únicamente las referencias antiguas `/strom/*.webp` a las URLs públicas, preservando imágenes personalizadas y los demás datos.
+
+Precios, promociones, opciones, stock, pagos y entregas son ilustrativos. `checkoutSettings.demoMode` identifica esta demostración: el checkout registra pedidos, reserva stock y muestra seguimiento, sin enviar correos ni solicitar pagos reales. El registro de clientes por correo está deshabilitado en esta demo; la compra es como invitado. Los enlaces de contacto y consulta mayorista apuntan al WhatsApp real, pero no envían mensajes automáticamente. La demo no se incluye en el sitemap y solicita no indexación.
+
 ## Mockups HTML
 
 - `/mockups/storefront.html`

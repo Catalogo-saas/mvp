@@ -1,0 +1,9 @@
+:global([data-template=strom]) .content{color:var(--store-text);background:var(--store-background)}
+:global([data-template=strom]) .brand{display:inline-flex;align-items:center;gap:12px;font-family:var(--heading-font);font-size:30px;text-transform:uppercase}
+.brand img{width:48px;height:48px;object-fit:contain}
+:global([data-template=strom]) .content :is(section,header,details){border-color:#deded8}
+:global([data-template=strom]) .content :is(p,time){color:#52534d}
+:global([data-template=strom]) .content :is(h1,h2){font-family:var(--heading-font);text-transform:uppercase}
+:global([data-template=strom]) .continue{background:var(--store-primary);color:var(--store-primary-ink);border-radius:4px;min-height:50px}
+:global([data-template=strom]) .continue:hover{background:#e0c000}
+:global([data-template=strom]) .content a:focus-visible{outline:2px solid #151610;outline-offset:4px}

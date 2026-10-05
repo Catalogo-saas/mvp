@@ -7,6 +7,7 @@ import { z } from "zod";
 import { customerTokenHash } from "@/lib/customer-auth";
 import { isMailConfigured, sendCustomerVerification } from "@/lib/order-mail";
 import { prisma } from "@/lib/prisma";
+import { normalizeCheckoutSettings } from "@/lib/commerce-settings";
 
 const schema = z.object({ name: z.string().trim().min(2).max(100), email: z.string().trim().email().max(254), password: z.string().min(8).max(120) });
 
@@ -14,9 +15,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ sto
   const { storeSlug } = await params;
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Revisá nombre, correo y contraseña (mínimo 8 caracteres)." }, { status: 400 });
-  if (!isMailConfigured()) return NextResponse.json({ error: "El registro no está disponible hasta configurar el correo de la tienda." }, { status: 503 });
   const store = await prisma.store.findFirst({ where: { slug: storeSlug, isPublished: true }, include: { owner: { select: { email: true } } } });
   if (!store) return NextResponse.json({ error: "Tienda no encontrada." }, { status: 404 });
+  if (normalizeCheckoutSettings(store.checkoutSettings).demoMode) return NextResponse.json({ error: "Esta tienda es una demostración. Podés probar la compra sin registrarte; no se envían correos." }, { status: 403 });
+  if (!isMailConfigured()) return NextResponse.json({ error: "El registro no está disponible hasta configurar el correo de la tienda." }, { status: 503 });
   const email = parsed.data.email.toLowerCase();
   const existing = await prisma.customer.findUnique({ where: { storeId_email: { storeId: store.id, email } } });
   if (existing?.emailVerifiedAt) return NextResponse.json({ error: "Ya existe una cuenta con este correo. Iniciá sesión." }, { status: 409 });

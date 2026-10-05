@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@/lib/generated/prisma/client";
-import { paymentMethodSnapshot } from "@/lib/commerce-settings";
+import { normalizeCheckoutSettings, paymentMethodSnapshot } from "@/lib/commerce-settings";
 import { notifyNewOrder } from "@/lib/order-mail";
 import { decrementStockForItems } from "@/lib/order-management";
 import { absoluteTrackingUrl, createTrackingToken, hashTrackingToken, trackingPath } from "@/lib/order-tracking";
@@ -88,6 +88,7 @@ export async function POST(request: Request) {
           customerName: input.customerName, customerEmail: input.customerEmail, customerPhone: input.customerPhone,
           fulfillment: delivery.name, stockReserved: true, notes: settings.allowNotes ? input.notes : null, total: quote.totals.total,
           checkout: {
+            demo: settings.demoMode,
             stockMode: "variant-exclusive",
             customerName: input.customerName, customerEmail: input.customerEmail, customerPhone: input.customerPhone,
             dni: input.dni ?? null, deliveryAddress: delivery.type === "custom" ? input.deliveryAddress : null,
@@ -106,7 +107,7 @@ export async function POST(request: Request) {
       return { order, store, replay: false };
     });
     if (created.rejected) return NextResponse.json({ code: created.rejected.code, error: created.rejected.message, quote: created.quote }, { status: created.rejected.status });
-    if (!created.replay) {
+    if (!created.replay && !normalizeCheckoutSettings(created.store.checkoutSettings).demoMode) {
       const trackingUrl = absoluteTrackingUrl(origin, created.store.slug, createTrackingToken(created.order.id, created.store.id));
       const adminUrl = new URL("/gestion/pedidos?orderId=" + encodeURIComponent(created.order.id), origin).toString();
       after(() => notifyNewOrder({ order: created.order, storeName: created.store.name, sellerEmail: created.store.owner.email, trackingUrl, adminUrl }));

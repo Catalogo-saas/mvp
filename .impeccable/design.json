@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T15:30:00Z",
+  "title": "Design System: Strom",
+  "extensions": {
+    "narrative": {
+      "scope": "Strom template seeded demo defaults only; DESIGN.md frontmatter owns normative primitives.",
+      "rules": ["Preserve yellow and ink identity throughout commerce.", "Keep demo disclosures visible.", "Do not impose Strom styling on existing tenants."]
+    }
+  }
+}

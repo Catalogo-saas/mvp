@@ -11,6 +11,35 @@
 }
 .storefront[data-template="dana"] { --body-font: var(--font-dana), Georgia, serif; }
 .storefront[data-template="vene"] { --body-font: var(--font-vene), sans-serif; --heading-font: var(--font-vene-heading), sans-serif; }
+.storefront[data-template="strom"] { --body-font: var(--font-vene), sans-serif; --heading-font: var(--font-strom-heading), sans-serif; --store-link-ink: #151515; }
+.storefront[data-template="strom"]::selection, .storefront[data-template="strom"] ::selection { background: #ffdf00; color: #151515; }
+.storefront[data-template="strom"] :is(button,a,input,select,summary):focus-visible { outline: 2px solid #151515; outline-offset: 4px; }
+.storefront[data-template="strom"] input { caret-color: #151515; accent-color: #151515; }
+.storefront[data-template="strom"] .header { border-bottom: 0; }
+.storefront[data-template="strom"] .headerInner { max-width: 1440px; padding: 18px 48px; min-height: 86px; }
+.storefront[data-template="strom"] .brand { display: flex; align-items: center; gap: 10px; font-size: 31px; text-transform: uppercase; font-weight: 800; }
+.storefront[data-template="strom"] .brand img { border-radius: 50%; }
+.storefront[data-template="strom"] .cartCount { color: #151515; }
+.storefront[data-template="strom"] .section { max-width: 1440px; padding: 60px 48px 12px; }
+.storefront[data-template="strom"] .section > h2 { text-align: left; text-transform: uppercase; font-size: 44px; font-weight: 700; line-height: 1.1; margin-bottom: 12px; }
+.storefront[data-template="strom"] .sectionDescription { text-align: left; margin: 0 0 28px; color: #54534e; }
+.storefront[data-template="strom"] .productCard { min-width: 0; }
+.storefront[data-template="strom"] .productMedia { background: #fff; }
+.storefront[data-template="strom"] .productMedia img { padding: 20px; }
+.storefront[data-template="strom"] .productOpen { text-align: left; align-items: flex-start; padding-top: 16px; }
+.storefront[data-template="strom"] .productName { font-size: 14px; font-weight: 600; }
+.storefront[data-template="strom"] .price { justify-content: flex-start; font-variant-numeric: tabular-nums; }
+.storefront[data-template="strom"] .price strong { color: #151515; font-size: 19px; }
+.storefront[data-template="strom"] .productBadges span { color: #151515; background: #ffdf00; }
+.storefront[data-template="strom"] .catalogHeading { text-transform: uppercase; }
+@media(max-width:900px) {
+  .storefront[data-template="strom"] .headerInner { padding: 12px 20px; min-height: 72px; }
+  .storefront[data-template="strom"] .section { padding: 40px 20px 12px; }
+  .storefront[data-template="strom"] .section > h2 { font-size: 34px; }
+  .storefront[data-template="strom"] .productMedia img { padding: 12px; }
+  .storefront[data-template="strom"] .productName { font-size: 12px; }
+  .storefront[data-template="strom"] .price strong { font-size: 16px; }
+}
 .storefront[data-font="serif"] { --body-font: var(--font-dana), Georgia, serif; --heading-font: var(--body-font); }
 .storefront[data-font="sans"] { --body-font: var(--font-roma), sans-serif; --heading-font: var(--body-font); }
 .storefront[data-template="vene"][data-font="sans"] { --body-font: var(--font-vene), sans-serif; --heading-font: var(--font-vene-heading), sans-serif; }

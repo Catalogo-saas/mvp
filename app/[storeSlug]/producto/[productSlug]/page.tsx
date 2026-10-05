@@ -7,6 +7,7 @@ import { getEffectiveProductPrice } from "@/lib/catalog";
 import { publicStoreCanonicalUrl } from "@/lib/public-store-url";
 import { getStoreCustomer } from "@/lib/customer-auth";
 import { StorefrontProductPage } from "@/components/storefront-product-page";
+import { normalizeCheckoutSettings } from "@/lib/commerce-settings";
 
 type Params = Promise<{ storeSlug: string; productSlug: string }>;
 
@@ -43,7 +44,7 @@ export default async function ProductPage({ params }: { params: Params }) {
   const store = product.store;
   const jsonLd = { "@context": "https://schema.org", "@type": "Product", name: product.name, description: product.description || undefined, image: product.imageUrls, offers: { "@type": "Offer", priceCurrency: "ARS", price: getEffectiveProductPrice(product), availability: product.stockQuantity === 0 ? "https://schema.org/OutOfStock" : "https://schema.org/InStock", url: publicStoreCanonicalUrl(store, `/producto/${product.slug}`) } };
   return <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>
+    {!normalizeCheckoutSettings(store.checkoutSettings).demoMode && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}/>}
     <StorefrontProductPage product={product} related={related} categories={visibleCategories(store.categories)} signedIn={Boolean(customer)} store={{
       name: store.name, slug: store.slug, whatsappPhone: store.whatsappPhone, description: store.description,
       heroTitle: store.heroTitle, heroSubtitle: store.heroSubtitle, logoUrl: store.logoUrl, template: store.template,

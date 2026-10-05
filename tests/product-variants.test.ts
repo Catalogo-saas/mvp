@@ -10,6 +10,12 @@ const groups = [
 ];
 
 describe("variant combinations", () => {
+  it("inherits a parent's promotion only when the variant inherits its base price", () => {
+    const key = selectedVariantKey(groups, ["blue", "m"]);
+    const variant = { key, stockQuantity: 2, basePrice: null, promoPrice: null, isVisible: true, imageUrl: null };
+    expect(getCatalogPrices({ basePrice: 1000, promoPrice: 900, variants: [variant] })).toEqual({ regular: 1000, effective: 900 });
+    expect(getCatalogPrices({ basePrice: 1000, promoPrice: 900, variants: [{ ...variant, basePrice: 1200 }] })).toEqual({ regular: 1200, effective: 1200 });
+  });
   it("generates every color/size combination", () => {
     const combinations = variantCombinations(groups);
     expect(combinations).toHaveLength(4);

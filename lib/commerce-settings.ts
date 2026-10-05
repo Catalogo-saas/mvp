@@ -56,6 +56,7 @@ export type PaymentMethod = z.infer<typeof paymentMethodSchema>;
 export type PaymentMethodType = PaymentMethod["type"];
 
 export const checkoutSettingsSchema = z.object({
+  demoMode: z.boolean().default(false),
   paymentMethods: paymentMethodsSchema.optional(),
   requirePhone: z.boolean().default(true),
   requireDni: z.boolean().default(false),

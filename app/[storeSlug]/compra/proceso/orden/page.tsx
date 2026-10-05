@@ -7,6 +7,9 @@ import { formatMoney } from "@/lib/money";
 import { hashTrackingToken } from "@/lib/order-tracking";
 import { prisma } from "@/lib/prisma";
 import { ReceiptUpload } from "@/components/receipt-upload";
+import { storefrontAppearance } from "@/components/storefront-appearance";
+import { DemoNotice } from "@/components/strom-storefront";
+import styles from "./order-status.module.css";
 
 export const metadata: Metadata = { title: "Estado de tu pedido", robots: { index: false, follow: false } };
 
@@ -26,7 +29,7 @@ export default async function OrderStatusPage({ params, searchParams }: Props) {
 
   const order = await prisma.order.findFirst({
     where: { trackingTokenHash: hashTrackingToken(hash), store: { slug: storeSlug, owner: { status: "ACTIVE" } } },
-    include: { store: { select: { name: true, slug: true, owner: { select: { email: true } } } }, items: true, events: { orderBy: { createdAt: "asc" } } }
+    include: { store: { select: { name: true, slug: true, logoUrl: true, whatsappPhone: true, template: true, theme: true, designConfig: true, owner: { select: { email: true } } } }, items: true, events: { orderBy: { createdAt: "asc" } } }
   });
   if (!order) notFound();
 
@@ -36,10 +39,11 @@ export default async function OrderStatusPage({ params, searchParams }: Props) {
   const headline = order.status === "CANCELLED" ? "Pedido cancelado" : order.fulfillmentStatus === "DELIVERED" ? "Entregado" : order.paymentStatus === "CONFIRMED" ? "Pago confirmado" : "Pago pendiente";
 
   return (
-    <main className="min-h-dvh bg-[#fafafa] text-slate-900">
-      <div className="mx-auto max-w-3xl bg-white px-4 pb-12 sm:min-h-dvh sm:px-8">
+    <main {...storefrontAppearance(order.store)}>
+      {checkout.demo === true && <DemoNotice/>}
+      <div className={`${styles.content} mx-auto max-w-3xl bg-white px-4 pb-12 sm:min-h-dvh sm:px-8`}>
         <header className="border-b border-slate-200 py-5">
-          <Link href={`/${storeSlug}`} className="text-2xl font-bold tracking-tight">{order.store.name}</Link>
+          <Link href={`/${storeSlug}`} className={`${styles.brand} text-2xl font-bold tracking-tight`}>{order.store.template === "strom" && order.store.logoUrl && <img src={order.store.logoUrl} alt=""/>}{order.store.name}</Link>
         </header>
         <details className="border-b border-slate-200 py-4">
           <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm font-medium">
@@ -74,9 +78,9 @@ export default async function OrderStatusPage({ params, searchParams }: Props) {
           <div><h3 className="font-semibold">Contacto y facturación</h3>{order.customerEmail ? <p className="mt-1 break-all text-slate-600">{order.customerEmail}</p> : null}{textValue(checkout.billingAddress) ? <p className="mt-1 whitespace-pre-wrap text-slate-600">{textValue(checkout.billingAddress)}</p> : null}</div>
         </section>
         {checkout.requestReceipt === true && order.paymentStatus === "PENDING" ? <ReceiptUpload token={hash} hasReceipt={Boolean(order.receiptKey)}/> : null}
-        <section className="mt-5 rounded-xl border border-slate-200 p-5 text-sm sm:p-7"><h2 className="text-lg font-bold">Consultá todas tus compras</h2><p className="mt-2 text-slate-600">Creá una cuenta o ingresá con el mismo correo de este pedido para verlo también en «Mis compras».</p><Link className="mt-3 inline-block font-semibold underline" href={`/${storeSlug}/perfil/acceso`}>Ingresar o registrarme</Link></section>
-        <Link href={`/${storeSlug}`} className="mt-6 block rounded-lg bg-slate-950 px-5 py-3 text-center font-semibold text-white">Seguir comprando</Link>
-        <p className="mt-5 text-center text-sm">¿Necesitás ayuda? <a className="underline" href={`mailto:${order.store.owner.email}`}>Contactanos</a></p>
+        {checkout.demo !== true && <section className="mt-5 rounded-xl border border-slate-200 p-5 text-sm sm:p-7"><h2 className="text-lg font-bold">Consultá todas tus compras</h2><p className="mt-2 text-slate-600">Creá una cuenta o ingresá con el mismo correo de este pedido para verlo también en «Mis compras».</p><Link className="mt-3 inline-block font-semibold underline" href={`/${storeSlug}/perfil/acceso`}>Ingresar o registrarme</Link></section>}
+        <Link href={`/${storeSlug}`} className={`${styles.continue} mt-6 block rounded-lg bg-slate-950 px-5 py-3 text-center font-semibold text-white`}>Seguir comprando</Link>
+        <p className="mt-5 text-center text-sm">¿Necesitás ayuda? <a className="underline" href={order.store.template === "strom" && order.store.whatsappPhone ? `https://wa.me/${order.store.whatsappPhone.replace(/\D/g, "")}` : `mailto:${order.store.owner.email}`}>Contactanos</a></p>
       </div>
     </main>
   );
