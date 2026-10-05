@@ -106,6 +106,7 @@ export function StorefrontHeader({ store, categories, cartCount = 0, query, onQu
       <div className={styles.navItem}><a href={href("/")} onClick={event => handleNavigation(event, "/", mobile)}>Inicio</a></div>
       {mobile ? <div className={`${styles.navItem} ${styles.categoryNav}`}><details><summary aria-label="Mostrar categorías">Categorías <ChevronDown size={18}/></summary><div className={styles.submenu}>{categoryBranches(null, true)}</div></details></div> : <div className={`${styles.navItem} ${styles.categoryNav}`}><button type="button" aria-haspopup="true">Categorías <ChevronDown size={14}/></button><div className={styles.submenu}>{categoryBranches(null, false)}</div></div>}
       <div className={styles.navItem}><a href={href("/productos")} onClick={event => handleNavigation(event, "/productos", mobile)}>Productos</a></div>
+      <div className={styles.navItem}><a href={href("/contacto")} onClick={event => handleNavigation(event, "/contacto", mobile)}>Contacto</a></div>
     </>;
   }
 

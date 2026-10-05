@@ -16,7 +16,7 @@ export function StorefrontFooter({ store, onNavigatePreview }: {
   const payments = normalizePaymentMethods(store).filter(method => method.enabled);
   const deliveries = normalizeDeliveryMethods(store.deliveryMethods).filter(method => method.enabled);
   const href = (path: string) => `/${store.slug}${path === "/" ? "" : path}`;
-  const pages: Array<[string, string]> = [["Inicio", "/"], ["Productos", "/productos"]];
+  const pages: Array<[string, string]> = [["Inicio", "/"], ["Productos", "/productos"], ["Contacto", "/contacto"]];
 
   return <footer className={styles.footer} id="store-contact">
     <div className={styles.footerInner}>

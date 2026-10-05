@@ -12,6 +12,7 @@ vi.mock("../lib/storage", () => storage);
 import { resolveImageReferences } from "../lib/image-uploads";
 
 const webpHeader = Uint8Array.from([...Buffer.from("RIFF"), 0, 0, 0, 0, ...Buffer.from("WEBP")]);
+const pngHeader = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 describe("pending image promotion", () => {
   beforeEach(() => {
@@ -66,6 +67,34 @@ describe("pending image promotion", () => {
 
     releaseFirstInspection();
     await expect(operation).resolves.toMatchObject({ urls: [expect.any(String), expect.any(String)] });
+  });
+
+  it("promotes PNG fallback images with matching content and metadata", async () => {
+    storage.inspectObject.mockResolvedValue({ contentLength: 1024, contentType: "image/png", etag: '"etag"' });
+    storage.readObjectPrefix.mockResolvedValue(pngHeader);
+
+    const result = await resolveImageReferences({
+      storeId: "store-a",
+      scope: "products",
+      references: [{ kind: "pending", key: "pending/store-a/products/fallback.png" }],
+      allowedStoredUrls: []
+    });
+
+    expect(result.urls[0]).toMatch(/products\/store-a\/.*\.png$/);
+    expect(storage.copyPublicObject).toHaveBeenCalledWith(expect.objectContaining({ contentType: "image/png" }));
+  });
+
+  it("rejects PNG content declared as WebP before copying it", async () => {
+    storage.readObjectPrefix.mockResolvedValue(pngHeader);
+
+    await expect(resolveImageReferences({
+      storeId: "store-a",
+      scope: "products",
+      references: [{ kind: "pending", key: "pending/store-a/products/mislabeled.webp" }],
+      allowedStoredUrls: []
+    })).rejects.toThrow("El contenido del archivo no coincide con su formato.");
+
+    expect(storage.copyPublicObject).not.toHaveBeenCalled();
   });
 
   it("rejects stored URLs that are not attached to the edited entity", async () => {

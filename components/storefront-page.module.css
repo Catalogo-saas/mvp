@@ -25,7 +25,7 @@
 .footer nav{display:flex;flex-wrap:wrap;justify-content:center;gap:12px 24px;font-size:12px;margin-bottom:24px}
 .footer nav a{min-height:44px;display:flex;align-items:center}
 .footer p{font-size:12px;margin-bottom:18px;white-space:pre-line}
-.footer small{font-size:10px;color:#777}
+.footer small{font-size:10px;color:inherit}
 .categoryGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px 24px;align-items:start}
 .category{min-width:0}
 .categoryLink{display:block}

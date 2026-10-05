@@ -18,7 +18,7 @@ export function StorefrontPage({ store, title, description, children, categories
   const page = normalizePublicPageConfig(store.publicPageConfig);
   const menus = normalizeMenuConfig(store.menuConfig);
   const href = (path: string) => /^https?:\/\//.test(path) ? path : `/${store.slug}${path === "/" ? "" : path}`;
-  const footerLinks = menus.footer.length ? menus.footer : menus.header;
+  const footerLinks = [...(menus.footer.length ? menus.footer : menus.header), { label: "Contacto", href: "/contacto" }];
   return <div {...storefrontAppearance(store)}>
     {page.announcement.enabled && page.announcement.text && <div className={styles.announcement}>{page.announcement.text}</div>}
     <StorefrontPageNav store={store} categories={categories}/>

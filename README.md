@@ -108,6 +108,10 @@ Las 24 fotos, el logo y los banners están alojados en Cloudflare R2 con URLs p�
 
 Precios, promociones, opciones, stock, pagos y entregas son ilustrativos. `checkoutSettings.demoMode` identifica esta demostración: el checkout registra pedidos, reserva stock y muestra seguimiento, sin enviar correos ni solicitar pagos reales. El registro de clientes por correo está deshabilitado en esta demo; la compra es como invitado. Los enlaces de contacto y consulta mayorista apuntan al WhatsApp real, pero no envían mensajes automáticamente. La demo no se incluye en el sitemap y solicita no indexación.
 
+## Betel
+
+`pnpm betel:seed` crea la tienda real `/betel` sobre Dana, con el logo original, colores crema/cobre/rosa, categorías Indumentaria y Hogar y catálogo vacío. Configurá `BETEL_OWNER_PASSWORD` en el entorno y `BETEL_LOGO_PATH` con la ruta al logo original PNG/JPEG. La contraseña no se registra ni se restablece al repetir. El comando usa la conexión directa de Prisma Postgres para el alta, valida la identidad, verifica las imágenes públicas y conserva los datos existentes. Pagos y entregas quedan pendientes de configuración. Ver [configuración y funcionamiento de Betel](docs/BETEL.md).
+
 ## Mockups HTML
 
 - `/mockups/storefront.html`

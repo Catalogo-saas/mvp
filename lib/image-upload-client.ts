@@ -5,7 +5,9 @@ import imageCompression from "browser-image-compression";
 import {
   GIF_MAX_BYTES,
   IMAGE_MAX_DIMENSION,
+  imageExtensions,
   imageMimeTypes,
+  sniffImageMimeType,
   STATIC_IMAGE_MAX_INPUT_BYTES,
   STATIC_IMAGE_MAX_OUTPUT_BYTES,
   type ImageReference,
@@ -106,8 +108,12 @@ async function optimizeImageUncached(file: File) {
   if (optimized.size > STATIC_IMAGE_MAX_OUTPUT_BYTES) {
     throw new ImageUploadError("No pudimos reducir una de las imágenes al tamaño permitido.");
   }
-  return new File([optimized], file.name.replace(/\.[^.]+$/, "") + ".webp", {
-    type: "image/webp",
+  const contentType = sniffImageMimeType(new Uint8Array(await optimized.slice(0, 16).arrayBuffer()));
+  if (!contentType || contentType === "image/gif") {
+    throw new ImageUploadError("La imagen procesada tiene un formato no soportado. Probá con otro archivo.");
+  }
+  return new File([optimized], file.name.replace(/\.[^.]+$/, "") + `.${imageExtensions[contentType]}`, {
+    type: contentType,
     lastModified: file.lastModified
   });
 }

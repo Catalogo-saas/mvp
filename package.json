@@ -18,6 +18,7 @@
     "superadmin:bootstrap": "tsx scripts/bootstrap-superadmin.ts",
     "demo:seed": "tsx scripts/seed-demo-tenant.ts",
     "strom:seed": "tsx scripts/seed-strom-tenant.ts",
+    "betel:seed": "tsx scripts/seed-betel-tenant.ts",
     "seed": "tsx prisma/seed.ts"
   },
   "pnpm": {

@@ -25,3 +25,7 @@ For the Strom demo: use the existing Vene template and merchant configuration, w
 ## Evidence on Hand
 
 Instagram https://www.instagram.com/strom.suplementos/ confirms yellow/black branding, retail and wholesale, sports supplements, apparel, accessories and Bolívar 403. ENA whey and Star creatine 300 g were identified visually. Other catalog items are representative; manufacturer source pages and image origins are in prisma/strom-catalog.json.
+
+## Betel
+
+Betel is a real published merchant at `/betel`, configured through the existing Dana template and editor. Preserve the supplied original logo and the confirmed cream (`#F8EDE2`), copper (`#8C4F37`), rose (`#D5A095`) and brown (`#4B2415`) palette. Its initial catalog is empty, with Indumentaria and Hogar categories and WhatsApp +54 381 348-8267. Payment, delivery and WhatsApp ordering remain disabled until the merchant supplies actual conditions. This tenant configuration does not replace Strom's documented design context or establish a new platform identity. [Betel's handoff](docs/BETEL.md) records provenance, verification and the distinction between published tenant data and local shared UI changes awaiting application deployment.
