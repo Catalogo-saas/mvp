@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-05T15:30:00Z",
-  "title": "Design System: Strom",
+  "title": "Design System: Strom configured Vene demo",
   "extensions": {
     "narrative": {
-      "scope": "Strom template seeded demo defaults only; DESIGN.md frontmatter owns normative primitives.",
-      "rules": ["Preserve yellow and ink identity throughout commerce.", "Keep demo disclosures visible.", "Do not impose Strom styling on existing tenants."]
+      "scope": "Strom's configured Vene demo defaults only; DESIGN.md frontmatter owns the documented primitives, not a new global identity.",
+      "rules": ["Use existing Vene typography, layouts and shared commerce components.", "Configure black primary and yellow secondary with useTemplateColors false.", "Keep banners, categories, purchase information and product groups editable in the existing editor; R2 SVG artwork is separate from editable banner copy.", "Keep demo disclosures visible.", "Do not introduce a custom Strom runtime branch or impose demo settings on other tenants."]
     }
   }
 }

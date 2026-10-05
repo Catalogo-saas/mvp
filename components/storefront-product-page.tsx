@@ -19,7 +19,7 @@ import { normalizeVariants, selectedVariantKey } from "@/lib/product-variants";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp";
 import styles from "./storefront-product-page.module.css";
 import storefrontStyles from "./commerce-storefront.module.css";
-import { DemoNotice } from "./strom-storefront";
+import { DemoNotice } from "./storefront-demo-notice";
 
 export function StorefrontProductPage({ store, product, related, categories, signedIn }: {
   store: StorefrontStore; product: StorefrontProduct; related: StorefrontProduct[]; categories: StorefrontCategory[]; signedIn: boolean;

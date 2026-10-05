@@ -6,13 +6,14 @@ test.describe("Strom", () => {
   test("portada, categorías, búsqueda y compra demo", async ({ page, isMobile }, testInfo) => {
     test.setTimeout(120000);
     await page.goto("/strom");
+    await expect(page.locator('[data-template="vene"]').first()).toBeVisible();
     await expect(page.getByRole("heading", { name: "Tu próximo nivel empieza acá." })).toBeVisible();
     await page.evaluate(async () => { await document.fonts.ready; await Promise.all(Array.from(document.images).map(image => { image.loading = "eager"; return image.decode().catch(() => undefined); })); });
     await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await mkdir(".impeccable/review", { recursive: true });
     await page.screenshot({ path: `.impeccable/review/strom-${testInfo.project.name}.png`, fullPage: true });
-    await page.getByRole("link", { name: "Ver creatinas", exact: true }).click();
+    await page.locator('main a[href="/strom/productos?categoria=creatinas"]').first().click();
     await expect(page.getByRole("heading", { name: "Creatinas", exact: true })).toBeVisible();
     await expect(page.getByText("4 productos", { exact: true })).toBeVisible();
     await page.goto("/strom/productos?q=omega");

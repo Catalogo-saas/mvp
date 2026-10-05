@@ -4,12 +4,14 @@ import type { PrismaClient, Prisma } from "../lib/generated/prisma/client";
 import catalog from "./strom-catalog.json";
 import brand from "./strom-brand.json";
 import { replaceStromImageReferences } from "./strom-images";
-import { createHomeSection, publicPageConfigSchema } from "../lib/public-page-config";
+import { createBannerItem, createHomeSection, normalizePublicPageConfig, publicPageConfigSchema } from "../lib/public-page-config";
 import { checkoutSettingsSchema, deliveryMethodSchema, paymentMethodSchema } from "../lib/commerce-settings";
-import { designConfigSchema } from "../lib/design-config";
+import { designConfigSchema, normalizeDesignConfig } from "../lib/design-config";
 import { variantKeyFromNames } from "../lib/product-variants";
 
 export const stromIdentity = { slug: "strom", email: "strom-demo@landing.test" };
+export const stromTemplate = "vene" as const;
+export const stromTheme = { primary: "#151515", accent: "#ffdf00", useTemplateColors: false };
 export const stromCategories = [
   ["proteinas", "Proteínas", 1], ["creatinas", "Creatinas", 7],
   ["preentrenos", "Preentrenos", 11], ["bienestar", "Bienestar", 15],
@@ -17,11 +19,35 @@ export const stromCategories = [
 ] as const;
 
 export function stromHome(categoryIds: Map<string, string>, productIds: Map<string, string>) {
-  const hero = { ...createHomeSection("banners", "strom-hero"), title: "Tu próximo nivel empieza acá.", description: "Suplementos, accesorios y todo lo que necesitás para acompañar tu entrenamiento.", bannerAutoplay: false };
-  const categories = { ...createHomeSection("featuredCategories", "strom-categories"), title: "Encontrá lo tuyo", categoryLayout: "three-even" as const, categoryIds: stromCategories.map(([slug]) => categoryIds.get(slug)!) };
+  const title = "Tu próximo nivel empieza acá.";
+  const description = "Suplementos, accesorios y todo lo que necesitás para acompañar tu entrenamiento.";
+  const bannerItems = [
+    { ...createBannerItem(brand.desktopBannerUrl, "strom-desktop"), title, description, link: "/productos", position: "middle-left" as const, desktop: true, mobile: false, textColor: "#151515", backgroundColor: "#00000000" },
+    { ...createBannerItem(brand.mobileBannerUrl, "strom-mobile"), title, description, link: "/productos", position: "bottom-left" as const, desktop: false, mobile: true, textColor: "#151515", backgroundColor: "#00000000" }
+  ];
+  const hero = { ...createHomeSection("banners", "strom-hero"), title, description, bannerItems, bannerHeight: "large" as const, bannerAutoplay: false };
+  const info = { ...createHomeSection("purchaseInfo", "strom-info"), infoColors: { mode: "secondary" as const, background: "#ffdf00", text: "#151515" }, infoItems: [
+    { icon: "store" as const, title: "Bolívar 403", text: "San Miguel de Tucumán. Retiro de demostración." },
+    { icon: "card" as const, title: "Probá cómo comprar", text: "Efectivo y transferencia ficticios. No realices pagos." },
+    { icon: "truck" as const, title: "Envíos · Demo", text: "Simulá tu entrega. Costos y condiciones ilustrativos." },
+    { icon: "whatsapp" as const, title: "Consultas mayoristas", text: "Consultá a Strom por WhatsApp: +54 9 381 200-7698." }
+  ] };
+  const categories = { ...createHomeSection("featuredCategories", "strom-categories"), title: "Encontrá lo tuyo", categoryLayout: "three-even" as const, categoryIds: stromCategories.map(([slug]) => categoryIds.get(slug)!), categoryTiles: stromCategories.map(([slug, name, image]) => ({ id: `strom-${slug}`, categoryId: categoryIds.get(slug)!, title: name, imageUrl: catalog[image - 1].image })) };
   const featured = { ...createHomeSection("productGroup", "strom-featured"), title: "Para darlo todo.", description: "Una selección para acompañar cada entrenamiento.", productIds: catalog.filter(p => p.featured).map(p => productIds.get(p.slug)!) };
   const more = { ...createHomeSection("productGroup", "strom-more"), title: "Más allá del entrenamiento.", description: "Bienestar, accesorios e indumentaria para tu día a día.", productIds: catalog.filter(p => ["bienestar", "accesorios", "indumentaria"].includes(p.category)).slice(0, 8).map(p => productIds.get(p.slug)!) };
-  return publicPageConfigSchema.parse({ homeSections: [hero, categories, featured, more], announcement: { enabled: true, text: "Propuesta de tienda online · Precios, promociones y stock de demostración" }, socials: { instagram: "https://www.instagram.com/strom.suplementos/" } });
+  return publicPageConfigSchema.parse({ homeSections: [hero, info, categories, featured, more], announcement: { enabled: true, text: "Propuesta de tienda online · Precios, promociones y stock de demostración" }, socials: { instagram: "https://www.instagram.com/strom.suplementos/" } });
+}
+
+// One-time conversion of the retired custom template, not a new runtime variant.
+export function stromExistingTemplateDesign(store: { publicPageConfig: unknown; designConfig: unknown; heroTitle: string | null; heroSubtitle: string | null }, defaults: ReturnType<typeof stromHome>) {
+  const page = normalizePublicPageConfig(store.publicPageConfig);
+  const heroDefaults = defaults.homeSections.find(section => section.id === "strom-hero")!;
+  const homeSections = page.homeSections.map(section => section.type === "banners" && section.id === "strom-hero" && section.bannerItems === undefined && !section.images.length ? {
+    ...section, bannerHeight: "large" as const, bannerItems: heroDefaults.bannerItems!.map(item => ({ ...item, title: section.title || store.heroTitle || item.title, description: section.description || store.heroSubtitle || item.description }))
+  } : section);
+  if (!homeSections.some(section => section.type === "purchaseInfo")) homeSections.splice(1, 0, defaults.homeSections.find(section => section.id === "strom-info")!);
+  const designConfig = normalizeDesignConfig(store.designConfig);
+  return { template: stromTemplate, theme: stromTheme, heroImageUrls: [], designConfig: { ...designConfig, primaryContrast: "#ffffff", secondaryContrast: "#151515", announcementColors: { ...designConfig.announcementColors, mode: "primary" as const }, footerColors: { ...designConfig.footerColors, mode: "primary" as const } }, publicPageConfig: publicPageConfigSchema.parse({ ...page, homeSections }) };
 }
 
 export function stromCommerce() {
@@ -49,12 +75,12 @@ export async function seedStrom(prisma: PrismaClient) {
     const owner = user ?? await tx.user.create({ data: { email: stromIdentity.email, name: "Strom · Administrador demo", role: "MERCHANT", status: "ACTIVE", passwordHash } });
     const commerce = stromCommerce();
     const store = await tx.store.upsert({ where: { slug: stromIdentity.slug }, update: {}, create: {
-      ownerId: owner.id, name: "Strom", slug: stromIdentity.slug, businessType: "RETAIL", template: "strom", whatsappPhone: "5493812007698",
+      ownerId: owner.id, name: "Strom", slug: stromIdentity.slug, businessType: "RETAIL", template: stromTemplate, whatsappPhone: "5493812007698",
       logoUrl: brand.logoUrl, faviconUrl: brand.logoUrl, isPublished: true,
       description: "Suplementos deportivos, accesorios e indumentaria. Propuesta de tienda online para Strom.",
-      heroTitle: "Tu próximo nivel empieza acá.", heroSubtitle: "Suplementos, accesorios y todo lo que necesitás para acompañar tu entrenamiento.", heroImageUrls: [catalog[0].image, catalog[6].image],
-      theme: { primary: "#ffdf00", accent: "#151515", useTemplateColors: true },
-      designConfig: designConfigSchema.parse({ font: "template", productImageRatio: "square", productImageFit: "contain", cardRadius: 12, quickBuyEnabled: true, floatingCartEnabled: true, logoSize: 48, backgroundColor: "#fcfbf7", textColor: "#151515", headerColors: { mode: "background" }, announcementColors: { mode: "secondary" }, footerColors: { mode: "secondary" }, footerText: "Propuesta de demostración para Strom. Precios, promociones, stock y condiciones comerciales ilustrativos." }),
+      heroTitle: "Tu próximo nivel empieza acá.", heroSubtitle: "Suplementos, accesorios y todo lo que necesitás para acompañar tu entrenamiento.", heroImageUrls: [],
+      theme: stromTheme,
+      designConfig: designConfigSchema.parse({ font: "template", productImageRatio: "square", productImageFit: "contain", cardRadius: 12, quickBuyEnabled: true, floatingCartEnabled: true, logoSize: 64, primaryContrast: "#ffffff", secondaryContrast: "#151515", backgroundColor: "#fcfbf7", textColor: "#151515", headerColors: { mode: "background" }, announcementColors: { mode: "primary" }, footerColors: { mode: "primary" }, footerText: "Propuesta de demostración para Strom. Precios, promociones, stock y condiciones comerciales ilustrativos." }),
       address: "Bolívar 403, San Miguel de Tucumán", businessHoursText: null, mobileProductColumns: 2,
       acceptCashPayments: true, acceptTransferPayments: true, whatsappOrdersEnabled: false, ...commerce,
       paymentAccountHolder: "CUENTA DE DEMOSTRACIÓN", paymentProvider: "Banco de demostración", paymentAlias: "DEMO.NO.TRANSFERIR",
@@ -99,7 +125,14 @@ export async function seedStrom(prisma: PrismaClient) {
       }
     }
     // Existing editorial changes, inventory, orders and credentials remain intact.
-    if (!existing) await tx.store.update({ where: { id: store.id }, data: { publicPageConfig: stromHome(categoryIds, productIds) } });
+    const home = stromHome(categoryIds, productIds);
+    if (!existing) await tx.store.update({ where: { id: store.id }, data: { publicPageConfig: home } });
+    else if (store.template === "strom") {
+      const visual = stromExistingTemplateDesign({ ...store, ...migratedStoreImages }, home);
+      const draft = store.designDraft && typeof store.designDraft === "object" && !Array.isArray(store.designDraft) ? store.designDraft as Record<string, unknown> : null;
+      const designDraft = draft?.template === "strom" ? { ...draft, ...stromExistingTemplateDesign({ ...store, ...draft } as typeof store, home) } : undefined;
+      await tx.store.update({ where: { id: store.id }, data: { ...visual, ...(designDraft ? { designDraft: designDraft as Prisma.InputJsonValue } : {}) } });
+    }
     return { storeId: store.id, slug: store.slug, email: owner.email, password: user ? null : password, created: !existing, products: await tx.product.count({ where: { storeId: store.id } }) };
-  }, { timeout: 180000 });
+  }, { maxWait: 30000, timeout: 180000 });
 }

@@ -11,7 +11,7 @@ import { normalizeCheckoutSettings, normalizeDeliveryMethods, normalizePaymentMe
 import { argentinaProvinces } from "@/lib/argentina-provinces";
 import { formatMoney } from "@/lib/money";
 import styles from "./storefront-checkout-page.module.css";
-import { DemoNotice } from "./strom-storefront";
+import { DemoNotice } from "./storefront-demo-notice";
 
 type CheckoutStore = {
   name: string; slug: string; logoUrl: string | null; template: string; theme: unknown; designConfig: unknown;
@@ -143,9 +143,9 @@ export function StorefrontCheckoutPage({ store }: { store: CheckoutStore }) {
         {error && <p className={styles.error} role="alert">{error}</p>}
         {verified.quote?.issueDetails.map((issue, index) => <p className={styles.error} role="alert" key={index}>{issue.message}{issue.availableQuantity !== undefined && issue.availableQuantity !== null ? " Disponibles: " + issue.availableQuantity + "." : ""}</p>)}
         {verified.error && <p className={styles.error} role="alert">{verified.error} <button type="button" onClick={() => void verified.refresh()}>Reintentar verificación</button></p>}
-        {store.template === "strom" && <div className={styles.mobileSummary}>{orderSummary}</div>}
+        {settings.demoMode && <div className={styles.mobileSummary}>{orderSummary}</div>}
         {recovery && <button type="button" disabled={loading} onClick={() => { const saved = sessionStorage.getItem(attemptKey); if (saved) void sendAttempt(JSON.parse(saved)); }}>{loading ? "Recuperando…" : "Reintentar confirmación"}</button>}<div className={styles.formActions}>{step>0 && <button type="button" className={styles.secondary} onClick={()=>setStep(step-1)}>Volver</button>}<button type="submit" className={styles.primary} disabled={loading || recovery || recoveryChecking || verified.blocking || !cartValid || step===2 && (!selectedMethod || !selectedPayment || !verified.quote?.complete)}>{step===2 ? <><Check size={18}/>{loading ? "Confirmando..." : "Confirmar pedido"}</> : "Continuar"}</button></div>
       </form>}</section>
-      <div className={styles.desktopSummary}>{orderSummary}</div>
+      <div className={styles.desktopSummary} data-demo={settings.demoMode}>{orderSummary}</div>
     </div></main></div>;
 }

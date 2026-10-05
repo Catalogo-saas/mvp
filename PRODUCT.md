@@ -20,7 +20,7 @@ Strom must use the existing commerce system and preserve other tenants. Its 24-p
 
 ## Brand Commitments
 
-For Strom only: yellow-led design with black sports typography, the public lightning logo, real product photography, and a complete checkout. User chose implementation directly in code.
+For the Strom demo: use the existing Vene template and merchant configuration, with black primary, yellow secondary, the public lightning logo, real product photography and a complete checkout. Inherit Vene's Manrope/Sora typography and shared commerce layouts. Banners, categories, purchase information and product groups remain editable in the existing merchant editor; R2-hosted SVG banner artwork is separate from editable copy. No custom Strom runtime branch.
 
 ## Evidence on Hand
 

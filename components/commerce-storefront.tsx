@@ -17,7 +17,7 @@ import styles from "./commerce-storefront.module.css";
 import { storefrontAppearance } from "./storefront-appearance";
 import { StorefrontFooter } from "./storefront-footer";
 import { StorefrontHeader } from "./storefront-header";
-import { DemoNotice, StromCategories, StromHero, StromWholesale } from "./strom-storefront";
+import { DemoNotice } from "./storefront-demo-notice";
 import type { StoreTemplate } from "@/lib/catalog";
 
 type Template = StoreTemplate;
@@ -95,10 +95,9 @@ export function CommerceStorefront(c: Props) {
     <StorefrontHeader store={store} categories={c.allCategories} cartCount={c.cartCount} query={c.query} onQuery={c.onQuery} onCart={c.onCart} onSearch={catalog} paymentMessage={template === "vene" ? paymentMessage : ""}/>
     <main>
       {c.mode === "home" ? page.homeSections.filter(section => section.enabled).map(section => {
-        if (section.type === "banners") return template === "strom" ? <StromHero key={section.id} section={section} store={store}/> : <HomeBanner key={section.id} section={section} store={store}/>;
+        if (section.type === "banners") return <HomeBanner key={section.id} section={section} store={store}/>;
         if (section.type === "purchaseInfo") return section.infoItems.length ? <PurchaseInfoCarousel key={section.id} section={section}/> : null;
         if (section.type === "featuredCategories") {
-          if (template === "strom") return <StromCategories key={section.id} section={section} store={store} categories={c.allCategories}/>;
           const categoryById = new Map(c.allCategories.map(item => [item.id, item]));
           const configuredTiles = section.categoryTiles ?? (section.categoryIds.length
             ? section.categoryIds.map((categoryId, index) => ({ id: `legacy-${index + 1}`, categoryId, title: "", imageUrl: section.categoryImages[categoryId] ?? "" }))
@@ -139,7 +138,6 @@ export function CommerceStorefront(c: Props) {
           </div>
         </div>
       </section>}
-      {c.mode === "home" && template === "strom" && <StromWholesale store={store}/>}
       {payments.demoMode && <DemoNotice/>}
       {!store.availability.isOpen && <p className={styles.closed}>{store.availability.label}</p>}
     </main>

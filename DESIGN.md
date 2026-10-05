@@ -1,74 +1,50 @@
 ---
-name: Strom storefront
-description: Sports-commerce demo; scope limited to the strom template.
+name: Strom configured Vene demo
+description: Seeded Strom settings on the existing Vene storefront; not a platform-wide design system.
 colors:
-  primary: "#ffdf00"
-  ink: "#151515"
+  primary: "#151515"
+  secondary: "#ffdf00"
   background: "#fcfbf7"
-  surface: "#ffffff"
 typography:
   display:
-    fontFamily: "Barlow Condensed, sans-serif"
-    fontSize: "clamp(54px, 6.7vw, 96px)"
-    fontWeight: 800
-    lineHeight: 0.94
-    letterSpacing: "-0.025em"
+    fontFamily: "Sora, sans-serif"
   body:
     fontFamily: "Manrope, sans-serif"
 rounded:
-  button: "6px"
   card: "12px"
-  stage: "24px"
-spacing:
-  desktop-gutter: "48px"
-  mobile-gutter: "20px"
-components:
-  hero-action:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.surface}"
-    rounded: "{rounded.button}"
-    padding: "17px 22px"
 ---
 
-# Design System: Strom
+# Design System: Strom configured Vene demo
 
 ## Overview
 
-This document governs the `strom` template only. Roma, Dana, Vene and the platform UI retain their existing identities.
+Strom uses the existing `vene` template through ordinary merchant configuration. This document records that demo's seeded settings; Roma, Dana, Vene defaults and the platform UI retain their existing identities.
 
 Values describe the seeded demonstration defaults; merchant design settings can override supported colors, typography and radii.
 
 ## Colors
 
-- Yellow `#ffdf00` leads the hero; ink `#151515` supplies copy and primary actions. Warm background `#fcfbf7`, white product photography surfaces.
+The seed sets primary black and secondary yellow (`theme.accent`), with `useTemplateColors: false`. Yellow banner artwork and purchase information accompany black announcement/footer surfaces. Primary contrast is white; secondary contrast and body text are black.
 
 ## Typography
 
-- Barlow Condensed 600/700/800 for display and section headings, uppercase; Manrope for body and commerce details. Display up to 96 px with −0.025 em tracking.
+`font: "template"` inherits Vene's Sora headings and Manrope body typography from the shared storefront. There is no Strom-specific type scale.
 
 ## Layout
 
-The storefront container is 1440 px; checkout is 1160 px. Below 800 px, Strom checkout places the summary in the form before the final action.
-- Wide two-column yellow hero: headline and catalog actions at left, product stage at right. On phones copy precedes a 300 px product stage.
-- Desktop six-column category rail; three at intermediate widths and two on phones. Product grids use four columns, with two on mobile.
-- 48 px desktop and 20 px phone gutters; section spacing 60–70 px desktop and 40 px phone.
-
-## Elevation & Depth
-
-Large surfaces rely on contrasting flat grounds, borders and isolated product photography rather than decorative shadows.
+Inherit Vene's shared responsive layouts. The seed orders standard banners, purchase information, featured categories and two product groups. Six categories use the existing `three-even` mosaic; mobile product columns are configured to two.
 
 ## Shapes
 
-- Product surfaces use 12 px corners, stage 24 px desktop/16 px mobile, action buttons 6 px. No decorative gradients or glow.
+The demo configures a 12 px card radius and square, contained product images. Other shapes follow the existing template and shared commerce components.
 
 ## Components
 
-- Shared commerce pages use black text for prices, links and totals; yellow actions retain black labels. Visible black focus rings and reduced-motion support.
-- Home banners, category selection and product groups are stored in the existing visual configuration. Wholesale callout belongs to the sports storefront template.
+Banners, category tiles, purchase information (including wholesale contact) and product groups are configured in the same merchant editor that renders the public storefront. Desktop and mobile SVG banner artwork is hosted on R2; its title and description remain separately editable banner fields. Both banners link to the catalog. Commerce uses shared components without a custom Strom runtime branch.
 
 ## Do's and Don'ts
 
 - Do preserve the public lightning logo, readable product packaging and prominent demo disclosures through checkout and order tracking.
-- Do use black text for yellow controls and commerce totals.
-- Don't apply these rules to the other storefront templates or platform UI.
+- Do adapt Strom through the existing template configuration and editor.
+- Don't introduce a fourth template or impose these demo settings on other tenants or the platform UI.
 - Don't present illustrative inventory, prices or payment instructions as confirmed Strom commercial data.

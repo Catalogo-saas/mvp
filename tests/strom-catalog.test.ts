@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import catalog from "../prisma/strom-catalog.json";
 import brand from "../prisma/strom-brand.json";
 import { replaceStromImageReferences } from "../prisma/strom-images";
-import { stromCategories, stromCommerce, stromHome } from "../prisma/strom-seed";
+import { stromCategories, stromCommerce, stromExistingTemplateDesign, stromHome, stromTemplate, stromTheme } from "../prisma/strom-seed";
+import { storeTemplates, getStoreThemeColors } from "../lib/catalog";
 import { normalizeCheckoutSettings } from "../lib/commerce-settings";
 
 describe("Strom demo", () => {
@@ -26,11 +27,28 @@ describe("Strom demo", () => {
     const categoryIds = new Map(stromCategories.map(([slug]) => [slug, `category-${slug}`]));
     const productIds = new Map(catalog.map(p => [p.slug, `product-${p.slug}`]));
     const home = stromHome(categoryIds, productIds);
-    expect(home.homeSections.map(s => s.type)).toEqual(["banners", "featuredCategories", "productGroup", "productGroup"]);
+    expect(home.homeSections.map(s => s.type)).toEqual(["banners", "purchaseInfo", "featuredCategories", "productGroup", "productGroup"]);
     for (const section of home.homeSections) {
       expect(section.productIds.every(id => [...productIds.values()].includes(id))).toBe(true);
       expect(section.categoryIds.every(id => [...categoryIds.values()].includes(id))).toBe(true);
     }
+  });
+  it("usa Vene sin agregar plantillas, con banners y contenido editables", () => {
+    expect(storeTemplates).toEqual(["roma", "dana", "vene"]);
+    expect(stromTemplate).toBe("vene");
+    expect(getStoreThemeColors(stromTemplate, stromTheme)).toMatchObject({ primary: "#151515", accent: "#ffdf00", useTemplateColors: false });
+    const home = stromHome(new Map(stromCategories.map(([slug]) => [slug, slug])), new Map(catalog.map(product => [product.slug, product.slug])));
+    const hero = home.homeSections[0];
+    expect(hero.bannerItems).toHaveLength(2);
+    expect(hero.bannerItems?.map(item => [item.desktop, item.mobile])).toEqual([[true, false], [false, true]]);
+    expect(hero.bannerItems?.every(item => item.imageUrl.startsWith("https:") && item.title && item.description && item.link === "/productos")).toBe(true);
+    const legacy = { publicPageConfig: { ...home, homeSections: home.homeSections.filter(section => section.type !== "purchaseInfo").map(section => section.type === "banners" ? { ...section, title: "Mi título", bannerItems: undefined } : section) }, designConfig: {}, heroTitle: null, heroSubtitle: null };
+    const migrated = stromExistingTemplateDesign(legacy, home);
+    expect(migrated.template).toBe("vene");
+    expect(migrated.heroImageUrls).toEqual([]);
+    expect(migrated.publicPageConfig.homeSections[0].bannerItems?.[0].title).toBe("Mi título");
+    const custom = { ...legacy, publicPageConfig: home };
+    expect(stromExistingTemplateDesign(custom, home).publicPageConfig.homeSections[0].bannerItems).toEqual(hero.bannerItems);
   });
   it("migra solo referencias locales conocidas y conserva imágenes personalizadas", () => {
     const original = { logo: "/strom/logo.webp", hero: ["/strom/1.webp", "/strom/7.webp"], draft: { imageUrl: "/strom/24.webp" }, custom: "https://example.com/own.webp", route: "/strom", missing: "/strom/unknown.webp", nullable: null };

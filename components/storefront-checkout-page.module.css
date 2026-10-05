@@ -17,4 +17,4 @@
 .copyFeedback{min-height:20px;margin:10px 0 0;font-size:13px;line-height:1.5}
 @media(max-width:480px){.transferDetails{padding:16px}.transferRow{align-items:flex-start;flex-direction:column;gap:10px}.form input:not([type=radio]),.form select,.form textarea{font-size:16px}}
 .desktopSummary{align-self:start;position:sticky;top:30px}.mobileSummary{display:none}
-@media(max-width:800px){.desktopSummary{position:static}:global([data-template=strom]) .desktopSummary{display:none}:global([data-template=strom]) .mobileSummary{display:block;margin-top:30px}}
+@media(max-width:800px){.desktopSummary{position:static}.desktopSummary[data-demo=true]{display:none}.mobileSummary{display:block;margin-top:30px}}

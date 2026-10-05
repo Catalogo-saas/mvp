@@ -3,26 +3,23 @@ import { normalizeVariants } from "@/lib/product-variants";
 export const storeTemplates = [
   "roma",
   "dana",
-  "vene",
-  "strom"
+  "vene"
 ] as const;
 
-export const publicStoreTemplates = ["roma", "dana", "vene", "strom"] as const;
+export const publicStoreTemplates = ["roma", "dana", "vene"] as const;
 
 export type StoreTemplate = (typeof storeTemplates)[number];
 
 export const storeTemplateLabels: Record<StoreTemplate, string> = {
   roma: "Roma · Clásica",
   dana: "Dana · Editorial",
-  vene: "Vene · Moderna",
-  strom: "Strom · Deportiva"
+  vene: "Vene · Moderna"
 };
 
 export const defaultCategoryTitles: Record<StoreTemplate, string> = {
   roma: "Descubrí nuestras categorías",
   dana: "Categorías",
-  vene: "Explorá la tienda",
-  strom: "Encontrá lo tuyo"
+  vene: "Explorá la tienda"
 };
 
 export function getDefaultCategoryTitle(template: string | null | undefined) {
@@ -34,8 +31,7 @@ type StoreColors = { primary: string; accent: string };
 export const templateOriginalColors: Partial<Record<StoreTemplate, StoreColors>> = {
   roma: { primary: "#d99195", accent: "#f2e4e4" },
   dana: { primary: "#176877", accent: "#f5c4d4" },
-  vene: { primary: "#ee7947", accent: "#191919" },
-  strom: { primary: "#ffdf00", accent: "#151515" }
+  vene: { primary: "#ee7947", accent: "#191919" }
 };
 
 export function supportsOriginalTemplateColors(template: string | null | undefined) {
