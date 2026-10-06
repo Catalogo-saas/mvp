@@ -57,3 +57,7 @@ export function remainingProductStock(
     .filter((item) => item.productId === product.id)
     .reduce((sum, item) => sum + item.quantity, 0);
 }
+
+export function shouldShowLowStockNotice(stock: number | null, threshold: number, hasCompleteSelection: boolean) {
+  return hasCompleteSelection && stock !== null && stock > 0 && stock <= threshold;
+}

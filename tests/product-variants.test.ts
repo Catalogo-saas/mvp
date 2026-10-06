@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { selectedVariantKey, variantCombinations } from "../lib/product-variants";
-import { calculateSelectedPrice, remainingSelectedStock } from "../lib/storefront-product-selection";
+import { calculateSelectedPrice, remainingSelectedStock, shouldShowLowStockNotice } from "../lib/storefront-product-selection";
 import { getCatalogPrices } from "../lib/catalog";
 
 const groups = [
@@ -34,6 +34,16 @@ describe("variant combinations", () => {
     const product = { id: "p1", basePrice: 1000, promoPrice: null, stockQuantity: 0, optionGroups: groups, variants: [{ key, stockQuantity: 3, basePrice: 1300, promoPrice: null, isVisible: true, imageUrl: null }] };
     expect(remainingSelectedStock(product, ["blue", "m"], [])).toBe(3);
     expect(calculateSelectedPrice(product, ["blue", "m"])).toBe(1300);
+  });
+
+  it("shows low-stock notices only for a completed selection with positive stock", () => {
+    expect(shouldShowLowStockNotice(0, 5, false)).toBe(false);
+    expect(shouldShowLowStockNotice(2, 5, false)).toBe(false);
+    expect(shouldShowLowStockNotice(0, 5, true)).toBe(false);
+    expect(shouldShowLowStockNotice(2, 5, true)).toBe(true);
+    expect(shouldShowLowStockNotice(5, 5, true)).toBe(true);
+    expect(shouldShowLowStockNotice(6, 5, true)).toBe(false);
+    expect(shouldShowLowStockNotice(null, 5, true)).toBe(false);
   });
 
   it("hides an unavailable combination and displays the lowest visible offer", () => {

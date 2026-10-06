@@ -14,7 +14,7 @@ import { normalizeDesignConfig } from "@/lib/design-config";
 import { normalizeCheckoutSettings } from "@/lib/commerce-settings";
 import { getDiscountPercent, getEffectiveProductPrice } from "@/lib/catalog";
 import { formatMoney } from "@/lib/money";
-import { calculateSelectedPrice, remainingSelectedStock } from "@/lib/storefront-product-selection";
+import { calculateSelectedPrice, remainingSelectedStock, shouldShowLowStockNotice } from "@/lib/storefront-product-selection";
 import { normalizeVariants, selectedVariantKey } from "@/lib/product-variants";
 import { normalizeWhatsAppPhone } from "@/lib/whatsapp";
 import styles from "./storefront-product-page.module.css";
@@ -44,6 +44,8 @@ export function StorefrontProductPage({ store, product, related, categories, sig
   const missingSelection = product.optionGroups.some(group => group.isRequired && !group.options.some(option => selectedOptionIds.includes(option.id)));
   const variants = normalizeVariants(product.variants);
   const unavailable = !missingSelection && remaining !== null && remaining <= 0 || variants.length > 0 && variants.every(item => !item.isVisible || item.stockQuantity === 0);
+  const hasCompleteSelection = !missingSelection && (!variants.length || Boolean(variant));
+  const showLowStockNotice = checkout.showLowStock && shouldShowLowStockNotice(remaining, checkout.lowStockThreshold, hasCompleteSelection);
   const price = calculateSelectedPrice(product, selectedOptionIds);
   const toggleOption = (group: StorefrontProduct["optionGroups"][number], id: string) => {
     setSelectedOptionIds(current => current.filter(item => !group.options.some(option => option.id === item)).concat(id));
@@ -102,7 +104,7 @@ export function StorefrontProductPage({ store, product, related, categories, sig
         <section className={styles.gallery} aria-label="Imágenes del producto"><div className={styles.heroImage}>{image ? <img src={image} alt={product.name}/> : <ImageIcon size={50}/ >}{getDiscountPercent(product) && <span className={styles.discount}>−{getDiscountPercent(product)}%</span>}</div>{product.imageUrls.length > 1 && <div className={styles.thumbnails}>{product.imageUrls.map((url,index) => <button key={`${url}-${index}`} type="button" aria-label={`Ver foto ${index+1}`} aria-pressed={index === imageIndex} onClick={() => setImageIndex(index)}><img src={url} alt=""/></button>)}</div>}</section>
         <section className={styles.details}><p className={styles.category}>{product.category?.name || "Producto"}</p><h1>{product.name}</h1>{product.sku && design.showSku && <p className={styles.sku}>SKU: {product.sku}</p>}<div className={styles.price}><strong>{formatMoney(price)}</strong>{getDiscountPercent(product) && <del>{formatMoney(product.basePrice)}</del>}</div><p className={styles.description}>{product.description}</p>
           {product.optionGroups.map(group => <fieldset className={styles.options} key={group.id}><legend>{group.name}{group.isRequired ? " *" : ""}</legend><div>{group.options.filter(option => option.isAvailable).map(option => <label key={option.id}><input type="radio" name={group.id} checked={selectedOptionIds.includes(option.id)} onChange={() => toggleOption(group,option.id)}/><span>{option.name}{option.priceDelta ? ` · +${formatMoney(option.priceDelta)}` : ""}</span></label>)}</div></fieldset>)}
-          {unavailable ? <p className={styles.notice}>Sin stock para esta opción.</p> : checkout.showLowStock && remaining !== null && remaining <= checkout.lowStockThreshold ? <p className={styles.notice}>Quedan {remaining} unidades.</p> : null}
+          {unavailable ? <p className={styles.notice}>Sin stock para esta opción.</p> : showLowStockNotice ? <p className={styles.notice}>Quedan {remaining} unidades.</p> : null}
           {message && <p className={styles.notice} role="status">{message}</p>}<div className={styles.actions}><button className={styles.add} type="button" disabled={unavailable} onClick={add}><ShoppingBag size={19}/> {unavailable ? "Sin stock" : "Agregar al carrito"}</button><div className={styles.shareWrap} onKeyDown={event => { if (event.key === "Escape") setShareOpen(false); }}><button className={styles.share} data-copied={linkCopied} type="button" onClick={() => setShareOpen(open => !open)} aria-label={linkCopied ? "Enlace copiado" : "Compartir producto"} aria-expanded={shareOpen} aria-haspopup="menu"><Share2 className={styles.shareIcon} size={20}/><Check className={styles.copiedIcon} size={20}/></button>{shareOpen && <div className={styles.shareMenu} role="menu" aria-label="Compartir producto"><button type="button" role="menuitem" onClick={shareOnWhatsApp}><img src="/social/whatsapp.svg" alt=""/> WhatsApp</button><button type="button" role="menuitem" onClick={() => void copyProductLink()}><img src="/social/instagram.svg" alt=""/> Instagram</button><button type="button" role="menuitem" onClick={shareOnFacebook}><img src="/social/facebook.svg" alt=""/> Facebook</button><button type="button" role="menuitem" onClick={() => void copyProductLink()}><LinkIcon size={17}/> Copiar link</button></div>}</div></div>
         </section>
       </div>
