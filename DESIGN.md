@@ -40,7 +40,7 @@ The demo configures a 12 px card radius and square, contained product images. Ot
 
 ## Components
 
-Banners, category tiles, purchase information (including wholesale contact) and product groups are configured in the same merchant editor that renders the public storefront. Desktop and mobile SVG banner artwork is hosted on R2; its title and description remain separately editable banner fields. Both banners link to the catalog. Commerce uses shared components without a custom Strom runtime branch.
+Banners, category tiles, purchase information (including wholesale contact) and product groups are configured in the same merchant editor that renders the public storefront. The desktop and mobile R2 banners use stock photography as a full-bleed image across the complete hero, without a yellow split or inset photo; only a compact translucent black panel sits behind the white copy for contrast. Title, description, position and links remain editable banner fields. Photo sources, license and crop details are recorded in `prisma/strom-banners.ts` and embedded in `prisma/strom-assets/`; the stock imagery is illustrative, not Strom inventory or an endorsement. Both banners link to the catalog. `pnpm strom:banners` verifies the current tenant and artwork; add `--apply` to publish the photos and update only the two banner items. Commerce uses shared components without a custom Strom runtime branch.
 
 ## Do's and Don'ts
 

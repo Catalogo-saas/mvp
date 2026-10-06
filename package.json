@@ -18,7 +18,9 @@
     "superadmin:bootstrap": "tsx scripts/bootstrap-superadmin.ts",
     "demo:seed": "tsx scripts/seed-demo-tenant.ts",
     "strom:seed": "tsx scripts/seed-strom-tenant.ts",
+    "strom:banners": "tsx scripts/publish-strom-banners.ts",
     "betel:seed": "tsx scripts/seed-betel-tenant.ts",
+    "betel:banners": "tsx scripts/update-betel-banners.ts",
     "seed": "tsx prisma/seed.ts"
   },
   "pnpm": {
