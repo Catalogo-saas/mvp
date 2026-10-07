@@ -1,8 +1,11 @@
 "use client";
 
+import { LoaderCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
+import styles from "./auth-forms.module.css";
 
 function safeCallbackUrl(value: string | null) {
   if (value?.startsWith("/") && !value.startsWith("//")) {
@@ -24,30 +27,66 @@ export function LoginForm() {
     const form = new FormData(event.currentTarget);
     const returnTo = safeCallbackUrl(new URLSearchParams(window.location.search).get("callbackUrl"));
     const callbackUrl = returnTo ? `/panel?returnTo=${encodeURIComponent(returnTo)}` : "/panel";
-    const result = await signIn("credentials", {
-      email: form.get("email"),
-      password: form.get("password"),
-      redirect: false,
-      callbackUrl
-    });
-    setLoading(false);
 
-    if (result?.error) {
-      setError("Email o contraseña incorrectos.");
-      return;
+    try {
+      const result = await signIn("credentials", {
+        email: form.get("email"),
+        password: form.get("password"),
+        redirect: false,
+        callbackUrl
+      });
+
+      if (result?.error) {
+        setError("Email o contraseña incorrectos.");
+        return;
+      }
+
+      router.replace(callbackUrl);
+      router.refresh();
+    } catch {
+      setError("No pudimos iniciar sesión. Revisá tu conexión e intentá de nuevo.");
+    } finally {
+      setLoading(false);
     }
-
-    router.replace(callbackUrl);
-    router.refresh();
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <input className="field" name="email" type="email" placeholder="Email" required />
-      <input className="field" name="password" type="password" placeholder="Contraseña" required />
-      {error ? <p className="text-sm font-semibold text-red-600">{error}</p> : null}
-      <button className="btn-primary w-full" disabled={loading}>
-        {loading ? "Ingresando..." : "Ingresar"}
+    <form onSubmit={onSubmit} className={styles.loginForm} aria-busy={loading}>
+      <div className={styles.fieldGroup}>
+        <label className={styles.label} htmlFor="login-email">Email</label>
+        <input
+          className={styles.input}
+          id="login-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          spellCheck={false}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "login-error" : undefined}
+          required
+        />
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.label} htmlFor="login-password">Contraseña</label>
+        <input
+          className={styles.input}
+          id="login-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "login-error" : undefined}
+          required
+        />
+      </div>
+
+      {error ? <p className={styles.error} id="login-error" role="alert">{error}</p> : null}
+
+      <button className={styles.submit} type="submit" disabled={loading}>
+        {loading ? <LoaderCircle className={styles.loadingIcon} size={18} aria-hidden="true" /> : null}
+        {loading ? "Ingresando…" : "Ingresar"}
       </button>
     </form>
   );

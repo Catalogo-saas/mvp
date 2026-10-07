@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
 import { formatBuenosAiresDate } from "@/lib/date-format";
 import { formatMoney } from "@/lib/money";
@@ -9,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { ReceiptUpload } from "@/components/receipt-upload";
 import { storefrontAppearance } from "@/components/storefront-appearance";
 import { DemoNotice } from "@/components/storefront-demo-notice";
+import { StorefrontProductThumbnail } from "@/components/storefront-product-thumbnail";
 import styles from "./order-status.module.css";
 
 export const metadata: Metadata = { title: "Estado de tu pedido", robots: { index: false, follow: false } };
@@ -45,12 +47,16 @@ export default async function OrderStatusPage({ params, searchParams }: Props) {
         <header className="border-b border-slate-200 py-5">
           <Link href={`/${storeSlug}`} className={`${styles.brand} text-2xl font-bold tracking-tight`}>{order.store.logoUrl && <img src={order.store.logoUrl} alt=""/>}{order.store.name}</Link>
         </header>
-        <details className="border-b border-slate-200 py-4">
-          <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm font-medium">
-            <span>Mostrar detalles del pedido</span><strong>{formatMoney(order.total)}</strong>
+        <details className={styles.orderDetails}>
+          <summary className={styles.orderSummary}>
+            <span className={styles.summaryLabel}><ChevronDown size={20} className={styles.summaryChevron} aria-hidden="true"/><span>Mostrar detalles del pedido</span></span>
+            <strong className={styles.summaryTotal}>{formatMoney(order.total)}</strong>
           </summary>
           <div className="mt-4 space-y-3 text-sm">
-            {order.items.map((item) => <div key={item.id} className="flex justify-between gap-3"><span>{item.productName} × {item.quantity}</span><span>{formatMoney(item.subtotal)}</span></div>)}
+            {order.items.map((item) => <div key={item.id} className={styles.orderItem}>
+              <StorefrontProductThumbnail src={item.imageUrl}/>
+              <div className={styles.itemDetails}><span className={styles.itemName}>{item.productName} × {item.quantity}</span><strong className={styles.itemPrice}>{formatMoney(item.subtotal)}</strong></div>
+            </div>)}
             {typeof checkout.discount === "number" && checkout.discount > 0 ? <div className="flex justify-between"><span>Descuento</span><span>-{formatMoney(checkout.discount)}</span></div> : null}
             {typeof checkout.shipping === "number" ? <div className="flex justify-between"><span>Entrega</span><span>{formatMoney(checkout.shipping)}</span></div> : <p>Entrega: costo a convenir</p>}
             {typeof checkout.preTaxTotal === "number" ? <><div className="flex justify-between"><span>Sin impuestos</span><span>{formatMoney(checkout.preTaxTotal)}</span></div><div className="flex justify-between"><span>Impuestos</span><span>{formatMoney(Number(checkout.taxAmount) || 0)}</span></div></> : null}

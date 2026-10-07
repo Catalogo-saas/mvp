@@ -17,6 +17,7 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const request = useRef<{ key: string; controller: AbortController; sequence: number; promise: Promise<CheckoutQuote | null> } | null>(null);
   const sequence = useRef(0);
+  const debounceTimer = useRef<number | null>(null);
 
   const applyQuote = useCallback((quote: CheckoutQuote) => {
     const inputLines = JSON.parse(linesJson) as ReturnType<typeof cartQuoteLines>;
@@ -37,7 +38,11 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
   }, [changeCart, inputJson, linesJson]);
 
   const refresh = useCallback((): Promise<CheckoutQuote | null> => {
-    // Focus, visibility and explicit confirmation can request the same quote together.
+    // An explicit check replaces a scheduled update and shares any identical request.
+    if (debounceTimer.current !== null) {
+      window.clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
     if (request.current?.key === inputJson && !request.current.controller.signal.aborted) return request.current.promise;
     request.current?.controller.abort();
     const controller = new AbortController();
@@ -67,19 +72,15 @@ export function useCheckoutQuote(slug: string, cart: StorefrontCartItem[], chang
 
   useEffect(() => {
     if (!active || !cart.length) return;
-    const timer = window.setTimeout(() => { void refresh(); }, 250);
-    const focus = () => {
-      if (document.visibilityState === "visible") { clearTimeout(timer); void refresh(); }
-    };
-    window.addEventListener("focus", focus);
-    document.addEventListener("visibilitychange", focus);
+    debounceTimer.current = window.setTimeout(() => { void refresh(); }, 250);
     return () => {
-      clearTimeout(timer);
+      if (debounceTimer.current !== null) {
+        window.clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
       request.current?.controller.abort();
       request.current = null;
       sequence.current += 1;
-      window.removeEventListener("focus", focus);
-      document.removeEventListener("visibilitychange", focus);
     };
   }, [active, cart.length, refresh]);
 

@@ -1,8 +1,16 @@
-import Link from "next/link";
+import type { Metadata } from "next";
+import { Store } from "lucide-react";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth-forms";
 import { getAuthenticatedUser } from "@/lib/merchant";
+
+import styles from "./login.module.css";
+
+export const metadata: Metadata = {
+  title: { absolute: "Ingresar | Mi negocio" },
+  robots: { index: false, follow: false }
+};
 
 export const dynamic = "force-dynamic";
 
@@ -16,17 +24,25 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const { error } = await searchParams;
 
   return (
-    <main className="container-page flex min-h-screen items-center justify-center py-12">
-      <section className="panel w-full max-w-md p-8">
-        <Link href="/" className="text-lg font-black">
-          Landing<span className="text-brand">SaaS</span>
-        </Link>
-        <h1 className="mt-8 text-3xl font-black">Ingresar</h1>
-        <p className="mt-2 text-muted">Accedé al backoffice de tu tienda.</p>
-        <div className="mt-8">
-          {error === "inactive" ? <p className="mb-4 rounded-2xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">La cuenta está dada de baja. Contactá al administrador.</p> : null}
-          <LoginForm />
+    <main className={styles.page}>
+      <section className={styles.card} aria-labelledby="login-title">
+        <div className={styles.brand}>
+          <span className={styles.brandMark} aria-hidden="true"><Store size={22} strokeWidth={2.2} /></span>
+          <span>Mi negocio</span>
         </div>
+
+        <div className={styles.formHeading}>
+          <h1 id="login-title">Ingresar</h1>
+          <p>Accedé al backoffice de tu tienda.</p>
+        </div>
+
+        {error === "inactive" ? (
+          <p className={styles.inactiveNotice} role="alert">
+            La cuenta está dada de baja. Contactá al administrador.
+          </p>
+        ) : null}
+
+        <LoginForm />
       </section>
     </main>
   );

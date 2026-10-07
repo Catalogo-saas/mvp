@@ -1,6 +1,7 @@
 "use client";
 
-import { Download, Eye, EyeOff, Pencil, Plus, Settings2, Save, Trash2, Upload, X } from "lucide-react";
+import { Download, Eye, EyeOff, Image as ImageIcon, Pencil, Plus, Settings2, Save, Trash2, Upload, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ import { useUnsavedChanges } from "@/components/unsaved-changes-provider";
 import { notifySuccess } from "@/lib/internal-notifications";
 import { SaveOverlay } from "@/components/save-overlay";
 import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
+import { AdminDialog } from "@/components/admin-ui";
 import { ProductCategoryPaths } from "@/components/product-category-paths";
 import { ProductImages } from "@/components/product-images";
 import { ProductVariantEditor } from "@/components/product-variant-editor";
@@ -107,6 +109,11 @@ type ImportPreview = {
   rows: Array<Record<string, unknown> & { rowNumber: number; name: string; basePrice: number }>;
   errors: Array<{ rowNumber: number; message: string }>;
   total: number;
+};
+
+type VariantImagePickerState = {
+  variantKey: string;
+  selectedUrl: string | null;
 };
 
 const colorSuggestions = [
@@ -279,12 +286,14 @@ function PriceInput({
   value,
   onChange,
   placeholder,
+  ariaLabel,
   tone = "default",
   required = false
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
+  ariaLabel?: string;
   tone?: "default" | "promo";
   required?: boolean;
 }) {
@@ -295,6 +304,7 @@ function PriceInput({
         className={`field !pl-9 ${tone === "promo" ? "border-red-200 text-red-700" : ""}`}
         inputMode="numeric"
         placeholder={placeholder}
+        aria-label={ariaLabel}
         value={value}
         required={required}
         onChange={(event) => onChange(formatInteger(event.target.value))}
@@ -365,6 +375,7 @@ export function ProductForm({
   const [editingProductId, setEditingProductId] = useState<string | null>(editorMode?.type === "edit" ? editorMode.productId : null);
   const [isProductModalOpen, setProductModalOpen] = useState(Boolean(editorMode));
   const [variantEditorOpen, setVariantEditorOpen] = useState(false);
+  const [variantImagePicker, setVariantImagePicker] = useState<VariantImagePickerState | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [error, setError] = useState("");
@@ -373,7 +384,9 @@ export function ProductForm({
   const [isImportModalOpen, setImportModalOpen] = useState(false);
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
   const [importing, setImporting] = useState(false);
-  useLockBodyScroll((isProductModalOpen && !editorMode) || variantEditorOpen || isImportModalOpen);
+  useLockBodyScroll((isProductModalOpen && !editorMode) || variantEditorOpen || Boolean(variantImagePicker) || isImportModalOpen);
+
+  const variantCombinationsList = useMemo(() => variantCombinations(draft.optionGroups), [draft.optionGroups]);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -444,6 +457,17 @@ export function ProductForm({
       const existing = current.variants.find((variant) => variant.key === key) ?? { key, stockQuantity: "", basePrice: current.basePrice, promoPrice: current.promoPrice, isVisible: true, imageUrl: null };
       return { ...current, variants: [...current.variants.filter((variant) => variant.key !== key), { ...existing, ...patch }] };
     });
+  }
+
+  function openVariantImagePicker(variantKey: string) {
+    const variant = draft.variants.find((item) => item.key === variantKey);
+    setVariantImagePicker({ variantKey, selectedUrl: variant?.imageUrl ?? null });
+  }
+
+  function applyVariantImageSelection() {
+    if (!variantImagePicker) return;
+    updateVariant(variantImagePicker.variantKey, { imageUrl: variantImagePicker.selectedUrl });
+    setVariantImagePicker(null);
   }
 
   function removeImage(index: number) {
@@ -784,10 +808,66 @@ export function ProductForm({
                   {!draft.optionGroups.length && <p>Agregá propiedades como talle o color para crear las variantes.</p>}
                   <button className="btn-primary variant-edit-button" type="button" onClick={() => setVariantEditorOpen(true)}><Settings2 size={18}/>{draft.optionGroups.length ? "Editar variantes" : "Agregar variantes"}</button>
 
-                  {variantCombinations(draft.optionGroups).length ? <div className="grid gap-3 border-t pt-4"><div><h3 className="font-black">Combinaciones</h3><p className="text-xs text-muted">Ingresá un precio por combinación. La oferta es opcional y el stock vacío es ilimitado.</p></div>{variantCombinations(draft.optionGroups).map((combination) => {
-                    const value = draft.variants.find((variant) => variant.key === combination.key);
-                    return <div key={combination.key} className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-3"><p className="font-semibold sm:col-span-3">{combination.label}</p><label className="grid gap-1 text-xs font-bold">Stock<input className="field" inputMode="numeric" value={value?.stockQuantity ?? ""} onChange={(event) => updateVariant(combination.key, { stockQuantity: formatInteger(event.target.value) })} placeholder="Ilimitado" /></label><label className="grid gap-1 text-xs font-bold">Precio<PriceInput value={value?.basePrice ?? draft.basePrice} onChange={(price) => updateVariant(combination.key, { basePrice: price })} placeholder="Precio" /></label><label className="grid gap-1 text-xs font-bold">Oferta<PriceInput value={value?.promoPrice ?? draft.promoPrice} onChange={(price) => updateVariant(combination.key, { promoPrice: price })} placeholder="Sin oferta" /></label><label className="grid gap-1 text-xs font-bold">Imagen<select className="field" value={value?.imageUrl ?? ""} onChange={(event) => updateVariant(combination.key, { imageUrl: event.target.value || null })}><option value="">Imagen principal</option>{draft.images.map((image, index) => <option key={image.id} value={image.url}>Foto {index + 1}</option>)}</select></label><label className="flex items-center gap-2 text-xs font-bold"><input type="checkbox" checked={value?.isVisible ?? true} onChange={(event) => updateVariant(combination.key, { isVisible: event.target.checked })} />Visible</label></div>;
-                  })}</div> : null}
+                  {variantCombinationsList.length ? <div className="variant-combinations">
+                    <header className="variant-combinations-header">
+                      <div>
+                        <h3>Variantes creadas</h3>
+                        <p id="variant-stock-help">Stock vacío = ilimitado. La oferta es opcional.</p>
+                      </div>
+                      <span>{variantCombinationsList.length.toLocaleString("es-AR")} {variantCombinationsList.length === 1 ? "variante" : "variantes"}</span>
+                    </header>
+                    <p className="variant-scroll-hint">Deslizá la tabla para ver todas las columnas.</p>
+                    <div className="variant-table-scroll" role="region" aria-label="Tabla de variantes" tabIndex={0}>
+                      <table className="variant-table">
+                        <caption className="sr-only">Stock, precio, oferta, foto y visibilidad de cada variante</caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Foto</th>
+                            <th scope="col">Variante</th>
+                            <th scope="col">Stock</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">Oferta</th>
+                            <th scope="col">Visible</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {variantCombinationsList.map((combination) => {
+                            const value = draft.variants.find((variant) => variant.key === combination.key);
+                            const selectedImage = value?.imageUrl
+                              ? draft.images.find((image) => image.url === value.imageUrl)
+                              : draft.images[0];
+                            return <tr key={combination.key}>
+                              <td>
+                                <div className="variant-photo-control">
+                                  <button className="variant-photo-button" type="button" aria-label={`Seleccionar foto para ${combination.label}`} onClick={() => openVariantImagePicker(combination.key)}>
+                                    <span className="variant-photo-preview">
+                                      {selectedImage ? <Image src={selectedImage.url} alt="" width={42} height={42} sizes="42px" /> : <ImageIcon size={19} aria-hidden="true" />}
+                                    </span>
+                                  </button>
+                                </div>
+                              </td>
+                              <th scope="row" className="variant-name">{combination.label}</th>
+                              <td>
+                                <input className="field" inputMode="numeric" aria-label={`Stock de ${combination.label}`} aria-describedby="variant-stock-help" value={value?.stockQuantity ?? ""} onChange={(event) => updateVariant(combination.key, { stockQuantity: formatInteger(event.target.value) })} placeholder="∞" />
+                              </td>
+                              <td>
+                                <PriceInput value={value?.basePrice ?? draft.basePrice} onChange={(price) => updateVariant(combination.key, { basePrice: price })} placeholder="Precio" ariaLabel={`Precio de ${combination.label}`} />
+                              </td>
+                              <td>
+                                <PriceInput value={value?.promoPrice ?? draft.promoPrice} onChange={(price) => updateVariant(combination.key, { promoPrice: price })} placeholder="Sin oferta" tone="promo" ariaLabel={`Oferta de ${combination.label}`} />
+                              </td>
+                              <td>
+                                <label className="variant-visible-control">
+                                  <input type="checkbox" aria-label={`Mostrar ${combination.label} en la tienda`} checked={value?.isVisible ?? true} onChange={(event) => updateVariant(combination.key, { isVisible: event.target.checked })} />
+                                  <span>Visible</span>
+                                </label>
+                              </td>
+                            </tr>;
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div> : null}
                 </section>
               ) : null}
 
@@ -814,6 +894,30 @@ export function ProductForm({
       ) : null}
 
       {variantEditorOpen && <ProductVariantEditor groups={draft.optionGroups} suggestions={{ Talle: sizeGroups, Color: [{ name: "Colores sugeridos", values: colorSuggestions.map(color => color.name) }], Presentación: [{ name: "Presentaciones", values: ["Unidad", "Pack x2", "Pack x3"] }] }} onChange={optionGroups => setDraft(current => ({ ...current, variantsEnabled: true, optionGroups }))} onClose={() => setVariantEditorOpen(false)}/>}
+      {variantImagePicker && <AdminDialog
+        open
+        title="Selecciona una imagen"
+        centeredMobile
+        wide
+        onClose={() => setVariantImagePicker(null)}
+        footer={<button className="btn-primary" type="button" onClick={applyVariantImageSelection}>Aceptar</button>}
+      >
+        {draft.images.length ? <div className="variant-image-picker" role="group" aria-label="Imágenes del producto">
+          {draft.images.map((image, index) => {
+            const isSelected = variantImagePicker.selectedUrl === image.url || (variantImagePicker.selectedUrl === null && index === 0);
+            return <button
+              key={image.id}
+              type="button"
+              className={`variant-image-option${isSelected ? " is-selected" : ""}`}
+              aria-label={`Foto ${index + 1}${index === 0 ? ", imagen principal" : ""}`}
+              aria-pressed={isSelected}
+              onClick={() => setVariantImagePicker((current) => current ? { ...current, selectedUrl: image.url } : current)}
+            >
+              <Image src={image.url} alt="" width={640} height={840} sizes="(max-width: 767px) 320px, 25vw" />
+            </button>;
+          })}
+        </div> : <p className="variant-image-picker-empty">Agregá fotos al producto para elegir una imagen para esta variante.</p>}
+      </AdminDialog>}
       {loading ? <SaveOverlay title="Guardando producto…" /> : null}
     </div>
   );

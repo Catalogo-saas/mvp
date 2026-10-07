@@ -3,3 +3,62 @@
 .brand img { width: 48px; height: 48px; object-fit: contain; }
 .continue { background: var(--store-primary); color: var(--store-primary-ink); }
 .continue:hover { filter: brightness(.9); }
+
+.orderDetails {
+  padding: 16px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--store-text) 15%, transparent);
+}
+
+.orderSummary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--store-text) 22%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--store-primary) 6%, var(--store-background));
+  color: var(--store-text);
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.orderSummary::-webkit-details-marker { display: none; }
+.orderSummary::marker { content: ""; }
+.orderSummary:focus-visible { outline: 2px solid var(--store-primary); outline-offset: 3px; }
+.orderSummary:active { background: color-mix(in srgb, var(--store-primary) 12%, var(--store-background)); }
+
+.summaryLabel {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+}
+
+.summaryChevron { transition: transform 180ms ease-out; }
+.orderDetails[open] .summaryChevron { transform: rotate(180deg); }
+.summaryTotal { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.orderItem {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.itemDetails { display: grid; gap: 8px; min-width: 0; }
+.itemName { font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.itemPrice { justify-self: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@media (hover: hover) {
+  .orderSummary:hover { background: color-mix(in srgb, var(--store-primary) 10%, var(--store-background)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summaryChevron { transition: none; }
+}

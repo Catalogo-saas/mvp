@@ -20,6 +20,10 @@ El stock simple es independiente del stock por variante. `null` significa ilimit
 
 La clave de idempotencia se vincula con una huella del contenido normalizado. Un reintento idéntico devuelve la misma venta; reutilizar la clave con otro contenido genera `409 IDEMPOTENCY_CONFLICT`. La firma renovada no cambia la huella. El frontend conserva el intento exacto en `sessionStorage` hasta conocer su resultado, y lo recupera al recargar. Las respuestas de cotización atrasadas no reemplazan modificaciones del carrito.
 
+El carrito y el checkout cotizan al abrirse y ante cambios de productos, cantidades, opciones, envío o pago, con un debounce de 250 ms. Recuperar foco, cambiar de pestaña o editar datos del comprador no dispara consultas. Cada botón «Continuar» vuelve a verificar antes de avanzar; «Confirmar pedido» conserva su comprobación final. Las solicitudes idénticas en curso se comparten, y una comprobación explícita cancela la actualización programada pendiente.
+
+Mientras se verifica o confirma, el botón mantiene su texto, muestra un spinner y queda deshabilitado; los datos ingresados se conservan ante errores. Cambiar provincia conserva el método de envío. El resumen muestra la foto del producto o variante y permite ajustar cantidades ante stock parcial; quitar productos se realiza en el carrito.
+
 La edición administrativa de ítems recalcula los importes conservando descuento y envío históricos. Pedidos anteriores sin porcentaje guardado lo derivan del subtotal y descuento originales. No se eliminan productos ni combinaciones con reservas abiertas. La actualización manual de stock exige la versión vigente para no sobrescribir una reserva concurrente.
 
 ## Despliegue

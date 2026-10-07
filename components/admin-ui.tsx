@@ -7,7 +7,7 @@ import { useLockBodyScroll } from "@/components/use-lock-body-scroll";
 export function AdminPageHeader({ title, description, action, back }: { title: string; description?: string; action?: ReactNode; back?: string }) {
   return <header className="admin-page-header"><div>{back && <Link href={back} className="admin-back"><ChevronLeft size={16} />Volver</Link>}<h1>{title}</h1>{description && <p>{description}</p>}</div>{action && <div className="admin-header-actions">{action}</div>}</header>;
 }
-export function AdminDialog({ open, onClose, title, children, footer, fullScreenMobile = false, centeredMobile = false, rightDrawerMobile = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; fullScreenMobile?: boolean; centeredMobile?: boolean; rightDrawerMobile?: boolean }) {
+export function AdminDialog({ open, onClose, title, children, footer, fullScreenMobile = false, centeredMobile = false, rightDrawerMobile = false, wide = false }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; fullScreenMobile?: boolean; centeredMobile?: boolean; rightDrawerMobile?: boolean; wide?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   useLockBodyScroll(open);
   useEffect(() => {
@@ -40,7 +40,7 @@ export function AdminDialog({ open, onClose, title, children, footer, fullScreen
       dialog.style.removeProperty("--dialog-viewport-top");
     };
   }, [open, fullScreenMobile]);
-  return <dialog ref={ref} className={`admin-dialog${fullScreenMobile ? " admin-dialog-fullscreen" : ""}${centeredMobile ? " admin-dialog-centered-mobile" : ""}${rightDrawerMobile ? " admin-dialog-right-drawer" : ""}`} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const box = event.currentTarget.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) onClose(); } }} aria-label={title}><header><h2>{title}</h2><button type="button" className="admin-icon-button" onClick={onClose} aria-label={`Cerrar ${title}`}><X size={20} /></button></header><div className="admin-dialog-body">{open ? children : null}</div>{footer && <footer>{footer}</footer>}</dialog>;
+  return <dialog ref={ref} className={`admin-dialog${fullScreenMobile ? " admin-dialog-fullscreen" : ""}${centeredMobile ? " admin-dialog-centered-mobile" : ""}${rightDrawerMobile ? " admin-dialog-right-drawer" : ""}${wide ? " admin-dialog-wide" : ""}`} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={(event) => { if (event.target === event.currentTarget) { const box = event.currentTarget.getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) onClose(); } }} aria-label={title}><header><h2>{title}</h2><button type="button" className="admin-icon-button" onClick={onClose} aria-label={`Cerrar ${title}`}><X size={20} /></button></header><div className="admin-dialog-body">{open ? children : null}</div>{footer && <footer>{footer}</footer>}</dialog>;
 }
 export function AdminPagination({ page, pageSize, total, onChange }: { page: number; pageSize: number; total: number; onChange: (page: number, size: number) => void }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));

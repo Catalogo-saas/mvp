@@ -7,10 +7,10 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: {
-    default: "Tu tienda online — Vendé con tu marca",
+    default: "Mi negocio | Panel de gestión",
     template: "%s | Tu tienda online"
   },
-  description: "Una tienda online personalizable para mostrar productos, recibir pedidos y administrar tu negocio desde un solo lugar.",
+  description: "Catálogos, pedidos y gestión para tiendas online.",
   metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000")
 };
 

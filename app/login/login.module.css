@@ -1,0 +1,95 @@
+.page {
+  --admin-primary: #5046ba;
+  --admin-ink: #25243b;
+  --admin-line: #e9e9f0;
+  --admin-muted: #6e6c81;
+  --admin-background: #f6f7fb;
+  --admin-icon-background: #eeebfb;
+
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 24px;
+  background: var(--admin-background);
+  color: var(--admin-ink);
+}
+
+.page ::selection {
+  background: #d8d4f3;
+  color: var(--admin-ink);
+}
+
+.card {
+  width: min(100%, 440px);
+  border: 1px solid var(--admin-line);
+  border-radius: 14px;
+  background: #fff;
+  padding: clamp(24px, 5vw, 36px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--admin-ink);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.brandMark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--admin-icon-background);
+  color: var(--admin-primary);
+}
+
+.formHeading {
+  margin-top: 32px;
+}
+
+.formHeading h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+
+.formHeading p {
+  margin: 7px 0 0;
+  color: var(--admin-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.inactiveNotice {
+  margin: 22px 0 0;
+  border: 1px solid #f1e1b9;
+  border-radius: 8px;
+  background: #fff5dd;
+  padding: 12px 14px;
+  color: #805a18;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@media (max-width: 420px) {
+  .page {
+    padding: 16px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 360px) {
+  .card {
+    padding: 20px;
+  }
+}

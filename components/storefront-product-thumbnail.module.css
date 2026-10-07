@@ -1,0 +1,16 @@
+.thumbnail {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--store-background, #fff);
+  color: var(--store-text, #222);
+}
+
+.thumbnail img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
